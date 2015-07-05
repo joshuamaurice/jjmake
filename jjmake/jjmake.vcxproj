@@ -101,6 +101,7 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <OpenMPSupport>false</OpenMPSupport>
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
+      <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -125,6 +126,7 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <OpenMPSupport>false</OpenMPSupport>
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
+      <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -149,6 +151,7 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <OpenMPSupport>false</OpenMPSupport>
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
+      <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -176,6 +179,7 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <OpenMPSupport>false</OpenMPSupport>
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
+      <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -187,16 +191,7 @@
     </BuildLog>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <ProgramDataBaseFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </ProgramDataBaseFileName>
-      <ProgramDataBaseFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </ProgramDataBaseFileName>
-      <ProgramDataBaseFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </ProgramDataBaseFileName>
-      <ProgramDataBaseFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </ProgramDataBaseFileName>
-    </ClCompile>
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

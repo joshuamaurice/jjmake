@@ -1,7 +1,6 @@
-*.sdf
-*.suo
-*.idb
-*.pdb
+bin/**
+tmp/**
 *.opensdf
-src/bin
-src/tmp
+*.sdf
+*.v12.suo
+**/*.vcxproj.user
