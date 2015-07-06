@@ -3,12 +3,18 @@
 //      (See accompanying file LICENSE.TXT or copy at
 //  http://www.w3.org/Consortium/Legal/2008/03-bsd-license.html)
 
-#ifdef _WIN32
-int wmain(int argc, wchar_t **argv)
+#include <iomanip>
+#include <sstream>
+
+namespace jjm
 {
-}
-#else
-int main(int argc, char** argv)
+
+template <typename IntegerT>
+std::string toHexStr(IntegerT const& x)
 {
+    std::stringstream ss;
+    ss << std::hex << x;
+    return ss.str(); 
 }
-#endif
+
+} //namespace
