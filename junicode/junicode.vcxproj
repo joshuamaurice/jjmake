@@ -23,6 +23,8 @@
     <ClCompile Include="junicode.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="jutfiterator.hpp" />
+    <ClInclude Include="jutfstring.hpp" />
     <ClInclude Include="jutfutils.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -3,13 +3,14 @@
 //      (See accompanying file LICENSE.TXT or copy at
 //  http://www.w3.org/Consortium/Legal/2008/03-bsd-license.html)
 
-#ifndef JUTFUTILS_HPP_HEADER_GUARD
-#define JUTFUTILS_HPP_HEADER_GUARD
+#ifndef JUNICODE_JUTFUTILS_HPP_HEADER_GUARD
+#define JUNICODE_JUTFUTILS_HPP_HEADER_GUARD
 
 #include "jbase/jcstdint.hpp"
 #include "jbase/jfatal.hpp"
 #include "jbase/jinttostring.hpp"
 #include "jbase/jstaticassert.hpp"
+#include "jbase/jtemplatemetaprogrammingutils.hpp"
 
 #include <memory>
 #include <utility>
@@ -44,36 +45,42 @@ inline int utf8LengthOf(UnicodeCodePoint cp);
 //Throws std::exception on invalid input. 
 inline int utf16LengthOf(UnicodeCodePoint cp);
 
-//Ensure the range "at" is sufficiently big before calling. 
-//Can determine what is sufficiently big by calling utf8LengthOf. 
-//Modifies the argument iter to point to just past what was written. 
-//Throws std::exception on invalid input. 
+//Will write the codepoint to the byte array pointed to by at. 
+//Will update the iterator to point to past-the-end of what was just written. 
+//It is the user's responsibility to ensure that sufficient space remains. 
+//The user can check how much will be written by calling utf8LengthOf. 
+//Throws std::exception on invalid codepoint input. 
 template <typename Int8Iter>
-void writeUtf8(UnicodeCodePoint cp, Int8Iter * at);
+void writeUtf8(UnicodeCodePoint cp, Int8Iter & at);
 
-//Ensure the range "at" is sufficiently big before calling. 
-//Can determine what is sufficiently big by calling utf16LengthOf. 
-//Modifies the argument iter to point to just past what was written. 
-//Throws std::exception on invalid input. 
-template <typename Int8Iter>
-void writeUtf16(UnicodeCodePoint cp, Int8Iter * at);
+//Will write the codepoint to the byte array pointed to by at. 
+//Will update the iterator to point to past-the-end of what was just written. 
+//It is the user's responsibility to ensure that sufficient space remains. 
+//The user can check how much will be written by calling utf16LengthOf. 
+//Throws std::exception on invalid codepoint input. 
+template <typename Int16Iter>
+void writeUtf16(UnicodeCodePoint cp, Int16Iter & at);
 
-//Modifies argument iter to point to the next code point segment (or end of text).
+//Reads the next codepoint from a stream of utf8 data. 
+//Modifies the argument iter to point to the next piece of data. 
 //On invalid input, it throws std::exception and the position of iter is unspecified. 
 template <typename Int8Iter>
 CodePoint readUtf8Forward(Int8Iter & iter);
 
-//Modifies argument iter to point to the next code point segment (or end of text).
+//Reads the next codepoint from a stream of utf16 data. 
+//Modifies the argument iter to point to the next piece of data. 
 //On invalid input, it throws std::exception and the position of iter is unspecified. 
 template <typename Int16Iter>
 CodePoint readUtf16Forward(Int16Iter & iter);
 
-//Modifies argument iter to point to the start of the just-read code point segment. 
+//Reads the previous codepoint from a bidi stream of utf8 data. 
+//Modifies the argument it to point to the start of the code point segment. 
 //On invalid input, it throws std::exception and the position of iter is unspecified. 
 template <typename Int8Iter>
 CodePoint readUtf8Backward(Int8Iter & iter);
 
-//Modifies argument iter to point to the start of the just-read code point segment. 
+//Reads the previous codepoint from a bidi stream of utf16 data. 
+//Modifies the argument it to point to the start of the code point segment. 
 //On invalid input, it throws std::exception and the position of iter is unspecified. 
 template <typename Int16Iter>
 CodePoint readUtf16Backward(Int16Iter & iter);
@@ -93,7 +100,7 @@ inline int utf8LengthOf(UnicodeCodePoint cp)
 }
 
 template <typename Int8Iter>
-void writeUtf8(UnicodeCodePoint cp, Int8Iter * at)
+void writeUtf8(UnicodeCodePoint cp, Int8Iter & at)
 {
     int const b = IsConvertibleTo<std::iterator_traits<Int8Iter>::iterator_category, std::output_iterator_tag>::b
             || IsConvertibleTo<std::iterator_traits<Int8Iter>::iterator_category, std::forward_iterator_tag>::b;
@@ -136,7 +143,7 @@ namespace Internal
 }
 
 template <typename Int8Iter>
-CodePoint readUtf8Forward(Int8Iter * at)
+CodePoint readUtf8Forward(Int8Iter & at)
 {   
     const int b = IsConvertibleTo<
             typename std::iterator_traits<Int8Iter>::iterator_category, 
@@ -194,7 +201,7 @@ CodePoint readUtf8Forward(Int8Iter * at)
 }
 
 template <typename Int8Iter>
-CodePoint readUtf8Backward(Int8Iter * at)
+CodePoint readUtf8Backward(Int8Iter & at)
 {
     const int b = IsConvertibleTo<std::iterator_traits<Int8Iter>::iterator_category, std::bidirectional_iterator_tag>::b;
     JSTATICASSERT(b);
@@ -252,7 +259,7 @@ inline int utf16LengthOf(UnicodeCodePoint cp)
 }
 
 template <typename Int16Iter>
-void writeUtf16(UnicodeCodePoint cp, Int16Iter * at)
+void writeUtf16(UnicodeCodePoint cp, Int16Iter & at)
 {
     int const b = IsConvertibleTo<std::iterator_traits<Int16Iter>::iterator_category, std::output_iterator_tag>::b
             || IsConvertibleTo<std::iterator_traits<Int16Iter>::iterator_category, std::forward_iterator_tag>::b;
@@ -284,7 +291,7 @@ namespace Internal
 }
 
 template <typename Int16Iter>
-CodePoint readUtf16Forward(Int16Iter * at)
+CodePoint readUtf16Forward(Int16Iter & at)
 {   
     const int b = IsConvertibleTo<
             typename std::iterator_traits<Int16Iter>::iterator_category, 
@@ -310,7 +317,7 @@ CodePoint readUtf16Forward(Int16Iter * at)
 }
 
 template <typename Int16Iter>
-CodePoint readUtf16Backward(Int16Iter * at)
+CodePoint readUtf16Backward(Int16Iter & at)
 {
     const int b = IsConvertibleTo<std::iterator_traits<Int16Iter>::iterator_category, std::bidirectional_iterator_tag>::b;
     JSTATICASSERT(b);
