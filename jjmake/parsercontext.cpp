@@ -296,7 +296,6 @@ vector<string> jjm::ParserContext::Evaluator::eval(string const& text)
 
 void jjm::ParserContext::Evaluator::functionFrame()
 {
-    append(); 
     for (;;)
     {   if ( ! source.hasNext()) 
         {   if (frames.size() == 1)

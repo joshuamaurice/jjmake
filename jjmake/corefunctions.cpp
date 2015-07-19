@@ -60,8 +60,24 @@ namespace
         virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
         {
             if (arguments.size() != 3)
-                throw std::runtime_error("Function 'get' takes exactly 2 additional arguments."); 
+                throw std::runtime_error("Function 'eq' takes exactly 2 additional arguments."); 
             bool b = arguments[1] == arguments[2];
+            vector<string> result;
+            if (b)
+                result.push_back("t");
+            return result; 
+        }
+    };
+    
+    class NotEqualsFunction : public jjm::ParserContext::NativeFunction
+    {
+    public:
+        NotEqualsFunction() {}
+        virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
+        {
+            if (arguments.size() != 3)
+                throw std::runtime_error("Function 'neq' takes exactly 2 additional arguments."); 
+            bool b = arguments[1] != arguments[2];
             vector<string> result;
             if (b)
                 result.push_back("t");
@@ -293,6 +309,7 @@ void jjm::ParserContext::registerBuiltInFunctions()
     r["get*"]    = new GetStarFunction; 
     r["if"]      = new IfFunction; 
     r["include"] = new IncludeFunction; 
+    r["neq"]     = new NotEqualsFunction; 
     r["print"]   = new PrintFunction; 
     r["set"]     = new SetFunction; 
     r["seta"]    = new SetaFunction; 
