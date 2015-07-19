@@ -17,7 +17,7 @@
 #include <vector>
 
 #ifdef _WIN32
-#include <windows.h>
+    #include <windows.h>
 #endif
 
 
@@ -31,7 +31,8 @@ namespace jjm { int jjmakemain(vector<string> const& args); }
     {
         vector<string> args;
         for (int x = 1; x < argc; ++x)
-        {   U8Str u8str = U8Str::utf16(makeNullTermRange(argv[x])); 
+        {   auto utf16range = makeNullTermRange(argv[x]);
+            U8Str u8str = U8Str::utf16(utf16range); 
             args.push_back(std::string(u8str.c_str()));  
         }
         return jjm::jjmakemain(args);
@@ -50,11 +51,11 @@ namespace
     template <size_t N>
     bool startsWith(string const& str, char const (&prefix)[N])
     {
-        for (size_t i=0; i < N; ++i)
-        {   if (i >= N)
-                return false; 
-            if (str[i] != prefix[i])
-                false;
+        if (str.size() < N - 1)
+            return false; 
+        for (size_t i = 0; i < N - 1; ++i)
+        {   if (str[i] != prefix[i])
+                return false;
         }
         return true; 
     }
@@ -82,31 +83,54 @@ int jjm::jjmakemain(vector<string> const& args)
         string effectiveFileContents; 
         bool hasInclude = false; 
         vector<string> goals; 
+        int numThreads = 1; 
         for (std::vector<string>::const_iterator arg = args.begin(); arg != args.end(); ++arg)
         {
             if (startsWith(*arg, "-I"))
-            {   if (arg->size() == 2)
+            {   string x; 
+                if (arg->size() == 2)
                 {   ++arg; 
                     if (arg == args.end())
                         throw std::runtime_error("Command line option \"-I\" without following path."); 
-                }
+                    x = *arg;
+                }else
+                    x = arg->substr(2, string::npos); 
                 hasInclude = true; 
-                effectiveFileContents += "(include '" + escapeSingleQuote(*arg) + "')\n"; 
+                effectiveFileContents += "(include '" + escapeSingleQuote(x) + "')\n"; 
                 continue; 
             }
             if (startsWith(*arg, "-D"))
-            {   if (arg->size() == 2)
+            {   string x; 
+                if (arg->size() == 2)
                 {   ++arg; 
                     if (arg == args.end())
-                        throw std::runtime_error("Command line option \"-D\" without following path."); 
-                }
-                string x = *arg; 
+                        throw std::runtime_error("Command line option \"-D\" without definition."); 
+                    x = *arg;
+                }else
+                    x = arg->substr(2, string::npos); 
                 if (x.find('=') == string::npos)
-                    throw std::runtime_error("Missing '=' in command line option \"" + x + "\"."); 
+                    throw std::runtime_error("Missing '=' in -D command line option \"" + *arg + "\"."); 
                 string name = x.substr(0, x.find('=')); 
-                string val =  x.substr(0, x.find('=') + 1); 
+                string val =  x.substr(x.find('=') + 1, string::npos); 
                 effectiveFileContents += "(set '" + escapeSingleQuote(name) + "' '" + escapeSingleQuote(val) + "')\n"; 
                 continue; 
+            }
+            if (startsWith(*arg, "-T"))
+            {   string x; 
+                if (arg->size() == 2)
+                {   ++arg; 
+                    if (arg == args.end())
+                        throw std::runtime_error("Command line option \"-T\" without following number."); 
+                    x = *arg;
+                }else
+                    x = arg->substr(2, string::npos); 
+                int y = 0; 
+                if (false == decStrToInteger(y, x))
+                    throw std::runtime_error("Not a valid number in -T command line option \"" + *arg + "\"."); 
+                if (y < 1)
+                    throw std::runtime_error("Invalid number in -T command line option \"" + *arg + "\"."); 
+                numThreads = y; 
+                continue;
             }
             if (   *arg == "-v" || *arg == "-version" || *arg == "--version"
                 || *arg == "-V" || *arg == "-Version" || *arg == "--Version")
@@ -116,8 +140,28 @@ int jjm::jjmakemain(vector<string> const& args)
             }
             if (   *arg == "-h" || *arg == "-help" || *arg == "--help")
             {
-                //TODO print help information
-                JFATAL(0, 0); 
+                jjm::writeToStdOut("-D<var>=<val>\n");
+                jjm::writeToStdOut("-D <var>=<val>\n");
+                jjm::writeToStdOut("        Create a variable with the given name and value in the root context.\n"); 
+                jjm::writeToStdOut("\n");
+                jjm::writeToStdOut("-h\n");
+                jjm::writeToStdOut("-help\n");
+                jjm::writeToStdOut("--help\n");
+                jjm::writeToStdOut("        Display this help message.\n"); 
+                jjm::writeToStdOut("\n");
+                jjm::writeToStdOut("-I<file>\n");
+                jjm::writeToStdOut("-I <file>\n");
+                jjm::writeToStdOut("        Include the given file in the root context.\n"); 
+                jjm::writeToStdOut("\n");
+                jjm::writeToStdOut("-v\n"); 
+                jjm::writeToStdOut("-V\n"); 
+                jjm::writeToStdOut("-version\n"); 
+                jjm::writeToStdOut("-Version\n"); 
+                jjm::writeToStdOut("--version\n"); 
+                jjm::writeToStdOut("--Version\n"); 
+                jjm::writeToStdOut("        Display version information.\n"); 
+                jjm::flushStdOut(); 
+                return 0; 
             }
             throw std::runtime_error("Unrecognized command line option \"" + *arg + "\"."); 
         }
@@ -125,7 +169,7 @@ int jjm::jjmakemain(vector<string> const& args)
         if (hasInclude == false)
             effectiveFileContents += "(include jjmake.txt)\n"; 
 
-        JjmakeContext context(JjmakeContext::ExecuteGoals, JjmakeContext::AllDependencies, goals);
+        JjmakeContext context(JjmakeContext::ExecuteGoals, JjmakeContext::AllDependencies, goals, numThreads);
         context.execute(effectiveFileContents); 
     }
     catch (std::exception & e)

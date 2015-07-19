@@ -68,7 +68,19 @@ private:
 template <typename Iter>
 Utf8ToCpInputIterator<Iter> makeUtf8ToCpInputIterator(Iter current, Iter end)
 {
+    JSTATICASSERT(sizeof(*current) == 1); 
     return Utf8ToCpInputIterator<Iter>(current, end); 
+}
+
+template <typename Iter>
+std::pair<Utf8ToCpInputIterator<Iter>, Utf8ToCpInputIterator<Iter> >
+makeUtf8ToCpRange(Iter current, Iter end)
+{
+    JSTATICASSERT(sizeof(*current) == 1); 
+    std::pair<Utf8ToCpInputIterator<Iter>, Utf8ToCpInputIterator<Iter> > x;
+    x.first  = Utf8ToCpInputIterator<Iter>(current, end); 
+    x.second = Utf8ToCpInputIterator<Iter>(end    , end); 
+    return x; 
 }
 
 
@@ -105,16 +117,18 @@ private:
 template <typename Iter>
 Utf16ToCpInputIterator<Iter> makeUtf16ToCpInputIterator(Iter current, Iter end)
 {
+    JSTATICASSERT(sizeof(*current) == 2); 
     return Utf16ToCpInputIterator<Iter>(current, end); 
 }
 
 template <typename Iter>
-std::pair<Utf8ToCpInputIterator<Iter>, Utf8ToCpInputIterator<Iter> > 
-    makeUtf8ToCpRange(Iter begin, Iter end)
+std::pair<Utf16ToCpInputIterator<Iter>, Utf16ToCpInputIterator<Iter> >
+makeUtf16ToCpRange(Iter current, Iter end)
 {
-    std::pair<Utf8ToCpInputIterator<Iter>, Utf8ToCpInputIterator<Iter> > x;
-    x.first  = Utf8ToCpInputIterator<Iter>(begin, end); 
-    x.second = Utf8ToCpInputIterator<Iter>(end  , end); 
+    JSTATICASSERT(sizeof(*current) == 1); 
+    std::pair<Utf16ToCpInputIterator<Iter>, Utf16ToCpInputIterator<Iter> > x;
+    x.first  = Utf16ToCpInputIterator<Iter>(current, end); 
+    x.second = Utf16ToCpInputIterator<Iter>(end    , end); 
     return x; 
 }
 
@@ -143,16 +157,6 @@ private:
     Int8Iter current;
     Int8Iter end;
 };
-
-template <typename Iter>
-std::pair<Utf16ToCpInputIterator<Iter>, Utf16ToCpInputIterator<Iter> > 
-    makeUtf16ToCpRange(Iter begin, Iter end)
-{
-    std::pair<Utf16ToCpInputIterator<Iter>, Utf16ToCpInputIterator<Iter> > x;
-    x.first  = Utf16ToCpInputIterator<Iter>(begin, end); 
-    x.second = Utf16ToCpInputIterator<Iter>(end  , end); 
-    return x; 
-}
 
 
 template <typename Int16Iter>
@@ -197,6 +201,8 @@ Utf8ToCpInputIterator<Int8Iter>::Utf8ToCpInputIterator()
         std::input_iterator_tag
     >::b;
     JSTATICASSERT(b);
+
+    JSTATICASSERT(sizeof(*current) == 1); 
 }
 
 template <typename Int8Iter>
@@ -213,6 +219,7 @@ Utf8ToCpInputIterator<Int8Iter>::Utf8ToCpInputIterator(Int8Iter current_, Int8It
     {   //convert this object to a "one-past-the-end" value
         current = Int8Iter();
         end = Int8Iter();
+        cp = static_cast<CodePoint>(-1); 
     }else
     {   cp = jjm::readUtf8Forward(current, end);
     }
@@ -250,7 +257,7 @@ typename Utf8ToCpInputIterator<Int8Iter>::value_type Utf8ToCpInputIterator<Int8I
 template <typename Int8Iter>
 bool operator== (Utf8ToCpInputIterator<Int8Iter> const& a, Utf8ToCpInputIterator<Int8Iter> const& b)
 {
-    return a.current == b.current; 
+    return a.cp == static_cast<CodePoint>(-1) && b.cp == static_cast<CodePoint>(-1);
 }
 
 template <typename Int8Iter>
@@ -268,6 +275,8 @@ Utf16ToCpInputIterator<Int8Iter>::Utf16ToCpInputIterator()
         std::input_iterator_tag
     >::b;
     JSTATICASSERT(b);
+
+    JSTATICASSERT(sizeof(*current) == 2); 
 }
 
 template <typename Int16Iter>
@@ -321,7 +330,7 @@ typename Utf16ToCpInputIterator<Int8Iter>::value_type Utf16ToCpInputIterator<Int
 template <typename Int8Iter>
 bool operator== (Utf16ToCpInputIterator<Int8Iter> const& a, Utf16ToCpInputIterator<Int8Iter> const& b)
 {
-    return a.current == b.current;
+    return a.cp == static_cast<CodePoint>(-1) && b.cp == static_cast<CodePoint>(-1);
 }
 
 template <typename Int8Iter>

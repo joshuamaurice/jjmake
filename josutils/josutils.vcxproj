@@ -22,11 +22,13 @@
     <ClCompile Include="jfilehandle.cpp" />
     <ClCompile Include="jfilestreams.cpp" />
     <ClCompile Include="jpath.cpp" />
+    <ClCompile Include="jthreading.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="jfilehandle.hpp" />
     <ClInclude Include="jfilestreams.hpp" />
     <ClInclude Include="jpath.hpp" />
+    <ClInclude Include="jthreading.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{a33367d7-1ff3-467f-8257-fe5df748809c}</ProjectGuid>
@@ -113,6 +115,7 @@
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
       <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
       <AdditionalIncludeDirectories>../</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NOMINMAX;NTDDI_VERSION=0x06000000;_WIN32_WINNT=0x0600;WINVER=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -145,6 +148,7 @@
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
       <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
       <AdditionalIncludeDirectories>../</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NOMINMAX;NTDDI_VERSION=0x06000000;_WIN32_WINNT=0x0600;WINVER=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -177,6 +181,7 @@
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
       <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
       <AdditionalIncludeDirectories>../</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NOMINMAX;NTDDI_VERSION=0x06000000;_WIN32_WINNT=0x0600;WINVER=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -212,6 +217,7 @@
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
       <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
       <AdditionalIncludeDirectories>../</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NOMINMAX;NTDDI_VERSION=0x06000000;_WIN32_WINNT=0x0600;WINVER=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

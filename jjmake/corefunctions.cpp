@@ -38,12 +38,12 @@ namespace
         virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
         {
             if (arguments.size() <= 1)
-                throw std::runtime_error("Function 'add' takes 1 or more additional arguments."); 
+                throw std::runtime_error("Function '" + arguments[0] + "' takes 1 or more additional arguments."); 
             std::int64_t result = 0; 
             for (size_t i = 1; i < arguments.size(); ++i)
             {   std::int64_t x; 
                 if (false == jjm::decStrToInteger(x, arguments[i]))
-                    throw std::runtime_error("Function 'add' was given non-numeric argument \"" + arguments[i] + "\"."); 
+                    throw std::runtime_error("Function '" + arguments[0] + "' was given non-numeric argument \"" + arguments[i] + "\"."); 
                 result += x; 
             }
 
@@ -60,7 +60,7 @@ namespace
         virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
         {
             if (arguments.size() != 3)
-                throw std::runtime_error("Function 'eq' takes exactly 2 additional arguments."); 
+                throw std::runtime_error("Function '" + arguments[0] + "' takes exactly 2 additional arguments."); 
             bool b = arguments[1] == arguments[2];
             vector<string> result;
             if (b)
@@ -76,7 +76,7 @@ namespace
         virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
         {
             if (arguments.size() != 3)
-                throw std::runtime_error("Function 'neq' takes exactly 2 additional arguments."); 
+                throw std::runtime_error("Function '" + arguments[0] + "' takes exactly 2 additional arguments."); 
             bool b = arguments[1] != arguments[2];
             vector<string> result;
             if (b)
@@ -92,10 +92,10 @@ namespace
         virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
         {
             if (arguments.size() != 2)
-                throw std::runtime_error("Function 'get' takes exactly 1 additional argument."); 
+                throw std::runtime_error("Function '" + arguments[0] + "' takes exactly 1 additional argument."); 
             string const& name = arguments[1]; 
             if (name.size() == 0)
-                throw std::runtime_error("Function 'get' does not accept an empty variable name."); 
+                throw std::runtime_error("Function '" + arguments[0] + "' does not accept an empty variable name."); 
 
             jjm::ParserContext::Value const* v = c->getValue(name); 
 
@@ -115,10 +115,10 @@ namespace
         virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
         {
             if (arguments.size() != 2)
-                throw std::runtime_error("Function 'get@' takes exactly 1 additional argument."); 
+                throw std::runtime_error("Function '" + arguments[0] + "' takes exactly 1 additional argument."); 
             string const& name = arguments[1]; 
             if (name.size() == 0)
-                throw std::runtime_error("Function 'get@' does not accept an empty variable name."); 
+                throw std::runtime_error("Function '" + arguments[0] + "' does not accept an empty variable name."); 
 
             jjm::ParserContext::Value const* v = c->getValue(name); 
 
@@ -136,10 +136,10 @@ namespace
         virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
         {
             if (arguments.size() != 2)
-                throw std::runtime_error("Function 'get*' takes exactly 1 additional argument."); 
+                throw std::runtime_error("Function '" + arguments[0] + "' takes exactly 1 additional argument."); 
             string const& name = arguments[1]; 
             if (name.size() == 0)
-                throw std::runtime_error("Function 'get*' does not accept an empty variable name."); 
+                throw std::runtime_error("Function '" + arguments[0] + "' does not accept an empty variable name."); 
 
             jjm::ParserContext::Value const* v = c->getValue(name); 
 
@@ -159,7 +159,7 @@ namespace
         virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
         {
             if (arguments.size() != 3 && arguments.size() != 4)
-                throw std::runtime_error("Function 'if' takes exactly 2 or 3 additional arguments."); 
+                throw std::runtime_error("Function '" + arguments[0] + "' takes exactly 2 or 3 additional arguments."); 
             string const& cond = arguments[1]; 
             string const& trueBody = arguments[2]; 
             string const& falseBody = arguments.size() == 4 ? arguments[3] : string(); 
@@ -190,13 +190,13 @@ namespace
         virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
         {
             if (arguments.size() != 2)
-                throw std::runtime_error("Function 'include' takes exactly 1 additional argument."); 
+                throw std::runtime_error("Function '" + arguments[0] + "' takes exactly 1 additional argument."); 
 
             //TODO change to not use ifstream
             string contents; 
             std::ifstream fin(arguments[1].c_str(), std::ios::binary); 
             if (!fin)
-                throw std::runtime_error("Function 'include' unable to open file \"" + arguments[1] + "\"."); 
+                throw std::runtime_error("Function '" + arguments[0] + "' unable to open file \"" + arguments[1] + "\"."); 
             for (string line; getline(fin, line); )
             {   contents += line;
                 contents += '\n'; 
@@ -261,14 +261,14 @@ namespace
         virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
         {
             if (arguments.size() != 3)
-                throw std::runtime_error("Function 'set' takes exactly 2 additional arguments."); 
+                throw std::runtime_error("Function '" + arguments[0] + "' takes exactly 2 additional arguments."); 
             string const& name = arguments[1]; 
             string const& valueString = arguments[2]; 
 
             if (name.size() == 0)
-                throw std::runtime_error("Function 'set' does not accept an empty variable name."); 
+                throw std::runtime_error("Function '" + arguments[0] + "' does not accept an empty variable name."); 
             if (name[0] == '.')
-                throw std::runtime_error("Function 'set' will not set a variable whose name begins with a dot >>.<<."); 
+                throw std::runtime_error("Function '" + arguments[0] + "' will not set a variable whose name begins with a dot >>.<<."); 
 
             c->setValue(name, valueString); 
 
@@ -284,11 +284,11 @@ namespace
         virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
         {
             if (arguments.size() <= 1)
-                throw std::runtime_error("Function 'seta' takes 1 or more additional arguments."); 
+                throw std::runtime_error("Function '" + arguments[0] + "' takes 1 or more additional arguments."); 
             string const& name = arguments[1]; 
             vector<string> valueVec(arguments.begin() + 2, arguments.end()); 
             if (name.size() == 0)
-                throw std::runtime_error("Function 'seta' does not accept an empty variable name."); 
+                throw std::runtime_error("Function '" + arguments[0] + "' does not accept an empty variable name."); 
 
             c->setValue(name, valueVec); 
 

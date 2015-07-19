@@ -30,8 +30,10 @@ int jjm::writeToStdOut(char const* utf8)
 {
 #ifdef _WIN32
     auto byteRange = jjm::makeNullTermRange(utf8);
-    auto cpIter = jjm::makeUtf16ToCpInputIterator(byteRange.first, byteRange.second); 
-    auto cpRange = jjm::makeNullTermRange(cpIter);
+    auto cpRange = make_pair(
+            jjm::makeUtf8ToCpInputIterator(byteRange.first,  byteRange.second), 
+            jjm::makeUtf8ToCpInputIterator(byteRange.second, byteRange.second)
+            ); 
     U16Str r4 = U16Str::cp(cpRange); 
     std::wcout.write(r4.data(), r4.sizeEU()); 
     return (! std::wcout) ? -1 : 0; 

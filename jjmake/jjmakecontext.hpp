@@ -9,6 +9,10 @@
 #include "parsercontext.hpp"
 #include "task.hpp"
 #include "taskdag.hpp"
+
+#include "jbase/juniqueptr.hpp"
+#include "josutils/jthreading.hpp"
+
 #include <string>
 #include <vector>
 
@@ -26,10 +30,11 @@ public:
     JjmakeContext(
             ExecutionMode executionMode, 
             DependencyMode dependencyMode, 
-            std::vector<std::string> const& goals
+            std::vector<std::string> const& goals,
+            int numThreads
             ); 
     ~JjmakeContext(); 
-    void execute(std::string const& firstFileContents); 
+    void execute(std::string const& rootEvalText); 
 
 private:
     JjmakeContext(JjmakeContext const& ); //not defined, not copyable
@@ -38,8 +43,10 @@ private:
     ExecutionMode executionMode; 
     DependencyMode dependencyMode; 
     std::vector<std::string> goals; 
+    int numThreads; 
 
-    ParserContext * rootParserContext; 
+    ThreadPool threadPool; 
+    UniquePtr<ParserContext*> rootParserContext; 
     TaskDag taskDag; 
 };
 

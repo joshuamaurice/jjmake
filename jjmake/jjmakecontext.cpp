@@ -5,27 +5,62 @@
 
 #include "jjmakecontext.hpp"
 
+#include "junicode/jstdouterr.hpp"
+
 using namespace std;
 
 jjm::JjmakeContext::JjmakeContext(
             ExecutionMode executionMode_, 
             DependencyMode dependencyMode_, 
-            vector<string> const& goals_
+            vector<string> const& goals_,
+            int numThreads_
             )
-    : rootParserContext(0)
+    : 
+    executionMode(executionMode_), 
+    dependencyMode(dependencyMode_), 
+    goals(goals_),
+    numThreads(numThreads_),
+    rootParserContext(ParserContext::newRoot()),
+    threadPool(numThreads_)
 {
-    executionMode = executionMode_;
-    dependencyMode = dependencyMode_;
-    goals = goals_; 
-    rootParserContext = ParserContext::newRoot(); 
 }
 
-jjm::JjmakeContext::~JjmakeContext()
+jjm::JjmakeContext::~JjmakeContext() 
 {
-    delete rootParserContext; 
 }
 
-void jjm::JjmakeContext::execute(string const& firstFileContents)
+void jjm::JjmakeContext::execute(string const& rootEvalText)
 {
-    rootParserContext->eval(firstFileContents); 
+    class InitialTask : public Thread::Runnable
+    {
+    public: 
+        JjmakeContext * jjmakeContext; 
+        ParserContext * parserContext; 
+        string rootEvalText; 
+        virtual void run()
+        {
+            try
+            {
+                parserContext->eval(rootEvalText); 
+            }
+            catch (std::exception & e)
+            {   string message; 
+                message += typeid(e).name() ;
+                message += ": ";
+                message += e.what(); 
+                message += "\n"; 
+                jjm::writeToStdOut(message); 
+                jjm::flushStdOut(); 
+            }
+        }
+    };
+    UniquePtr<InitialTask*> initialTask(new InitialTask); 
+    initialTask->jjmakeContext = this;
+    initialTask->parserContext = this->rootParserContext.get();
+    initialTask->rootEvalText = rootEvalText; 
+
+    //start phase 1
+    threadPool.addTask(initialTask.release()); 
+    threadPool.waitUntilIdle(); 
+    //phase 1 complete
 }

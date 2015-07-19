@@ -115,6 +115,7 @@
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
       <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
       <AdditionalIncludeDirectories>../</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NOMINMAX;NTDDI_VERSION=0x06000000;_WIN32_WINNT=0x0600;WINVER=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -147,6 +148,7 @@
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
       <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
       <AdditionalIncludeDirectories>../</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NOMINMAX;NTDDI_VERSION=0x06000000;_WIN32_WINNT=0x0600;WINVER=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -179,6 +181,7 @@
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
       <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
       <AdditionalIncludeDirectories>../</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NOMINMAX;NTDDI_VERSION=0x06000000;_WIN32_WINNT=0x0600;WINVER=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -214,6 +217,7 @@
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
       <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
       <AdditionalIncludeDirectories>../</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NOMINMAX;NTDDI_VERSION=0x06000000;_WIN32_WINNT=0x0600;WINVER=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
