@@ -102,13 +102,19 @@
       <OpenMPSupport>false</OpenMPSupport>
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
       <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
+      <AdditionalIncludeDirectories>../</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\josutils\;$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\junicode\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>josutils.lib;junicode.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <BuildLog>
       <Path>$(IntDir)\$(SolutionName).log</Path>
     </BuildLog>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -127,13 +133,19 @@
       <OpenMPSupport>false</OpenMPSupport>
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
       <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
+      <AdditionalIncludeDirectories>../</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\josutils\;$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\junicode\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>josutils.lib;junicode.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <BuildLog>
       <Path>$(IntDir)\$(SolutionName).log</Path>
     </BuildLog>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -152,15 +164,21 @@
       <OpenMPSupport>false</OpenMPSupport>
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
       <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
+      <AdditionalIncludeDirectories>../</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\josutils\;$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\junicode\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>josutils.lib;junicode.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <BuildLog>
       <Path>$(IntDir)\$(SolutionName).log</Path>
     </BuildLog>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -180,18 +198,34 @@
       <OpenMPSupport>false</OpenMPSupport>
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
       <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
+      <AdditionalIncludeDirectories>../</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\josutils\;$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\junicode\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>josutils.lib;junicode.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <BuildLog>
       <Path>$(IntDir)\$(SolutionName).log</Path>
     </BuildLog>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="corefunctions.cpp" />
+    <ClCompile Include="jjmakecontext.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="parsercontext.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="jjmakecontext.hpp" />
+    <ClInclude Include="parsercontext.hpp" />
+    <ClInclude Include="plugin.hpp" />
+    <ClInclude Include="task.hpp" />
+    <ClInclude Include="taskdag.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

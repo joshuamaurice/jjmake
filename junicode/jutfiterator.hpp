@@ -14,408 +14,486 @@
 namespace jjm
 {
 
-template <typename Integer8Iterator>
-class Utf8InputIterator;
-template <typename Integer16Iterator>
-class Utf16InputIterator;
+template <typename Int8Iter>
+class Utf8ToCpInputIterator;
+template <typename Int16Iter>
+class Utf16ToCpInputIterator;
 
-template <typename Integer8Iterator>
-class Utf8BidiIterator;
-template <typename Integer16Iterator>
-class Utf16BidiIterator;
+template <typename Int8Iter>
+class Utf8ToCpBidiIterator;
+template <typename Int16Iter>
+class Utf16ToCpBidiIterator;
 
-template <typename Integer8Iterator>
-bool operator== (Utf8InputIterator<Integer8Iterator> const& a, Utf8InputIterator<Integer8Iterator> const& b);
-template <typename Integer16Iterator>
-bool operator== (Utf16InputIterator<Integer16Iterator> const& a, Utf16InputIterator<Integer16Iterator> const& b);
+template <typename Int8Iter>
+bool operator== (Utf8ToCpInputIterator<Int8Iter> const& a, Utf8ToCpInputIterator<Int8Iter> const& b);
+template <typename Int16Iter>
+bool operator== (Utf16ToCpInputIterator<Int16Iter> const& a, Utf16ToCpInputIterator<Int16Iter> const& b);
 
-template <typename Integer8Iterator>
-bool operator!= (Utf8InputIterator<Integer8Iterator> const& a, Utf8InputIterator<Integer8Iterator> const& b);
-template <typename Integer16Iterator>
-bool operator!= (Utf16InputIterator<Integer16Iterator> const& a, Utf16InputIterator<Integer16Iterator> const& b);
+template <typename Int8Iter>
+bool operator!= (Utf8ToCpInputIterator<Int8Iter> const& a, Utf8ToCpInputIterator<Int8Iter> const& b);
+template <typename Int16Iter>
+bool operator!= (Utf16ToCpInputIterator<Int16Iter> const& a, Utf16ToCpInputIterator<Int16Iter> const& b);
 
 
-template <typename Integer8Iterator>
-class Utf8InputIterator
+//Requires that the default constructed Int8Iter() be a stable, single 
+//value that can be used to indicate "one-past-the-end" value. 
+template <typename Int8Iter>
+class Utf8ToCpInputIterator
 {
 public:
     typedef std::input_iterator_tag     iterator_category;
     typedef CodePoint                   value_type;
-    typedef typename std::iterator_traits<Integer8Iterator>::difference_type    difference_type;
+    typedef typename std::iterator_traits<Int8Iter>::difference_type    difference_type;
     typedef CodePoint const*            pointer;
     typedef CodePoint const&            reference;
 public:
     struct Proxy { CodePoint cp; CodePoint operator* () const { return cp; } };
 public:
-    Utf8InputIterator();
-    Utf8InputIterator(Integer8Iterator x);
-    Utf8InputIterator&      operator++ (); //prefix
+    Utf8ToCpInputIterator(); //creates a "one-past-the-end" value
+    Utf8ToCpInputIterator(Int8Iter current, Int8Iter end); //"end" is used for bounds-checking
+    Utf8ToCpInputIterator&      operator++ (); //prefix
     Proxy               operator++ (int); //postfix
-    value_type          operator* ();
-    Integer8Iterator    euIter() const { return iter; }
+    value_type          operator* (); //returns the next code-point
+    Int8Iter    getIter() const { return current; }
 
-    friend bool operator== <> (Utf8InputIterator<Integer8Iterator> const& a, Utf8InputIterator<Integer8Iterator> const& b);
-    friend bool operator!= <> (Utf8InputIterator<Integer8Iterator> const& a, Utf8InputIterator<Integer8Iterator> const& b);
+    friend bool operator== <> (Utf8ToCpInputIterator<Int8Iter> const& a, Utf8ToCpInputIterator<Int8Iter> const& b);
+    friend bool operator!= <> (Utf8ToCpInputIterator<Int8Iter> const& a, Utf8ToCpInputIterator<Int8Iter> const& b);
 
 private:
-    Integer8Iterator iter;
+    Int8Iter current;
+    Int8Iter end;
     CodePoint cp;
 };
 
+template <typename Iter>
+Utf8ToCpInputIterator<Iter> makeUtf8ToCpInputIterator(Iter current, Iter end)
+{
+    return Utf8ToCpInputIterator<Iter>(current, end); 
+}
 
-template <typename Integer16Iterator>
-class Utf16InputIterator
+
+//Requires that the default constructed Int16Iter() be a stable, single 
+//value that can be used to indicate "one-past-the-end" value. 
+template <typename Int16Iter>
+class Utf16ToCpInputIterator
 {
 public:
     typedef std::input_iterator_tag     iterator_category;
     typedef CodePoint                   value_type;
-    typedef typename std::iterator_traits<Integer16Iterator>::difference_type    difference_type;
+    typedef typename std::iterator_traits<Int16Iter>::difference_type    difference_type;
     typedef CodePoint const*            pointer;
     typedef CodePoint const&            reference;
 public:
     struct Proxy { CodePoint cp; CodePoint operator* () const { return cp; } };
 public:
-    Utf16InputIterator();
-    Utf16InputIterator(Integer16Iterator x);
-    Utf16InputIterator&     operator++ (); //prefix
+    Utf16ToCpInputIterator(); //creates a "one-past-the-end" value
+    Utf16ToCpInputIterator(Int16Iter current, Int16Iter end); //"end" is used for bounds-checking
+    Utf16ToCpInputIterator&     operator++ (); //prefix
     Proxy                   operator++ (int); //postfix
-    value_type              operator* ();
-    Utf16InputIterator      euIter() const { return iter; }
+    value_type              operator* (); //returns the next code-point
+    Int16Iter       getIter() const { return current; }
 
-    friend bool operator== <> (Utf16InputIterator<Integer16Iterator> const& a, Utf16InputIterator<Integer16Iterator> const& b);
-    friend bool operator!= <> (Utf16InputIterator<Integer16Iterator> const& a, Utf16InputIterator<Integer16Iterator> const& b);
+    friend bool operator== <> (Utf16ToCpInputIterator<Int16Iter> const& a, Utf16ToCpInputIterator<Int16Iter> const& b);
+    friend bool operator!= <> (Utf16ToCpInputIterator<Int16Iter> const& a, Utf16ToCpInputIterator<Int16Iter> const& b);
 
 private:
-    Integer16Iterator iter;
+    Int16Iter current;
+    Int16Iter end;
     CodePoint cp;
 };
 
+template <typename Iter>
+Utf16ToCpInputIterator<Iter> makeUtf16ToCpInputIterator(Iter current, Iter end)
+{
+    return Utf16ToCpInputIterator<Iter>(current, end); 
+}
 
-template <typename Integer8Iterator>
-class Utf8BidiIterator
+template <typename Iter>
+std::pair<Utf8ToCpInputIterator<Iter>, Utf8ToCpInputIterator<Iter> > 
+    makeUtf8ToCpRange(Iter begin, Iter end)
+{
+    std::pair<Utf8ToCpInputIterator<Iter>, Utf8ToCpInputIterator<Iter> > x;
+    x.first  = Utf8ToCpInputIterator<Iter>(begin, end); 
+    x.second = Utf8ToCpInputIterator<Iter>(end  , end); 
+    return x; 
+}
+
+
+template <typename Int8Iter>
+class Utf8ToCpBidiIterator
 {
 public:
     typedef std::bidirectional_iterator_tag  iterator_category;
     typedef CodePoint  value_type;
-    typedef typename std::iterator_traits<Integer8Iterator>::difference_type  difference_type;
+    typedef typename std::iterator_traits<Int8Iter>::difference_type  difference_type;
     typedef CodePoint const*    pointer;
     typedef CodePoint const&    reference;
 
 public:
-    Utf8BidiIterator();
-    Utf8BidiIterator(Integer8Iterator x);
-    Utf8BidiIterator&   operator++ (); //prefix
-    Utf8BidiIterator    operator++ (int); //postfix
-    Utf8BidiIterator&   operator-- (); //prefix
-    Utf8BidiIterator    operator-- (int); //postfix
+    Utf8ToCpBidiIterator(); 
+    Utf8ToCpBidiIterator(Int8Iter begin, Int8Iter current, Int8Iter end); //"begin" and "end" are used for bounds-checking
+    Utf8ToCpBidiIterator&   operator++ (); //prefix
+    Utf8ToCpBidiIterator    operator++ (int); //postfix
+    Utf8ToCpBidiIterator&   operator-- (); //prefix
+    Utf8ToCpBidiIterator    operator-- (int); //postfix
     value_type          operator* () const;
-    Integer8Iterator    euIter() const { return iter; }
+    Int8Iter    getIter() const { return current; }
 private:
-    Integer8Iterator iter;
+    Int8Iter begin;
+    Int8Iter current;
+    Int8Iter end;
 };
 
+template <typename Iter>
+std::pair<Utf16ToCpInputIterator<Iter>, Utf16ToCpInputIterator<Iter> > 
+    makeUtf16ToCpRange(Iter begin, Iter end)
+{
+    std::pair<Utf16ToCpInputIterator<Iter>, Utf16ToCpInputIterator<Iter> > x;
+    x.first  = Utf16ToCpInputIterator<Iter>(begin, end); 
+    x.second = Utf16ToCpInputIterator<Iter>(end  , end); 
+    return x; 
+}
 
-template <typename Integer16Iterator>
-class Utf16BidiIterator
+
+template <typename Int16Iter>
+class Utf16ToCpBidiIterator
 {
 public:
     typedef std::bidirectional_iterator_tag     iterator_category;
     typedef CodePoint                           value_type;
-    typedef typename std::iterator_traits<Integer16Iterator>::difference_type    difference_type;
+    typedef typename std::iterator_traits<Int16Iter>::difference_type    difference_type;
     typedef CodePoint const*                    pointer;
     typedef CodePoint const&                    reference;
 
 public:
-    Utf16BidiIterator();
-    Utf16BidiIterator(Integer16Iterator x);
-    Utf16BidiIterator&  operator++ (); //prefix
-    Utf16BidiIterator   operator++ (int); //postfix
-    Utf16BidiIterator&  operator-- (); //prefix
-    Utf16BidiIterator   operator-- (int); //postfix
+    Utf16ToCpBidiIterator();
+    Utf16ToCpBidiIterator(Int16Iter begin, Int16Iter current, Int16Iter end);
+    Utf16ToCpBidiIterator&  operator++ (); //prefix
+    Utf16ToCpBidiIterator   operator++ (int); //postfix
+    Utf16ToCpBidiIterator&  operator-- (); //prefix
+    Utf16ToCpBidiIterator   operator-- (int); //postfix
     CodePoint           operator* () const;
-    Integer16Iterator   euIter() const { return iter; }
+    Int16Iter   getIter() const { return current; }
 
-    friend bool operator== <> (Utf16BidiIterator<Integer16Iterator> const& a, Utf16BidiIterator<Integer16Iterator> const& b);
-    friend bool operator!= <> (Utf16BidiIterator<Integer16Iterator> const& a, Utf16BidiIterator<Integer16Iterator> const& b);
+    friend bool operator== <> (Utf16ToCpBidiIterator<Int16Iter> const& a, Utf16ToCpBidiIterator<Int16Iter> const& b);
+    friend bool operator!= <> (Utf16ToCpBidiIterator<Int16Iter> const& a, Utf16ToCpBidiIterator<Int16Iter> const& b);
 
 private:
-    Integer16Iterator iter;
+    Int16Iter begin;
+    Int16Iter current;
+    Int16Iter end;
 };
 
 
 // ---- ---- ---- ---- 
 // impl: 
 
-template <typename Integer8Iterator>
-Utf8InputIterator<Integer8Iterator>::Utf8InputIterator()
-    : iter(), cp(static_cast<CodePoint>(-1))
+template <typename Int8Iter>
+Utf8ToCpInputIterator<Int8Iter>::Utf8ToCpInputIterator()
+    : current(), end(), cp(static_cast<CodePoint>(-1))
 {
     const bool b = jjm::IsConvertibleTo<
-        typename std::iterator_traits<Integer8Iterator>::iterator_category,
+        typename std::iterator_traits<Int8Iter>::iterator_category,
         std::input_iterator_tag
     >::b;
     JSTATICASSERT(b);
 }
 
-template <typename Integer8Iterator>
-Utf8InputIterator<Integer8Iterator>::Utf8InputIterator(Integer8Iterator x)
-    : iter(x), cp(static_cast<CodePoint>(-1))
+template <typename Int8Iter>
+Utf8ToCpInputIterator<Int8Iter>::Utf8ToCpInputIterator(Int8Iter current_, Int8Iter end_)
+    : current(current_), end(end_), cp(static_cast<CodePoint>(-1))
 {
     const bool b = jjm::IsConvertibleTo<
-        typename std::iterator_traits<Integer8Iterator>::iterator_category,
+        typename std::iterator_traits<Int8Iter>::iterator_category,
+        std::input_iterator_tag
+    >::b;
+    JSTATICASSERT(b);
+
+    if (current == end)
+    {   //convert this object to a "one-past-the-end" value
+        current = Int8Iter();
+        end = Int8Iter();
+    }else
+    {   cp = jjm::readUtf8Forward(current, end);
+    }
+}
+
+template <typename Int8Iter>
+Utf8ToCpInputIterator<Int8Iter>& Utf8ToCpInputIterator<Int8Iter>::operator++ () //prefix
+{
+    if (current == end)
+    {   //convert this object to a "one-past-the-end" value
+        current = Int8Iter();
+        end = Int8Iter();
+        cp = static_cast<CodePoint>(-1); 
+        return *this; 
+    }
+
+    cp = jjm::readUtf8Forward(current, end);
+    return *this; 
+}
+
+template <typename Int8Iter>
+typename Utf8ToCpInputIterator<Int8Iter>::Proxy Utf8ToCpInputIterator<Int8Iter>::operator++ (int) //postfix
+{
+    Proxy p = { this->operator*() };
+    ++*this;
+    return p;
+}
+
+template <typename Int8Iter>
+typename Utf8ToCpInputIterator<Int8Iter>::value_type Utf8ToCpInputIterator<Int8Iter>::operator* ()
+{
+    return cp; 
+}
+
+template <typename Int8Iter>
+bool operator== (Utf8ToCpInputIterator<Int8Iter> const& a, Utf8ToCpInputIterator<Int8Iter> const& b)
+{
+    return a.current == b.current; 
+}
+
+template <typename Int8Iter>
+bool operator!= (Utf8ToCpInputIterator<Int8Iter> const& a, Utf8ToCpInputIterator<Int8Iter> const& b)
+{
+    return !(a == b);
+}
+
+template <typename Int8Iter>
+Utf16ToCpInputIterator<Int8Iter>::Utf16ToCpInputIterator()
+    : current(), end(), cp(static_cast<CodePoint>(-1))
+{
+    const bool b = jjm::IsConvertibleTo<
+        typename std::iterator_traits<Int8Iter>::iterator_category,
         std::input_iterator_tag
     >::b;
     JSTATICASSERT(b);
 }
 
-template <typename Integer8Iterator>
-Utf8InputIterator<Integer8Iterator>& Utf8InputIterator<Integer8Iterator>::operator++ () //prefix
+template <typename Int16Iter>
+Utf16ToCpInputIterator<Int16Iter>::Utf16ToCpInputIterator(Int16Iter current_, Int16Iter end_)
+    : current(current_), end(end_), cp(static_cast<CodePoint>(-1))
 {
-    if (cp != static_cast<CodePoint>(-1))
-        cp = static_cast<CodePoint>(-1);
-    return *this;
+    const bool b = jjm::IsConvertibleTo<
+        typename std::iterator_traits<Int16Iter>::iterator_category,
+        std::input_iterator_tag
+    >::b;
+    JSTATICASSERT(b);
+    
+    if (current == end)
+    {   //convert this object to a "one-past-the-end" value
+        current = Int16Iter();
+        end = Int16Iter();
+    }else
+    {   cp = jjm::readUtf16Forward(current, end);
+    }
 }
 
-template <typename Integer8Iterator>
-typename Utf8InputIterator<Integer8Iterator>::Proxy Utf8InputIterator<Integer8Iterator>::operator++ (int) //postfix
+template <typename Int16Iter>
+Utf16ToCpInputIterator<Int16Iter>& Utf16ToCpInputIterator<Int16Iter>::operator++ () //prefix
+{
+    if (current == end)
+    {   //convert this object to a "one-past-the-end" value
+        current = Int16Iter();
+        end = Int16Iter();
+        cp = static_cast<CodePoint>(-1); 
+        return *this; 
+    }
+
+    cp = jjm::readUtf16Forward(current, end);
+    return *this; 
+}
+
+template <typename Int8Iter>
+typename Utf16ToCpInputIterator<Int8Iter>::Proxy Utf16ToCpInputIterator<Int8Iter>::operator++ (int) //postfix
 {
     Proxy p = { **this };
     ++*this;
     return p;
 }
 
-template <typename Integer8Iterator>
-typename Utf8InputIterator<Integer8Iterator>::value_type Utf8InputIterator<Integer8Iterator>::operator* ()
+template <typename Int8Iter>
+typename Utf16ToCpInputIterator<Int8Iter>::value_type Utf16ToCpInputIterator<Int8Iter>::operator* ()
 {
-    if (cp == static_cast<CodePoint>(-1))
-        cp = jjm::readUtf8Forward(iter);
     return cp;
 }
 
-template <typename Integer8Iterator>
-bool operator== (Utf8InputIterator<Integer8Iterator> const& a, Utf8InputIterator<Integer8Iterator> const& b)
+template <typename Int8Iter>
+bool operator== (Utf16ToCpInputIterator<Int8Iter> const& a, Utf16ToCpInputIterator<Int8Iter> const& b)
 {
-    return a.cp == b.cp && a.iter == b.iter;
+    return a.current == b.current;
 }
 
-template <typename Integer8Iterator>
-bool operator!= (Utf8InputIterator<Integer8Iterator> const& a, Utf8InputIterator<Integer8Iterator> const& b)
+template <typename Int8Iter>
+bool operator!= (Utf16ToCpInputIterator<Int8Iter> const& a, Utf16ToCpInputIterator<Int8Iter> const& b)
 {
     return !(a == b);
 }
 
-template <typename Integer8Iterator>
-Utf16InputIterator<Integer8Iterator>::Utf16InputIterator()
-    : iter(), cp(static_cast<CodePoint>(-1))
-{
-    const bool b = jjm::IsConvertibleTo<
-        typename std::iterator_traits<Integer8Iterator>::iterator_category,
-        std::input_iterator_tag
-    >::b;
-    JSTATICASSERT(b);
-}
-
-template <typename Integer8Iterator>
-Utf16InputIterator<Integer8Iterator>::Utf16InputIterator(Integer8Iterator x)
-    : iter(x), cp(static_cast<CodePoint>(-1))
-{
-    const bool b = jjm::IsConvertibleTo<
-        typename std::iterator_traits<Integer8Iterator>::iterator_category,
-        std::input_iterator_tag
-    >::b;
-    JSTATICASSERT(b);
-}
-
-template <typename Integer8Iterator>
-Utf16InputIterator<Integer8Iterator>& Utf16InputIterator<Integer8Iterator>::operator++ () //prefix
-{
-    if (cp != static_cast<CodePoint>(-1))
-        cp = static_cast<CodePoint>(-1);
-    return *this;
-}
-
-template <typename Integer8Iterator>
-typename Utf16InputIterator<Integer8Iterator>::Proxy Utf16InputIterator<Integer8Iterator>::operator++ (int) //postfix
-{
-    Proxy p = { **this };
-    ++*this;
-    return p;
-}
-
-template <typename Integer8Iterator>
-typename Utf16InputIterator<Integer8Iterator>::value_type Utf16InputIterator<Integer8Iterator>::operator* ()
-{
-    if (cp == static_cast<CodePoint>(-1))
-        cp = jjm::readUtf16Forward(iter);
-    return cp;
-}
-
-template <typename Integer8Iterator>
-bool operator== (Utf16InputIterator<Integer8Iterator> const& a, Utf16InputIterator<Integer8Iterator> const& b)
-{
-    return a.cp == b.cp && a.iter == b.iter;
-}
-
-template <typename Integer8Iterator>
-bool operator!= (Utf16InputIterator<Integer8Iterator> const& a, Utf16InputIterator<Integer8Iterator> const& b)
-{
-    return !(a == b);
-}
-
-template <typename Integer8Iterator>
-Utf8BidiIterator<Integer8Iterator>::Utf8BidiIterator()
+template <typename Int8Iter>
+Utf8ToCpBidiIterator<Int8Iter>::Utf8ToCpBidiIterator()
+    : begin(), current(), end() 
 {
     const bool b1 = jjm::IsSameType<
         std::bidirectional_iterator_tag,
-        typename std::iterator_traits<Integer8Iterator>::iterator_category
+        typename std::iterator_traits<Int8Iter>::iterator_category
     >::b;
     const bool b2 = jjm::IsSameType<
         std::random_access_iterator_tag,
-        typename std::iterator_traits<Integer8Iterator>::iterator_category
+        typename std::iterator_traits<Int8Iter>::iterator_category
     >::b;
     JSTATICASSERT(b1 || b2);
 }
 
-template <typename Integer8Iterator>
-Utf8BidiIterator<Integer8Iterator>::Utf8BidiIterator(Integer8Iterator x) : iter(x)
+template <typename Int8Iter>
+Utf8ToCpBidiIterator<Int8Iter>::Utf8ToCpBidiIterator(
+            Int8Iter begin_,
+            Int8Iter current_,
+            Int8Iter end_)
+    : begin(begin_), current(current_), end(end_)
 {
     const bool b1 = jjm::IsSameType<
         std::bidirectional_iterator_tag,
-        typename std::iterator_traits<Integer8Iterator>::iterator_category
+        typename std::iterator_traits<Int8Iter>::iterator_category
     >::b;
     const bool b2 = jjm::IsSameType<
         std::random_access_iterator_tag,
-        typename std::iterator_traits<Integer8Iterator>::iterator_category
+        typename std::iterator_traits<Int8Iter>::iterator_category
     >::b;
     JSTATICASSERT(b1 || b2);
 }
 
-template <typename Integer8Iterator>
-Utf8BidiIterator<Integer8Iterator>& Utf8BidiIterator<Integer8Iterator>::operator++ () //prefix
+template <typename Int8Iter>
+Utf8ToCpBidiIterator<Int8Iter>& Utf8ToCpBidiIterator<Int8Iter>::operator++ () //prefix
 {
-    jjm::readUtf8Forward(iter);
+    jjm::readUtf8Forward(current, end);
     return *this;
 }
 
-template <typename Integer8Iterator>
-Utf8BidiIterator<Integer8Iterator> Utf8BidiIterator<Integer8Iterator>::operator++ (int) //postfix
+template <typename Int8Iter>
+Utf8ToCpBidiIterator<Int8Iter> Utf8ToCpBidiIterator<Int8Iter>::operator++ (int) //postfix
 {
-    Utf8BidiIterator tmp(*this);
+    Utf8ToCpBidiIterator tmp(*this);
     ++*this;
     return tmp;
 }
 
-template <typename Integer8Iterator>
-Utf8BidiIterator<Integer8Iterator>& Utf8BidiIterator<Integer8Iterator>::operator-- () //prefix
+template <typename Int8Iter>
+Utf8ToCpBidiIterator<Int8Iter>& Utf8ToCpBidiIterator<Int8Iter>::operator-- () //prefix
 {
-    jjm::readUtf8Backward(iter);
+    jjm::readUtf8Backward(begin, current);
     return *this;
 }
 
-template <typename Integer8Iterator>
-Utf8BidiIterator<Integer8Iterator> Utf8BidiIterator<Integer8Iterator>::operator-- (int) //postfix
+template <typename Int8Iter>
+Utf8ToCpBidiIterator<Int8Iter> Utf8ToCpBidiIterator<Int8Iter>::operator-- (int) //postfix
 {
-    Utf8BidiIterator tmp(*this);
+    Utf8ToCpBidiIterator tmp(*this);
     --*this;
     return tmp;
 }
 
-template <typename Integer8Iterator>
-typename Utf8BidiIterator<Integer8Iterator>::value_type Utf8BidiIterator<Integer8Iterator>::operator* () const
+template <typename Int8Iter>
+typename Utf8ToCpBidiIterator<Int8Iter>::value_type Utf8ToCpBidiIterator<Int8Iter>::operator* () const
 {
-    Integer8Iterator tmp = iter;
-    return jjm::readUtf8Forward(tmp);
+    Int8Iter tmp = current;
+    return jjm::readUtf8Forward(tmp, end);
 }
 
-template <typename Integer8Iterator>
-bool operator== (Utf8BidiIterator<Integer8Iterator> const& a, Utf8BidiIterator<Integer8Iterator> const& b)
+template <typename Int8Iter>
+bool operator== (Utf8ToCpBidiIterator<Int8Iter> const& a, Utf8ToCpBidiIterator<Int8Iter> const& b)
 {
-    return a.euIter() == b.euIter();
+    return a.getIter() == b.getIter(); 
 }
 
-template <typename Integer8Iterator>
-bool operator!= (Utf8BidiIterator<Integer8Iterator> const& a, Utf8BidiIterator<Integer8Iterator> const& b)
+template <typename Int8Iter>
+bool operator!= (Utf8ToCpBidiIterator<Int8Iter> const& a, Utf8ToCpBidiIterator<Int8Iter> const& b)
 {
-    return a.euIter() != b.euIter();
+    return !(a == b); 
 }
 
-template <typename Integer8Iterator>
-Utf16BidiIterator<Integer8Iterator>::Utf16BidiIterator()
+template <typename Int8Iter>
+Utf16ToCpBidiIterator<Int8Iter>::Utf16ToCpBidiIterator()
+    : begin(), current(), end()
 {
     const bool b1 = jjm::IsSameType<
         std::bidirectional_iterator_tag,
-        typename std::iterator_traits<Integer8Iterator>::iterator_category
+        typename std::iterator_traits<Int8Iter>::iterator_category
     >::b;
     const bool b2 = jjm::IsSameType<
         std::random_access_iterator_tag,
-        typename std::iterator_traits<Integer8Iterator>::iterator_category
+        typename std::iterator_traits<Int8Iter>::iterator_category
     >::b;
     JSTATICASSERT(b1 || b2);
 }
 
-template <typename Integer8Iterator>
-Utf16BidiIterator<Integer8Iterator>::Utf16BidiIterator(Integer8Iterator x) : iter(x)
+template <typename Int16Iter>
+Utf16ToCpBidiIterator<Int16Iter>::Utf16ToCpBidiIterator(
+                Int16Iter begin_,
+                Int16Iter current_,
+                Int16Iter end_) 
+    : begin(begin_), current(current_), end(end_)
 {
     const bool b1 = jjm::IsSameType<
         std::bidirectional_iterator_tag,
-        typename std::iterator_traits<Integer8Iterator>::iterator_category
+        typename std::iterator_traits<Int16Iter>::iterator_category
     >::b;
     const bool b2 = jjm::IsSameType<
         std::random_access_iterator_tag,
-        typename std::iterator_traits<Integer8Iterator>::iterator_category
+        typename std::iterator_traits<Int16Iter>::iterator_category
     >::b;
     JSTATICASSERT(b1 || b2);
 }
 
-template <typename Integer8Iterator>
-Utf16BidiIterator<Integer8Iterator>& Utf16BidiIterator<Integer8Iterator>::operator++ () //prefix
+template <typename Int8Iter>
+Utf16ToCpBidiIterator<Int8Iter>& Utf16ToCpBidiIterator<Int8Iter>::operator++ () //prefix
 {
-    jjm::readUtf16Forward(iter);
+    jjm::readUtf16Forward(current, end);
     return *this;
 }
 
-template <typename Integer8Iterator>
-Utf16BidiIterator<Integer8Iterator> Utf16BidiIterator<Integer8Iterator>::operator++ (int) //postfix
+template <typename Int8Iter>
+Utf16ToCpBidiIterator<Int8Iter> Utf16ToCpBidiIterator<Int8Iter>::operator++ (int) //postfix
 {
-    Utf16BidiIterator tmp(*this);
+    Utf16ToCpBidiIterator tmp(*this);
     ++*this;
     return tmp;
 }
 
-template <typename Integer8Iterator>
-Utf16BidiIterator<Integer8Iterator>& Utf16BidiIterator<Integer8Iterator>::operator-- () //prefix
+template <typename Int8Iter>
+Utf16ToCpBidiIterator<Int8Iter>& Utf16ToCpBidiIterator<Int8Iter>::operator-- () //prefix
 {
-    jjm::readUtf16Backward(iter);
+    jjm::readUtf16Backward(begin, current);
     return *this;
 }
 
-template <typename Integer8Iterator>
-Utf16BidiIterator<Integer8Iterator> Utf16BidiIterator<Integer8Iterator>::operator-- (int) //postfix
+template <typename Int8Iter>
+Utf16ToCpBidiIterator<Int8Iter> Utf16ToCpBidiIterator<Int8Iter>::operator-- (int) //postfix
 {
-    Utf16BidiIterator tmp(*this);
+    Utf16ToCpBidiIterator tmp(*this);
     --*this;
     return tmp;
 }
 
-template <typename Integer8Iterator>
-typename Utf16BidiIterator<Integer8Iterator>::value_type Utf16BidiIterator<Integer8Iterator>::operator* () const
+template <typename Int16Iter>
+typename Utf16ToCpBidiIterator<Int16Iter>::value_type Utf16ToCpBidiIterator<Int16Iter>::operator* () const
 {
-    Integer8Iterator tmp = iter;
-    return jjm::readUtf16Forward(tmp);
+    Int16Iter tmp = current;
+    return jjm::readUtf16Forward(tmp, end);
 }
 
-template <typename Integer8Iterator>
-bool operator== (Utf16BidiIterator<Integer8Iterator> const& a, Utf16BidiIterator<Integer8Iterator> const& b)
+template <typename Int8Iter>
+bool operator== (Utf16ToCpBidiIterator<Int8Iter> const& a, Utf16ToCpBidiIterator<Int8Iter> const& b)
 {
-    return a.Integer8Iterator() == b.Integer8Iterator();
+    return a.getIter() == b.getIter();
 }
 
-template <typename Integer8Iterator>
-bool operator!= (Utf16BidiIterator<Integer8Iterator> const& a, Utf16BidiIterator<Integer8Iterator> const& b)
+template <typename Int8Iter>
+bool operator!= (Utf16ToCpBidiIterator<Int8Iter> const& a, Utf16ToCpBidiIterator<Int8Iter> const& b)
 {
-    return a.Integer8Iterator() != b.Integer8Iterator();
+    return !(a == b); 
 }
 
-} //namespace
+} //namespace jjm
 
 #endif

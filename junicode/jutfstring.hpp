@@ -7,7 +7,8 @@
 #define JUNICODE_JUSTRING_HPP_HEADER_GUARD
 
 #include "jutfiterator.hpp"
-#include "jbase/jboundscheckediterator.hpp"
+
+#include "jbase/jtemplatemetaprogrammingutils.hpp"
 
 
 namespace jjm
@@ -32,29 +33,29 @@ public:
     typedef  char                   EncodingUnit;
     typedef  unsigned char          UnsignedEncodingUnit;
     typedef  EncodingUnit const*    EuIterator;
-    typedef  Utf8BidiIterator<BoundsCheckedIter<EuIterator> >    CpIterator;
+    typedef  Utf8ToCpBidiIterator<EuIterator>    CpIterator;
 
     static BasicUtf8String bom()
     {
         static unsigned char const x[3] = { 0xEF, 0xBB, 0xBF };
-        return utf(reinterpret_cast<char const*>(x), reinterpret_cast<char const*>(x)+3);
+        return utf8(reinterpret_cast<char const*>(x), reinterpret_cast<char const*>(x)+3);
     }
 
 public:
-    /*The static creation functions (utf() and cp() create a copy.
-    The utf functions do no validation.
-    The cp functions do validate input (throws std::exception on invalid
-    input).
-    */
-    static BasicUtf8String utf(std::string const& utf8str, allocator_type const& alloc = allocator_type());
-    static BasicUtf8String utf(EncodingUnit const* nullTerminatedUtf8, allocator_type const& alloc = allocator_type());
-    static BasicUtf8String utf(BoundsCheckedIter<EncodingUnit const*> nullTerminatedUtf8, allocator_type const& alloc = allocator_type());
-    static BasicUtf8String utf(EncodingUnit const* firstUtf8, EncodingUnit const* lastUtf8, allocator_type const& alloc = allocator_type());
-    static BasicUtf8String utf(BoundsCheckedIter<EncodingUnit const*> firstUtf8, BoundsCheckedIter<EncodingUnit const*> lastUtf8, allocator_type const& alloc = allocator_type());
-    static BasicUtf8String utf(CpIterator first, CpIterator last, allocator_type const& alloc = allocator_type());
-    static BasicUtf8String cp(CodePoint x, allocator_type const& alloc = allocator_type());
-    template <typename CpRange> static BasicUtf8String cp(CpRange const& x, allocator_type const& alloc = allocator_type());
-    template <typename CpIterator2> static BasicUtf8String cp(CpIterator2 first, CpIterator2 last, allocator_type const& alloc = allocator_type());
+    /* The static creation functions utf8(), utf16(), and cp() create a copy.
+    The utf8 functions do no validation.
+    The utf16 and cp functions do validate input (throws std::exception on 
+    invalid input). */
+
+    template <typename Range> static BasicUtf8String utf8(Range const& range,                 allocator_type const& alloc = allocator_type());
+    template <typename Iter>  static BasicUtf8String utf8(Iter const& begin, Iter const& end, allocator_type const& alloc = allocator_type());
+
+    template <typename Range> static BasicUtf8String utf16(Range const& range,                 allocator_type const& alloc = allocator_type());
+    template <typename Iter>  static BasicUtf8String utf16(Iter const& begin, Iter const& end, allocator_type const& alloc = allocator_type());
+
+    static BasicUtf8String cp(CodePoint cp, allocator_type const& alloc = allocator_type());
+    template <typename Range> static BasicUtf8String cp(Range const& range,                 allocator_type const& alloc = allocator_type());
+    template <typename Iter>  static BasicUtf8String cp(Iter const& begin, Iter const& end, allocator_type const& alloc = allocator_type());
 
 public:
     explicit BasicUtf8String(allocator_type const& alloc = allocator_type());
@@ -62,43 +63,43 @@ public:
     BasicUtf8String& operator= (BasicUtf8String const& x);
     ~BasicUtf8String();
 
-    template <typename allocator_type2> BasicUtf8String(BasicUtf16String<allocator_type2> const& x, allocator_type const& alloc = allocator_type());
-
     //Non-empty strings guaranteed to return null-terminated string. 
     //Empty strings may return null-terminated empty string or null-pointer. 
-    EncodingUnit const* c_str() const { return first; }
-    EncodingUnit const* data() const { return first; }
+    EncodingUnit const* c_str() const { return m_begin; }
+    EncodingUnit const* data() const { return m_begin; }
 
-    bool empty() const { return lastSize == first; }
+    bool empty() const { return m_endSize == m_begin; }
 
     //To give fast c_str() and data(), and ensure always null terminated, 
     //it is guaranteed that: capacityEU() >= sizeEU() + 1 or capacityEU() == 0
     BasicUtf8String& reserveEU(std::size_t numEncodingUnits);
 
-    std::size_t capacityEU() const { return lastCapacity - first; }
+    std::size_t capacityEU() const { return m_endCapacity - m_begin; }
 
     void shrink_to_fit() { BasicUtf8String(*this).swap(*this); }
 
-    std::size_t lengthBytes() const { return (lastSize - first) * sizeof(EncodingUnit); }
-    std::size_t lengthEU() const { return lastSize - first; }
-    std::size_t sizeBytes() const { return (lastSize - first) * sizeof(EncodingUnit); }
+    std::size_t lengthBytes() const { return (m_endSize - m_begin) * sizeof(EncodingUnit); }
+    std::size_t lengthEU() const { return m_endSize - m_begin; }
+    std::size_t sizeBytes() const { return (m_endSize - m_begin) * sizeof(EncodingUnit); }
     std::size_t sizeEU() const { return lengthEU(); }
 
-    void clear() { lastSize = first; }
+    void clear() { m_endSize = m_begin; }
 
-    template <typename CpIterator2> BasicUtf8String& insert(CpIterator at, CpIterator2 first, CpIterator2 last);
+    template <typename CpIterator2> BasicUtf8String& insert(CpIterator at, CpIterator2 begin_, CpIterator2 end_);
     BasicUtf8String& insert(CpIterator at, BasicUtf8String const& str);
 
-    void erase(CpIterator first, CpIterator last);
+    void erase(CpIterator begin_, CpIterator end_);
 
     BasicUtf8String& append(BasicUtf8String str);
 
     BasicUtf8String& appendCP(CodePoint cp);
     template <typename CpRange> BasicUtf8String& appendCP(CpRange r);
-    template <typename CpIterator2> BasicUtf8String& appendCP(CpIterator2 first, CpIterator2 last);
+    template <typename CpIterator2> BasicUtf8String& appendCP(CpIterator2 begin_, CpIterator2 end_);
 
     //Only add complete codepoints! Otherwise bad things may happen. 
-    BasicUtf8String& appendEU(EncodingUnit const* first, EncodingUnit const* last);
+    BasicUtf8String& appendEU(EncodingUnit const* begin_, EncodingUnit const* end_);
+    template <typename EuIter>
+    BasicUtf8String& appendEU(EuIter begin_, EuIter end_);
 
     void swap(BasicUtf8String& x);
 
@@ -111,25 +112,25 @@ public:
 
     EuIterator  beginEU() { return cbeginEU(); }
     EuIterator  beginEU() const { return cbeginEU(); }
-    EuIterator cbeginEU() const { return first; }
+    EuIterator cbeginEU() const { return m_begin; }
     EuIterator  endEU() { return cendEU(); }
     EuIterator  endEU() const { return cendEU(); }
-    EuIterator cendEU() const { return lastSize; }
+    EuIterator cendEU() const { return m_endSize; }
 
-    allocator_type get_allocator() const { return myalloc; }
+    allocator_type get_allocator() const { return m_alloc; }
 
     //Do not use this unless you know what you are doing, are familiar with 
     //utf8, and are familiar with the implementation of this class. 
-    EncodingUnit* mutable_data() { return first; }
+    EncodingUnit* mutable_data() { return m_begin; }
 
 private:
-    EncodingUnit* first;
-    EncodingUnit* lastSize;
-    EncodingUnit* lastCapacity;
-    allocator_type myalloc;
+    EncodingUnit* m_begin;
+    EncodingUnit* m_endSize;
+    EncodingUnit* m_endCapacity;
+    allocator_type m_alloc;
 
     //Caller need to guarantee the invariant that everything in the range 
-    //[lastSize, lastCapacity) is 0. 
+    //[m_endSize, m_endCapacity) is 0. 
     BasicUtf8String& reserveEUInternal(std::size_t numEncodingUnits);
 };
 
@@ -172,69 +173,73 @@ public:
     typedef  Utf16EncodingUnit      EncodingUnit;
     typedef  Utf16EncodingUnit      UnsignedEncodingUnit;
     typedef  EncodingUnit const*    EuIterator;
-    typedef  Utf16BidiIterator<BoundsCheckedIter<EuIterator> >    CpIterator;
+    typedef  Utf16ToCpBidiIterator<EuIterator>    CpIterator;
 
     static BasicUtf16String bom()
     {
         static EncodingUnit const x = 0xFEFF;
-        return utf(&x, &x + 1);
+        return utf16(&x, &x + 1);
     }
 
 public:
-    /*The static creation functions (utf() and cp()) create a copy.
-    The utf functions do no validation. */
-    static BasicUtf16String utf(EncodingUnit const* nullTerminatedUtf16, allocator_type const& alloc = allocator_type());
-    static BasicUtf16String utf(BoundsCheckedIter<EncodingUnit const*> nullTerminatedUtf16, allocator_type const& alloc = allocator_type());
-    static BasicUtf16String utf(EncodingUnit const* firstUtf16, EncodingUnit const* lastUtf16, allocator_type const& alloc = allocator_type());
-    static BasicUtf16String utf(BoundsCheckedIter<EncodingUnit const*> firstUtf16, BoundsCheckedIter<EncodingUnit const*> lastUtf16, allocator_type const& alloc = allocator_type());
-    static BasicUtf16String utf(CpIterator first, CpIterator last, allocator_type const& alloc = allocator_type());
-    static BasicUtf16String cp(CodePoint x, allocator_type const& alloc = allocator_type());
-    template <typename CpRange> static BasicUtf16String cp(CpRange const& x, allocator_type const& alloc = allocator_type());
-    template <typename CpIterator2> static BasicUtf16String cp(CpIterator2 first, CpIterator2 last, allocator_type const& alloc = allocator_type());
+    /* The static creation functions utf8(), utf16(), and cp() create a copy.
+    The utf16 functions do no validation.
+    The utf8 and cp functions do validate input (throws std::exception on 
+    invalid input). */
+
+    template <typename Range> static BasicUtf16String utf8(Range const& range,                 allocator_type const& alloc = allocator_type());
+    template <typename Iter>  static BasicUtf16String utf8(Iter const& begin, Iter const& end, allocator_type const& alloc = allocator_type());
+
+    template <typename Range> static BasicUtf16String utf16(Range const& range,                 allocator_type const& alloc = allocator_type());
+    template <typename Iter>  static BasicUtf16String utf16(Iter const& begin, Iter const& end, allocator_type const& alloc = allocator_type());
+
+    static BasicUtf16String cp(CodePoint cp, allocator_type const& alloc = allocator_type());
+    template <typename Range> static BasicUtf16String cp(Range const& range,                 allocator_type const& alloc = allocator_type());
+    template <typename Iter>  static BasicUtf16String cp(Iter const& begin, Iter const& end, allocator_type const& alloc = allocator_type());
 
 public:
     explicit BasicUtf16String(allocator_type const& alloc = allocator_type());
     BasicUtf16String(BasicUtf16String const& x);
     BasicUtf16String& operator= (BasicUtf16String const& x);
     ~BasicUtf16String();
-
-    template <typename allocator_type2> BasicUtf16String(BasicUtf8String<allocator_type2> const& x, allocator_type const& alloc = allocator_type());
     
     //Non-empty strings guaranteed to return null-terminated string. 
     //Empty strings may return null-terminated empty string or null-pointer. 
-    EncodingUnit const* c_str() const { return first; }
-    EncodingUnit const* data() const { return first; }
+    EncodingUnit const* c_str() const { return m_begin; }
+    EncodingUnit const* data() const { return m_begin; }
 
-    bool empty() const { return lastSize == first; }
+    bool empty() const { return m_endSize == m_begin; }
 
     //To give fast c_str() and data(), and ensure always null terminated, 
     //it is guaranteed that: capacityEU() >= sizeEU() + 1 or capacityEU() == 0
     BasicUtf16String& reserveEU(std::size_t numEncodingUnits);
 
-    std::size_t capacityEU() const { return lastCapacity - first; }
+    std::size_t capacityEU() const { return m_endCapacity - m_begin; }
 
     void shrink_to_fit() { BasicUtf16String(*this).swap(*this); }
 
-    std::size_t lengthBytes() const { return (lastSize - first) * sizeof(EncodingUnit); }
-    std::size_t lengthEU() const { return lastSize - first; }
-    std::size_t sizeBytes() const { return (lastSize - first) * sizeof(EncodingUnit); }
+    std::size_t lengthBytes() const { return (m_endSize - m_begin) * sizeof(EncodingUnit); }
+    std::size_t lengthEU() const { return m_endSize - m_begin; }
+    std::size_t sizeBytes() const { return (m_endSize - m_begin) * sizeof(EncodingUnit); }
     std::size_t sizeEU() const { return lengthEU(); }
 
-    void clear() { lastSize = first; }
+    void clear() { m_endSize = m_begin; }
 
     BasicUtf16String& insert(CpIterator at, BasicUtf16String const& str);
-    template <typename CpIterator2> BasicUtf16String& insert(CpIterator at, CpIterator2 first, CpIterator2 last);
+    template <typename CpIterator2> BasicUtf16String& insert(CpIterator at, CpIterator2 begin_, CpIterator2 end_);
 
-    void erase(CpIterator first, CpIterator last);
+    void erase(CpIterator begin_, CpIterator end_);
 
     BasicUtf16String& append(BasicUtf16String str);
 
     BasicUtf16String& appendCP(CodePoint cp);
     template <typename CpRange> BasicUtf16String& appendCP(CpRange r);
-    template <typename CpIterator2> BasicUtf16String& appendCP(CpIterator2 first, CpIterator2 last);
+    template <typename CpIterator2> BasicUtf16String& appendCP(CpIterator2 begin_, CpIterator2 end_);
 
     //Only add complete code point encodings! Otherwise bad things may happen. 
-    BasicUtf16String& appendEU(EncodingUnit const* first, EncodingUnit const* last);
+    BasicUtf16String& appendEU(EncodingUnit const* begin_, EncodingUnit const* end_);
+    template <typename EuIter>
+    BasicUtf16String& appendEU(EuIter begin_, EuIter end_);
 
     void swap(BasicUtf16String& x);
 
@@ -247,25 +252,25 @@ public:
 
     EuIterator  beginEU() { return cbeginEU(); }
     EuIterator  beginEU() const { return cbeginEU(); }
-    EuIterator cbeginEU() const { return first; }
+    EuIterator cbeginEU() const { return m_begin; }
     EuIterator  endEU() { return cendEU(); }
     EuIterator  endEU() const { return cendEU(); }
-    EuIterator cendEU() const { return lastSize; }
+    EuIterator cendEU() const { return m_endSize; }
 
-    allocator_type get_allocator() const { return myalloc; }
+    allocator_type get_allocator() const { return m_alloc; }
 
     //Do not use this unless you know what you are doing, are familiar with 
     //utf16, and are familiar with the implementation of this class. 
-    EncodingUnit* mutable_data() { return first; }
+    EncodingUnit* mutable_data() { return m_begin; }
 
 private:
-    EncodingUnit* first;
-    EncodingUnit* lastSize;
-    EncodingUnit* lastCapacity;
-    allocator_type myalloc;
+    EncodingUnit* m_begin;
+    EncodingUnit* m_endSize;
+    EncodingUnit* m_endCapacity;
+    allocator_type m_alloc;
 
     //Caller need to guarantee the invariant that everything in the range 
-    //[lastSize, lastCapacity) is 0. 
+    //[m_endSize, m_endCapacity) is 0. 
     BasicUtf16String& reserveEUInternal(std::size_t numEncodingUnits);
 };
 
@@ -311,99 +316,137 @@ template <std::size_t n>  Utf16String  a2u16(char const (&ascii)[n]);
 // ---- ---- ---- ---- 
 // impl: 
 
-
-template <typename allocator_type>
-BasicUtf8String<allocator_type> BasicUtf8String<allocator_type>::utf(
-    std::string const& utf8str, allocator_type const& alloc)
+namespace Internal
 {
-    return utf(utf8str.c_str(), utf8str.c_str() + utf8str.size(), alloc);
+    inline char const* getUtf8EuRangeBegin(std::string const& range) { return range.c_str(); }
+    inline char const* getUtf8EuRangeEnd(std::string const& range) { return range.c_str() + range.size(); }
+
+    inline U8Str::EuIterator getUtf8EuRangeBegin(U8Str const& range) { return range.beginEU(); }
+    inline U8Str::EuIterator getUtf8EuRangeEnd(U8Str const& range) { return range.endEU(); }
+
+    inline U16Str::EuIterator getUtf16EuRangeBegin(U16Str const& range) { return range.beginEU(); }
+    inline U16Str::EuIterator getUtf16EuRangeEnd(U16Str const& range) { return range.endEU(); }
+
+    template <typename Iter>
+    Iter getUtf16EuRangeBegin(std::pair<Iter, Iter> const& range) { return range.first; }
+    template <typename Iter>
+    Iter getUtf16EuRangeEnd  (std::pair<Iter, Iter> const& range) { return range.second; }
+
+    inline U8Str::CpIterator getCpRangeBegin(U8Str const& range) { return range.beginCP(); }
+    inline U8Str::CpIterator getCpRangeEnd  (U8Str const& range) { return range.endCP  (); }
+
+    inline U16Str::CpIterator getCpRangeBegin(U16Str const& range) { return range.beginCP(); }
+    inline U16Str::CpIterator getCpRangeEnd  (U16Str const& range) { return range.endCP  (); }
+
+    template <typename Iter> Iter getCpRangeBegin(std::pair<Iter, Iter> range) { return range.first; }
+    template <typename Iter> Iter getCpRangeEnd  (std::pair<Iter, Iter> range) { return range.second; }
+
+    template <typename Iter, typename IterTag>
+    struct JustringIterDiff
+    {   inline typename std::iterator_traits<Iter>::difference_type operator() (Iter end, Iter begin) const { return 0; }
+    };
+    template <typename Iter>
+    struct JustringIterDiff<Iter, std::random_access_iterator_tag>
+    {   inline typename std::iterator_traits<Iter>::difference_type operator() (Iter end, Iter begin) const { return end - begin; }
+    };
 }
 
-template <typename allocator_type>
-BasicUtf8String<allocator_type>  BasicUtf8String<allocator_type>::utf(
-    EncodingUnit const* nullTerminatedUtf8, allocator_type const& alloc)
-{
-    return utf(
-        nullTerminatedUtf8,
-        nullTerminatedUtf8 + std::strlen(nullTerminatedUtf8),
-        alloc);
-}
+
+
 
 template <typename allocator_type>
-BasicUtf8String<allocator_type>  BasicUtf8String<allocator_type>::utf(
-    BoundsCheckedIter<EncodingUnit const*> nullTerminatedUtf8, allocator_type const& alloc)
-{
-    return utf(nullTerminatedUtf8.current(), alloc);
-}
-
-template <typename allocator_type>
-BasicUtf8String<allocator_type>  BasicUtf8String<allocator_type>::utf(
-    EncodingUnit const* first, EncodingUnit const* last, allocator_type const& alloc)
+template <typename Range>
+BasicUtf8String<allocator_type>  BasicUtf8String<allocator_type>::utf8(
+    Range const& range, allocator_type const& alloc)
 {
     BasicUtf8String str(alloc);
-    str.reserveEUInternal((last - first) + 1);
-    std::memcpy(str.first, first, (last - first) * sizeof(EncodingUnit));
-    str.lastSize = str.first + (last - first);
-    *str.lastSize = 0;
-    return str;
+    using jjm::Internal::getUtf8EuRangeBegin; 
+    using jjm::Internal::getUtf8EuRangeEnd; 
+    str.appendEU(getUtf8EuRangeBegin(range), getUtf8EuRangeEnd(range)); 
+    return str; 
 }
 
 template <typename allocator_type>
-BasicUtf8String<allocator_type>  BasicUtf8String<allocator_type>::utf(
-    BoundsCheckedIter<EncodingUnit const*> first, BoundsCheckedIter<EncodingUnit const*> last, allocator_type const& alloc)
+template <typename Iter>
+BasicUtf8String<allocator_type>  BasicUtf8String<allocator_type>::utf8(
+    Iter const& begin_, Iter const& end_, allocator_type const& alloc)
 {
-    return utf(first.current(), last.current(), alloc);
+    BasicUtf8String str(alloc);
+    str.appendEU(begin_, end_); 
+    return str; 
 }
 
 template <typename allocator_type>
-BasicUtf8String<allocator_type> BasicUtf8String<allocator_type>::utf(
-    CpIterator first, CpIterator last, allocator_type const& alloc)
+template <typename Range>
+BasicUtf8String<allocator_type>  BasicUtf8String<allocator_type>::utf16(
+    Range const& range, allocator_type const& alloc)
 {
-    return utf(first.euIter(), last.euIter(), alloc);
+    BasicUtf8String str(alloc);
+    using jjm::Internal::getUtf16EuRangeBegin; 
+    using jjm::Internal::getUtf16EuRangeEnd; 
+    str.appendCP(
+            makeUtf16ToCpInputIterator(getUtf16EuRangeBegin(range), getUtf16EuRangeEnd(range)), 
+            makeUtf16ToCpInputIterator(getUtf16EuRangeEnd(  range), getUtf16EuRangeEnd(range))
+            ); 
+    return str; 
+}
+
+template <typename allocator_type>
+template <typename Iter>
+BasicUtf8String<allocator_type>  BasicUtf8String<allocator_type>::utf16(
+    Iter const& begin_, Iter const& end_, allocator_type const& alloc)
+{
+    BasicUtf8String str(alloc);
+    Utf16ToCpInputIterator<Iter> a1(begin_, end_); 
+    Utf16ToCpInputIterator<Iter> a2(end_,   end_); 
+    str.appendCP(a1, a2); 
+    return str; 
 }
 
 template <typename allocator_type>
 BasicUtf8String<allocator_type>  BasicUtf8String<allocator_type>::cp(
-    CodePoint x, allocator_type const& alloc)
+    CodePoint cp, allocator_type const& alloc)
 {
     BasicUtf8String str(alloc);
-    str.appendCP(x);
-    return str;
+    str.appendCP(cp); 
+    return str; 
 }
 
 template <typename allocator_type>
-template <typename CpRange>
+template <typename Range>
 BasicUtf8String<allocator_type>  BasicUtf8String<allocator_type>::cp(
-    CpRange const& r, allocator_type const& alloc)
+    Range const& range, allocator_type const& alloc)
 {
-    return cp(r.beginCP(), r.endCP(), alloc);
+    BasicUtf8String str(alloc);
+    str.appendCP(range.beginCP(), range.endCP()); 
+    return str; 
 }
 
 template <typename allocator_type>
-template <typename CpIter>
+template <typename Iter>
 BasicUtf8String<allocator_type>  BasicUtf8String<allocator_type>::cp(
-    CpIter first, CpIter last, allocator_type const& alloc)
+    Iter const& begin_, Iter const& end_, allocator_type const& alloc)
 {
     BasicUtf8String str(alloc);
-    str.appendCP(first, last);
-    return str;
+    str.appendCP(begin_, end_); 
+    return str; 
 }
 
 template <typename allocator_type>
 BasicUtf8String<allocator_type>::BasicUtf8String(allocator_type const& alloc)
-    : first(0), lastSize(0), lastCapacity(0), myalloc(alloc)
+    : m_begin(0), m_endSize(0), m_endCapacity(0), m_alloc(alloc)
 {}
 
 template <typename allocator_type>
 BasicUtf8String<allocator_type>::BasicUtf8String(BasicUtf8String const& x)
-    : first(0), lastSize(0), lastCapacity(0), myalloc(x.myalloc)
+    : m_begin(0), m_endSize(0), m_endCapacity(0), m_alloc(x.m_alloc)
 {
     if (x.sizeEU())
     {
         reserveEUInternal(x.sizeEU() + 1);
-        std::memcpy(first, x.first, x.sizeBytes());
-        lastSize = first + x.sizeEU();
-        *lastSize = 0;
+        std::memcpy(m_begin, x.m_begin, x.sizeBytes());
+        m_endSize = m_begin + x.sizeEU();
+        *m_endSize = 0;
     }
 }
 
@@ -417,8 +460,8 @@ BasicUtf8String<allocator_type>& BasicUtf8String<allocator_type>::operator= (Bas
 template <typename allocator_type>
 BasicUtf8String<allocator_type>::~BasicUtf8String()
 {
-    if (first)
-        myalloc.deallocate(first, capacityEU());
+    if (m_begin)
+        m_alloc.deallocate(m_begin, capacityEU());
 }
 
 template <typename allocator_type>
@@ -427,7 +470,7 @@ BasicUtf8String<allocator_type>& BasicUtf8String<allocator_type>::reserveEU(std:
     if (capacityEU() < n)
     {
         reserveEUInternal(n);
-        std::memset(first + sizeEU(), 0, (lastCapacity - lastSize) * sizeof(EncodingUnit));
+        std::memset(m_begin + sizeEU(), 0, (m_endCapacity - m_endSize) * sizeof(EncodingUnit));
     }
     return *this;
 }
@@ -437,12 +480,12 @@ BasicUtf8String<allocator_type>& BasicUtf8String<allocator_type>::reserveEUInter
 {
     if (capacityEU() < n)
     {
-        BasicUtf8String newstr(myalloc);
-        newstr.first = newstr.myalloc.allocate(n);
-        newstr.lastSize = newstr.first + sizeEU();
-        newstr.lastCapacity = newstr.first + n;
+        BasicUtf8String newstr(m_alloc);
+        newstr.m_begin = newstr.m_alloc.allocate(n);
+        newstr.m_endSize = newstr.m_begin + sizeEU();
+        newstr.m_endCapacity = newstr.m_begin + n;
         if (sizeEU())
-            std::memcpy(newstr.first, first, sizeBytes());
+            std::memcpy(newstr.m_begin, m_begin, sizeBytes());
         swap(newstr);
     }
     return *this;
@@ -454,28 +497,28 @@ BasicUtf8String<allocator_type>::insert(CpIterator at, BasicUtf8String const& st
 {
     if (str.sizeEU() > 0)
     {
-        size_t const atEuIndex = at.euIter().current() - first;
+        size_t const atEuIndex = at.getIter() - m_begin;
         if (sizeEU() + str.sizeEU() + 1 > capacityEU())
         {
-            BasicUtf8String newstr(myalloc);
+            BasicUtf8String newstr(m_alloc);
             newstr.reserveEUInternal(sizeEU() + str.sizeEU() + 1);
-            newstr.appendEU(first, first + atEuIndex);
+            newstr.appendEU(m_begin, m_begin + atEuIndex);
             newstr.append(str);
-            newstr.appendEU(first + atEuIndex, lastSize);
-            *newstr.lastSize = 0;
+            newstr.appendEU(m_begin + atEuIndex, m_endSize);
+            *newstr.m_endSize = 0;
             swap(newstr);
         }
         else
         {
             std::memmove(
-                first + atEuIndex + str.sizeEU(),
-                first + atEuIndex,
+                m_begin + atEuIndex + str.sizeEU(),
+                m_begin + atEuIndex,
                 (sizeEU() - atEuIndex) * sizeof(EncodingUnit));
             std::memcpy(
-                first + atEuIndex,
+                m_begin + atEuIndex,
                 str.data(),
                 str.sizeBytes());
-            lastSize += str.sizeEU();
+            m_endSize += str.sizeEU();
         }
     }
     return *this;
@@ -484,20 +527,20 @@ BasicUtf8String<allocator_type>::insert(CpIterator at, BasicUtf8String const& st
 template <typename allocator_type>
 template <typename CpIter>
 BasicUtf8String<allocator_type>&  BasicUtf8String<allocator_type>::insert(
-    CpIterator at, CpIter firstArg, CpIter lastArg)
+    CpIterator at, CpIter begin_, CpIter last_)
 {
     //TODO is there a better implementation with strong exception safety?
-    return insert(at, BasicUtf8String(firstArg, lastArg));
+    return insert(at, BasicUtf8String(begin_, last_));
 }
 
 template <typename allocator_type>
-void BasicUtf8String<allocator_type>::erase(CpIterator firstToErase, CpIterator lastToErase)
+void BasicUtf8String<allocator_type>::erase(CpIterator beginToErase, CpIterator endToErase)
 {
-    EncodingUnit * firstToErase1 = first + (firstToErase.euIter().current() - first);
-    EncodingUnit * lastToErase1 = first + (lastToErase.euIter().current() - first);
-    std::memmove(firstToErase1, lastToErase1, (lastSize - lastToErase1) * sizeof(EncodingUnit));
-    std::memset(lastSize - (lastToErase1 - firstToErase1), 0, (lastToErase1 - firstToErase1) * sizeof(EncodingUnit));
-    lastSize -= (lastToErase1 - firstToErase1);
+    EncodingUnit * beginToErase1 = m_begin + (beginToErase.getIter() - m_begin);
+    EncodingUnit * endToErase1 = m_begin + (endToErase.getIter() - m_begin);
+    std::memmove(beginToErase1, endToErase1, (m_endSize - endToErase1) * sizeof(EncodingUnit));
+    std::memset(m_endSize - (endToErase1 - beginToErase1), 0, (endToErase1 - beginToErase1) * sizeof(EncodingUnit));
+    m_endSize -= (endToErase1 - beginToErase1);
 }
 
 template <typename allocator_type>
@@ -509,21 +552,21 @@ BasicUtf8String<allocator_type>& BasicUtf8String<allocator_type>::append(BasicUt
 template <typename allocator_type>
 BasicUtf8String<allocator_type>& BasicUtf8String<allocator_type>::appendCP(CodePoint const cp)
 {
-    int const len = ::jjm::utf8LengthOf(cp);
+    int const len = jjm::utf8LengthOf(cp);
     if (sizeEU() + len + 1 >= capacityEU())
         reserveEU((capacityEU() >> 1) + capacityEU() + 16); //MAGIC NUMBERS, do 1.5 bigger plus 16
-    EncodingUnit* tmp = first + sizeEU();
-    ::jjm::writeUtf8(cp, tmp);
-    lastSize += len;
+    EncodingUnit* tmp = m_begin + sizeEU();
+    jjm::writeUtf8(cp, tmp);
+    m_endSize += len;
     return *this;
 }
 
 template <typename allocator_type>
 template <typename CpIter>
-BasicUtf8String<allocator_type>& BasicUtf8String<allocator_type>::appendCP(CpIter first, CpIter last)
+BasicUtf8String<allocator_type>& BasicUtf8String<allocator_type>::appendCP(CpIter begin_, CpIter end_)
 {
-    for (; first != last; ++first)
-        appendCP(*first);
+    for (; begin_ != end_; ++begin_)
+        appendCP(*begin_);
     return *this;
 }
 
@@ -568,9 +611,38 @@ BasicUtf8String<allocator_type>& BasicUtf8String<allocator_type>::appendEU(
     if (y - x)
     {
         reserveEUInternal(sizeEU() + (y - x) + 1);
-        std::memcpy(first + sizeEU(), x, (y - x) * sizeof(EncodingUnit));
-        lastSize += (y - x);
-        *lastSize = 0;
+        std::memcpy(m_begin + sizeEU(), x, (y - x) * sizeof(EncodingUnit));
+        m_endSize += (y - x);
+        *m_endSize = 0;
+    }
+    return *this;
+}
+
+template <typename allocator_type>
+template <typename EuIter>
+BasicUtf8String<allocator_type>& BasicUtf8String<allocator_type>::appendEU(
+    EuIter x, EuIter y)
+{
+    int const isRandomAccessIter = IsConvertibleTo<std::iterator_traits<EuIter>::iterator_category*, std::random_access_iterator_tag*>::b; 
+    if (isRandomAccessIter)
+    {   typename std::iterator_traits<EuIter>::difference_type inputRangeLength = 
+                Internal::JustringIterDiff<EuIter, std::iterator_traits<EuIter>::iterator_category>()(y, x);
+        reserveEUInternal(sizeEU() + inputRangeLength + 1);
+        for ( ; x != y; )
+        {   *m_endSize = *x; 
+            ++x;
+            ++m_endSize; 
+        }
+        *m_endSize = 0;
+    }else
+    {   for ( ; x != y; )
+        {   if (sizeEU() + 2 >= capacityEU())
+                reserveEU((capacityEU() >> 1) + capacityEU() + 16); //MAGIC NUMBERS, do 1.5 bigger plus 16
+            *m_endSize = *x; 
+            ++x;
+            ++m_endSize; 
+        }
+        *m_endSize = 0;
     }
     return *this;
 }
@@ -579,26 +651,24 @@ template <typename allocator_type>
 void BasicUtf8String<allocator_type>::swap(BasicUtf8String & str)
 {
     using std::swap;
-    swap(first, str.first);
-    swap(lastSize, str.lastSize);
-    swap(lastCapacity, str.lastCapacity);
-    swap(myalloc, str.myalloc);
+    swap(m_begin, str.m_begin);
+    swap(m_endSize, str.m_endSize);
+    swap(m_endCapacity, str.m_endCapacity);
+    swap(m_alloc, str.m_alloc);
 }
 
 template <typename allocator_type>
 typename BasicUtf8String<allocator_type>::CpIterator
 BasicUtf8String<allocator_type>::cbeginCP() const
 {
-    return jjm::Utf8BidiIterator<jjm::BoundsCheckedIter<EuIterator> >(
-        jjm::BoundsCheckedIter<EuIterator>(beginEU(), beginEU(), endEU()));
+    return jjm::Utf8ToCpBidiIterator<EuIterator>(beginEU(), beginEU(), endEU()); 
 }
 
 template <typename allocator_type>
 typename BasicUtf8String<allocator_type>::CpIterator
 BasicUtf8String<allocator_type>::cendCP() const
 {
-    return jjm::Utf8BidiIterator<jjm::BoundsCheckedIter<EuIterator> >(
-        jjm::BoundsCheckedIter<EuIterator>(beginEU(), endEU(), endEU()));
+    return jjm::Utf8ToCpBidiIterator<EuIterator>(beginEU(), endEU(), endEU());
 }
 
 template <typename allocator_type>
@@ -649,91 +719,101 @@ inline bool operator>= (BasicUtf8String<alloc1> const& a, BasicUtf8String<alloc2
 
 
 
-template <typename allocator_type>
-BasicUtf16String<allocator_type>  BasicUtf16String<allocator_type>::utf(
-    EncodingUnit const* nullTerminatedUtf16, allocator_type const& alloc)
-{
-    EncodingUnit const* x = nullTerminatedUtf16;
-    for (; *x;)
-        ++x;
-    return utf(nullTerminatedUtf16, x, alloc);
-}
 
 template <typename allocator_type>
-BasicUtf16String<allocator_type>  BasicUtf16String<allocator_type>::utf(
-    BoundsCheckedIter<EncodingUnit const*> nullTerminatedUtf16, allocator_type const& alloc)
-{
-    return utf(nullTerminatedUtf16.current(), alloc);
-}
-
-template <typename allocator_type>
-BasicUtf16String<allocator_type>  BasicUtf16String<allocator_type>::utf(
-    EncodingUnit const* first, EncodingUnit const* last, allocator_type const& alloc)
+template <typename Range>
+BasicUtf16String<allocator_type>  BasicUtf16String<allocator_type>::utf8(
+    Range const& range, allocator_type const& alloc)
 {
     BasicUtf16String str(alloc);
-    str.reserveEUInternal((last - first) + 1);
-    std::memcpy(str.first, first, (last - first) * sizeof(EncodingUnit));
-    str.lastSize = str.first + (last - first);
-    *str.lastSize = 0;
-    return str;
+    using jjm::Internal::getUtf8RangeBegin; 
+    using jjm::Internal::getUtf8RangeEnd; 
+    Utf8ToCpInputIterator<Iter> a1(getUtf8RangeBegin(range), getUtf8RangeEnd(range)); 
+    Utf8ToCpInputIterator<Iter> a2(getUtf8RangeEnd(  range), getUtf8RangeEnd(range)); 
+    str.appendCP(a1, a2); 
+    return str; 
 }
 
 template <typename allocator_type>
-BasicUtf16String<allocator_type>  BasicUtf16String<allocator_type>::utf(
-    BoundsCheckedIter<EncodingUnit const*> first, BoundsCheckedIter<EncodingUnit const*> last, allocator_type const& alloc)
+template <typename Iter>
+BasicUtf16String<allocator_type>  BasicUtf16String<allocator_type>::utf8(
+    Iter const& begin_, Iter const& end_, allocator_type const& alloc)
 {
-    return utf(first.current(), last.current(), alloc);
+    BasicUtf16String str(alloc);
+    Utf8ToCpInputIterator<Iter> a1(begin_, end_); 
+    Utf8ToCpInputIterator<Iter> a2(end_,   end_); 
+    str.appendCP(a1, a2); 
+    return str; 
 }
 
 template <typename allocator_type>
-BasicUtf16String<allocator_type> BasicUtf16String<allocator_type>::utf(
-    CpIterator first, CpIterator last, allocator_type const& alloc)
+template <typename Range>
+BasicUtf16String<allocator_type>  BasicUtf16String<allocator_type>::utf16(
+    Range const& range, allocator_type const& alloc)
 {
-    return utf(first.euIter(), last.euIter(), alloc);
+    BasicUtf16String str(alloc); 
+    using jjm::Internal::getUtf16RangeBegin; 
+    using jjm::Internal::getUtf16RangeEnd; 
+    str.appendEU(getUtf16RangeBegin(range), getUtf16RangeEnd(range)); 
+    return str; 
+}
+
+template <typename allocator_type>
+template <typename Iter>
+BasicUtf16String<allocator_type>  BasicUtf16String<allocator_type>::utf16(
+    Iter const& begin_, Iter const& end_, allocator_type const& alloc)
+{
+    BasicUtf16String str(alloc); 
+    str.appendEU(begin_, end_); 
+    return str; 
 }
 
 template <typename allocator_type>
 BasicUtf16String<allocator_type>  BasicUtf16String<allocator_type>::cp(
-    CodePoint x, allocator_type const& alloc)
+    CodePoint cp, allocator_type const& alloc)
 {
     BasicUtf16String str(alloc);
-    str.appendCP(x);
-    return str;
+    str.appendCP(cp); 
+    return str; 
 }
 
 template <typename allocator_type>
-template <typename CpRange>
+template <typename Range>
 BasicUtf16String<allocator_type>  BasicUtf16String<allocator_type>::cp(
-    CpRange const& r, allocator_type const& alloc)
+    Range const& range, allocator_type const& alloc)
 {
-    return cp(r.beginCP(), r.endCP(), alloc);
+    BasicUtf16String str(alloc);
+    using jjm::Internal::getCpRangeBegin; 
+    using jjm::Internal::getCpRangeEnd;  
+    str.appendCP(getCpRangeBegin(range), getCpRangeEnd(range));  
+    return str; 
 }
 
 template <typename allocator_type>
-template <typename CpIter>
+template <typename Iter>
 BasicUtf16String<allocator_type>  BasicUtf16String<allocator_type>::cp(
-    CpIter first, CpIter last, allocator_type const& alloc)
+    Iter const& begin_, Iter const& end_, allocator_type const& alloc)
 {
     BasicUtf16String str(alloc);
-    str.appendCP(first, last);
-    return str;
+    str.appendCP(begin_, end_); 
+    return str; 
 }
 
 template <typename allocator_type>
 BasicUtf16String<allocator_type>::BasicUtf16String(allocator_type const& alloc)
-    : first(0), lastSize(0), lastCapacity(0), myalloc(alloc)
+    : m_begin(0), m_endSize(0), m_endCapacity(0), m_alloc(alloc)
 {}
 
 template <typename allocator_type>
 BasicUtf16String<allocator_type>::BasicUtf16String(BasicUtf16String const& x)
-    : first(0), lastSize(0), lastCapacity(0), myalloc(x.myalloc)
+    : m_begin(0), m_endSize(0), m_endCapacity(0), m_alloc(x.m_alloc)
 {
     if (x.sizeEU())
     {
         reserveEUInternal(x.sizeEU() + 1);
-        std::memcpy(first, x.first, x.sizeBytes());
-        lastSize = first + x.sizeEU();
-        *lastSize = 0;
+        std::memcpy(m_begin, x.m_begin, x.sizeBytes());
+        m_endSize = m_begin + x.sizeEU();
+        *m_endSize = 0;
     }
 }
 
@@ -747,8 +827,8 @@ BasicUtf16String<allocator_type>& BasicUtf16String<allocator_type>::operator= (B
 template <typename allocator_type>
 BasicUtf16String<allocator_type>::~BasicUtf16String()
 {
-    if (first)
-        myalloc.deallocate(first, capacityEU());
+    if (m_begin)
+        m_alloc.deallocate(m_begin, capacityEU());
 }
 
 template <typename allocator_type>
@@ -757,7 +837,7 @@ BasicUtf16String<allocator_type>& BasicUtf16String<allocator_type>::reserveEU(st
     if (capacityEU() < n)
     {
         reserveEUInternal(n);
-        std::memset(first + sizeEU(), 0, (lastCapacity - lastSize) * sizeof(EncodingUnit));
+        std::memset(m_begin + sizeEU(), 0, (m_endCapacity - m_endSize) * sizeof(EncodingUnit));
     }
     return *this;
 }
@@ -767,12 +847,12 @@ BasicUtf16String<allocator_type>& BasicUtf16String<allocator_type>::reserveEUInt
 {
     if (capacityEU() < n)
     {
-        BasicUtf16String newstr(myalloc);
-        newstr.first = newstr.myalloc.allocate(n);
-        newstr.lastSize = newstr.first + sizeEU();
-        newstr.lastCapacity = newstr.first + n;
+        BasicUtf16String newstr(m_alloc);
+        newstr.m_begin = newstr.m_alloc.allocate(n);
+        newstr.m_endSize = newstr.m_begin + sizeEU();
+        newstr.m_endCapacity = newstr.m_begin + n;
         if (sizeEU())
-            std::memcpy(newstr.first, first, sizeBytes());
+            std::memcpy(newstr.m_begin, m_begin, sizeBytes());
         swap(newstr);
     }
     return *this;
@@ -784,28 +864,28 @@ BasicUtf16String<allocator_type>::insert(CpIterator at, BasicUtf16String const& 
 {
     if (str.sizeEU() > 0)
     {
-        size_t const atEuIndex = at.euIter().current() - first;
+        size_t const atEuIndex = at.getIter() - m_begin;
         if (sizeEU() + str.sizeEU() + 1 > capacityEU())
         {
-            BasicUtf16String newstr(myalloc);
+            BasicUtf16String newstr(m_alloc);
             newstr.reserveEUInternal(sizeEU() + str.sizeEU() + 1);
-            newstr.appendEU(first, first + atEuIndex);
+            newstr.appendEU(m_begin, m_begin + atEuIndex);
             newstr.append(str);
-            newstr.appendEU(first + atEuIndex, lastSize);
-            *newstr.lastSize = 0;
+            newstr.appendEU(m_begin + atEuIndex, m_endSize);
+            *newstr.m_endSize = 0;
             swap(newstr);
         }
         else
         {
             std::memmove(
-                first + atEuIndex + str.sizeEU(),
-                first + atEuIndex,
+                m_begin + atEuIndex + str.sizeEU(),
+                m_begin + atEuIndex,
                 (sizeEU() - atEuIndex) * sizeof(EncodingUnit));
             std::memcpy(
-                first + atEuIndex,
+                m_begin + atEuIndex,
                 str.data(),
                 str.sizeBytes());
-            lastSize += str.sizeEU();
+            m_endSize += str.sizeEU();
         }
     }
     return *this;
@@ -814,20 +894,20 @@ BasicUtf16String<allocator_type>::insert(CpIterator at, BasicUtf16String const& 
 template <typename allocator_type>
 template <typename CpIter>
 BasicUtf16String<allocator_type>&  BasicUtf16String<allocator_type>::insert(
-    CpIterator at, CpIter firstArg, CpIter lastArg)
+    CpIterator at, CpIter begin_, CpIter last_)
 {
     //TODO is there a better implementation with strong exception safety?
-    return insert(at, BasicUtf16String(firstArg, lastArg));
+    return insert(at, BasicUtf16String(begin_, last_));
 }
 
 template <typename allocator_type>
-void BasicUtf16String<allocator_type>::erase(CpIterator firstToErase, CpIterator lastToErase)
+void BasicUtf16String<allocator_type>::erase(CpIterator beginToErase, CpIterator endToErase)
 {
-    EncodingUnit * firstToErase1 = first + (firstToErase.euIter().current() - first);
-    EncodingUnit * lastToErase1 = first + (lastToErase.euIter().current() - first);
-    std::memmove(firstToErase1, lastToErase1, (lastSize - lastToErase1) * sizeof(EncodingUnit));
-    std::memset(lastSize - (lastToErase1 - firstToErase1), 0, (lastToErase1 - firstToErase1) * sizeof(EncodingUnit));
-    lastSize -= (lastToErase1 - firstToErase1);
+    EncodingUnit * beginToErase1 = m_begin + (beginToErase.getIter() - m_begin);
+    EncodingUnit * endToErase1 = m_begin + (endToErase.getIter() - m_begin);
+    std::memmove(beginToErase1, endToErase1, (m_endSize - endToErase1) * sizeof(EncodingUnit));
+    std::memset(m_endSize - (endToErase1 - beginToErase1), 0, (endToErase1 - beginToErase1) * sizeof(EncodingUnit));
+    m_endSize -= (endToErase1 - beginToErase1);
 }
 
 template <typename allocator_type>
@@ -839,21 +919,21 @@ BasicUtf16String<allocator_type>& BasicUtf16String<allocator_type>::append(Basic
 template <typename allocator_type>
 BasicUtf16String<allocator_type>& BasicUtf16String<allocator_type>::appendCP(CodePoint const cp)
 {
-    int const len = ::jjm::utf16LengthOf(cp);
+    int const len = jjm::utf16LengthOf(cp);
     if (sizeEU() + len + 1 >= capacityEU())
         reserveEU((capacityEU() >> 1) + capacityEU() + 16); //MAGIC NUMBERS, do 1.5 bigger plus 16
-    EncodingUnit* tmp = first + sizeEU();
-    ::jjm::writeUtf16(cp, tmp);
-    lastSize += len;
+    EncodingUnit* tmp = m_begin + sizeEU();
+    jjm::writeUtf16(cp, tmp);
+    m_endSize += len;
     return *this;
 }
 
 template <typename allocator_type>
 template <typename CpIter>
-BasicUtf16String<allocator_type>& BasicUtf16String<allocator_type>::appendCP(CpIter first, CpIter last)
+BasicUtf16String<allocator_type>& BasicUtf16String<allocator_type>::appendCP(CpIter begin_, CpIter end_)
 {
-    for (; first != last; ++first)
-        appendCP(*first);
+    for (; begin_ != end_; ++begin_)
+        appendCP(*begin_);
     return *this;
 }
 
@@ -896,11 +976,39 @@ BasicUtf16String<allocator_type>& BasicUtf16String<allocator_type>::appendEU(
     EncodingUnit const* x, EncodingUnit const* y)
 {
     if (y - x)
-    {
-        reserveEUInternal(sizeEU() + (y - x) + 1);
-        std::memcpy(first + sizeEU(), x, (y - x) * sizeof(EncodingUnit));
-        lastSize += (y - x);
-        *lastSize = 0;
+    {   reserveEUInternal(sizeEU() + (y - x) + 1);
+        std::memcpy(m_begin + sizeEU(), x, (y - x) * sizeof(EncodingUnit));
+        m_endSize += (y - x);
+        *m_endSize = 0;
+    }
+    return *this;
+}
+
+template <typename allocator_type>
+template <typename EuIter>
+BasicUtf16String<allocator_type>& BasicUtf16String<allocator_type>::appendEU(
+    EuIter x, EuIter y)
+{
+    int const isRandomAccessIter = IsConvertibleTo<std::iterator_traits<EuIter>::iterator_category*, std::random_access_iterator_tag*>::b; 
+    if (isRandomAccessIter)
+    {   typename std::iterator_traits<EuIter>::difference_type inputRangeLength = 
+                Internal::JustringIterDiff<EuIter, std::iterator_traits<EuIter>::iterator_category>()(y, x);
+        reserveEUInternal(sizeEU() + inputRangeLength + 1);
+        for ( ; x != y; )
+        {   *m_endSize = *x; 
+            ++x;
+            ++m_endSize; 
+        }
+        *m_endSize = 0;
+    }else
+    {   for ( ; x != y; )
+        {   if (sizeEU() + 2 >= capacityEU())
+                reserveEU((capacityEU() >> 1) + capacityEU() + 16); //MAGIC NUMBERS, do 1.5 bigger plus 16
+            *m_endSize = *x; 
+            ++x;
+            ++m_endSize; 
+        }
+        *m_endSize = 0;
     }
     return *this;
 }
@@ -909,26 +1017,24 @@ template <typename allocator_type>
 void BasicUtf16String<allocator_type>::swap(BasicUtf16String & str)
 {
     using std::swap;
-    swap(first, str.first);
-    swap(lastSize, str.lastSize);
-    swap(lastCapacity, str.lastCapacity);
-    swap(myalloc, str.myalloc);
+    swap(m_begin, str.m_begin);
+    swap(m_endSize, str.m_endSize);
+    swap(m_endCapacity, str.m_endCapacity);
+    swap(m_alloc, str.m_alloc);
 }
 
 template <typename allocator_type>
 typename BasicUtf16String<allocator_type>::CpIterator
 BasicUtf16String<allocator_type>::cbeginCP() const
 {
-    return jjm::Utf16BidiIterator<jjm::BoundsCheckedIter<EuIterator> >(
-        jjm::BoundsCheckedIter<EuIterator>(beginEU(), beginEU(), endEU()));
+    return jjm::Utf16ToCpBidiIterator<EuIterator>(beginEU(), beginEU(), endEU());
 }
 
 template <typename allocator_type>
 typename BasicUtf16String<allocator_type>::CpIterator
 BasicUtf16String<allocator_type>::cendCP() const
 {
-    return jjm::Utf16BidiIterator<jjm::BoundsCheckedIter<EuIterator> >(
-        jjm::BoundsCheckedIter<EuIterator>(beginEU(), endEU(), endEU()));
+    return jjm::Utf16ToCpBidiIterator<EuIterator>(beginEU(), endEU(), endEU());
 }
 
 template <typename allocator_type>
@@ -982,34 +1088,34 @@ inline bool operator>= (BasicUtf16String<alloc1> const& a, BasicUtf16String<allo
 
 inline Utf8String a2u8(char const * ascii)
 {
-    return Utf8String::utf(ascii);
+    return U8Str::utf8(ascii);
 }
 
 inline Utf8String a2u8(std::string const& ascii)
 {
-    return Utf8String::utf(ascii.data(), ascii.data() + ascii.size());
+    return U8Str::utf8(ascii.data(), ascii.data() + ascii.size());
 }
 
 template <std::size_t n>
 inline Utf8String a2u8(char const (&ascii)[n])
 {
-    return Utf8String::utf(ascii, ascii + n - 1);
+    return U8Str::utf8(ascii, ascii + n - 1);
 }
 
 inline Utf16String a2u16(char const * ascii)
 {
-    return Utf16String(a2u8(ascii));
+    return U16Str::cp(a2u8(ascii));
 }
 
 inline Utf16String a2u16(std::string const& ascii)
 {
-    return Utf16String(a2u8(ascii));
+    return U16Str::cp(a2u8(ascii));
 }
 
 template <std::size_t n>
 Utf16String a2u16(char const (&ascii)[n])
 {
-    return Utf16String(a2u8(ascii));
+    return U16Str::cp(a2u8(ascii));
 }
 
 

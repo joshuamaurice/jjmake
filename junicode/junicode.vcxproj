@@ -20,9 +20,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="generate-gciter-data-cfile.cpp" />
+    <ClCompile Include="jstdouterr.cpp" />
     <ClCompile Include="junicode.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="jstdouterr.hpp" />
+    <ClInclude Include="jstringliteral.hpp" />
     <ClInclude Include="jutfiterator.hpp" />
     <ClInclude Include="jutfstring.hpp" />
     <ClInclude Include="jutfutils.hpp" />
@@ -33,26 +36,26 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -75,22 +78,22 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)\bin\$(PlatformName)-$(Configuration)\$(ProjectName)\</OutDir>
+    <OutDir>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\$(ProjectName)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)\bin\$(PlatformName)-$(Configuration)\$(ProjectName)\</OutDir>
+    <OutDir>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\$(ProjectName)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)\bin\$(PlatformName)-$(Configuration)\$(ProjectName)\</OutDir>
+    <OutDir>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\$(ProjectName)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)\bin\$(PlatformName)-$(Configuration)\$(ProjectName)\</OutDir>
+    <OutDir>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\$(ProjectName)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
@@ -120,8 +123,10 @@
       <Path>$(IntDir)\$(SolutionName).log</Path>
     </BuildLog>
     <CustomBuildStep>
-      <Command>$(TargetPath) &gt; $(OutDir)\gciter-data-cfile.c || (rm -f $(OutDir)\gciter-data-cfile.c &amp;&amp; false)</Command>
-      <Outputs>$(OutDir)\gciter-data-cfile.c</Outputs>
+      <Command>
+      </Command>
+      <Outputs>
+      </Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -150,8 +155,10 @@
       <Path>$(IntDir)\$(SolutionName).log</Path>
     </BuildLog>
     <CustomBuildStep>
-      <Command>$(TargetPath) &gt; $(OutDir)\gciter-data-cfile.c || (rm -f $(OutDir)\gciter-data-cfile.c &amp;&amp; false)</Command>
-      <Outputs>$(OutDir)\gciter-data-cfile.c</Outputs>
+      <Command>
+      </Command>
+      <Outputs>
+      </Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -182,8 +189,10 @@
       <Path>$(IntDir)\$(SolutionName).log</Path>
     </BuildLog>
     <CustomBuildStep>
-      <Command>$(TargetPath) &gt; $(OutDir)\gciter-data-cfile.c || (rm -f $(OutDir)\gciter-data-cfile.c &amp;&amp; false)</Command>
-      <Outputs>$(OutDir)\gciter-data-cfile.c</Outputs>
+      <Command>
+      </Command>
+      <Outputs>
+      </Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -215,8 +224,10 @@
       <Path>$(IntDir)\$(SolutionName).log</Path>
     </BuildLog>
     <CustomBuildStep>
-      <Command>$(TargetPath) &gt; $(OutDir)\gciter-data-cfile.c || (rm -f $(OutDir)\gciter-data-cfile.c &amp;&amp; false)</Command>
-      <Outputs>$(OutDir)\gciter-data-cfile.c</Outputs>
+      <Command>
+      </Command>
+      <Outputs>
+      </Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

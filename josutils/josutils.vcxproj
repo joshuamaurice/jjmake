@@ -19,34 +19,41 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="generate-gciter-data-cfile.cpp" />
+    <ClCompile Include="jfilehandle.cpp" />
+    <ClCompile Include="jfilestreams.cpp" />
+    <ClCompile Include="jpath.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="jfilehandle.hpp" />
+    <ClInclude Include="jfilestreams.hpp" />
+    <ClInclude Include="jpath.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{05961d10-d1f7-4729-9f83-da3c5d85d57b}</ProjectGuid>
-    <RootNamespace>junicode-gciter-data</RootNamespace>
+    <ProjectGuid>{a33367d7-1ff3-467f-8257-fe5df748809c}</ProjectGuid>
+    <RootNamespace>josutils</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -114,8 +121,10 @@
       <Path>$(IntDir)\$(SolutionName).log</Path>
     </BuildLog>
     <CustomBuildStep>
-      <Command>$(TargetPath) &gt; $(OutDir)\gciter-data-cfile.c || (rm -f $(OutDir)\gciter-data-cfile.c &amp;&amp; false)</Command>
-      <Outputs>$(OutDir)\gciter-data-cfile.c</Outputs>
+      <Command>
+      </Command>
+      <Outputs>
+      </Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -144,8 +153,10 @@
       <Path>$(IntDir)\$(SolutionName).log</Path>
     </BuildLog>
     <CustomBuildStep>
-      <Command>$(TargetPath) &gt; $(OutDir)\gciter-data-cfile.c || (rm -f $(OutDir)\gciter-data-cfile.c &amp;&amp; false)</Command>
-      <Outputs>$(OutDir)\gciter-data-cfile.c</Outputs>
+      <Command>
+      </Command>
+      <Outputs>
+      </Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -176,8 +187,10 @@
       <Path>$(IntDir)\$(SolutionName).log</Path>
     </BuildLog>
     <CustomBuildStep>
-      <Command>$(TargetPath) &gt; $(OutDir)\gciter-data-cfile.c || (rm -f $(OutDir)\gciter-data-cfile.c &amp;&amp; false)</Command>
-      <Outputs>$(OutDir)\gciter-data-cfile.c</Outputs>
+      <Command>
+      </Command>
+      <Outputs>
+      </Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -209,8 +222,10 @@
       <Path>$(IntDir)\$(SolutionName).log</Path>
     </BuildLog>
     <CustomBuildStep>
-      <Command>$(TargetPath) &gt; $(OutDir)\gciter-data-cfile.c || (rm -f $(OutDir)\gciter-data-cfile.c &amp;&amp; false)</Command>
-      <Outputs>$(OutDir)\gciter-data-cfile.c</Outputs>
+      <Command>
+      </Command>
+      <Outputs>
+      </Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

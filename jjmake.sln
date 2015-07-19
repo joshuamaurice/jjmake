@@ -5,15 +5,28 @@ VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jjmake", "jjmake\jjmake.vcxproj", "{9A894767-9632-4970-B1D1-79017FB82E98}"
 	ProjectSection(ProjectDependencies) = postProject
+		{1BB2BD18-43F1-48AC-9282-4B8987A41380} = {1BB2BD18-43F1-48AC-9282-4B8987A41380}
 		{AE078AD2-C841-4EB8-AB6D-FAC243E75D86} = {AE078AD2-C841-4EB8-AB6D-FAC243E75D86}
+		{A33367D7-1FF3-467F-8257-FE5DF748809C} = {A33367D7-1FF3-467F-8257-FE5DF748809C}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "junicode", "junicode\junicode.vcxproj", "{AE078AD2-C841-4EB8-AB6D-FAC243E75D86}"
 	ProjectSection(ProjectDependencies) = postProject
 		{05961D10-D1F7-4729-9F83-DA3C5D85D57B} = {05961D10-D1F7-4729-9F83-DA3C5D85D57B}
+		{1BB2BD18-43F1-48AC-9282-4B8987A41380} = {1BB2BD18-43F1-48AC-9282-4B8987A41380}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "junicode-gciter-data", "junicode\junicode-gciter-data.vcxproj", "{05961D10-D1F7-4729-9F83-DA3C5D85D57B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1BB2BD18-43F1-48AC-9282-4B8987A41380} = {1BB2BD18-43F1-48AC-9282-4B8987A41380}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "josutils", "josutils\josutils.vcxproj", "{A33367D7-1FF3-467F-8257-FE5DF748809C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1BB2BD18-43F1-48AC-9282-4B8987A41380} = {1BB2BD18-43F1-48AC-9282-4B8987A41380}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jbase", "jbase\jbase.vcxproj", "{1BB2BD18-43F1-48AC-9282-4B8987A41380}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -47,6 +60,22 @@ Global
 		{05961D10-D1F7-4729-9F83-DA3C5D85D57B}.Release|Win32.Build.0 = Release|Win32
 		{05961D10-D1F7-4729-9F83-DA3C5D85D57B}.Release|x64.ActiveCfg = Release|x64
 		{05961D10-D1F7-4729-9F83-DA3C5D85D57B}.Release|x64.Build.0 = Release|x64
+		{A33367D7-1FF3-467F-8257-FE5DF748809C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A33367D7-1FF3-467F-8257-FE5DF748809C}.Debug|Win32.Build.0 = Debug|Win32
+		{A33367D7-1FF3-467F-8257-FE5DF748809C}.Debug|x64.ActiveCfg = Debug|x64
+		{A33367D7-1FF3-467F-8257-FE5DF748809C}.Debug|x64.Build.0 = Debug|x64
+		{A33367D7-1FF3-467F-8257-FE5DF748809C}.Release|Win32.ActiveCfg = Release|Win32
+		{A33367D7-1FF3-467F-8257-FE5DF748809C}.Release|Win32.Build.0 = Release|Win32
+		{A33367D7-1FF3-467F-8257-FE5DF748809C}.Release|x64.ActiveCfg = Release|x64
+		{A33367D7-1FF3-467F-8257-FE5DF748809C}.Release|x64.Build.0 = Release|x64
+		{1BB2BD18-43F1-48AC-9282-4B8987A41380}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1BB2BD18-43F1-48AC-9282-4B8987A41380}.Debug|Win32.Build.0 = Debug|Win32
+		{1BB2BD18-43F1-48AC-9282-4B8987A41380}.Debug|x64.ActiveCfg = Debug|x64
+		{1BB2BD18-43F1-48AC-9282-4B8987A41380}.Debug|x64.Build.0 = Debug|x64
+		{1BB2BD18-43F1-48AC-9282-4B8987A41380}.Release|Win32.ActiveCfg = Release|Win32
+		{1BB2BD18-43F1-48AC-9282-4B8987A41380}.Release|Win32.Build.0 = Release|Win32
+		{1BB2BD18-43F1-48AC-9282-4B8987A41380}.Release|x64.ActiveCfg = Release|x64
+		{1BB2BD18-43F1-48AC-9282-4B8987A41380}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -6,10 +6,10 @@
 #ifndef JUNICODE_JUTFUTILS_HPP_HEADER_GUARD
 #define JUNICODE_JUTFUTILS_HPP_HEADER_GUARD
 
-#include "jbase/jcstdint.hpp"
 #include "jbase/jfatal.hpp"
 #include "jbase/jinttostring.hpp"
 #include "jbase/jstaticassert.hpp"
+#include "jbase/jstdint.hpp"
 #include "jbase/jtemplatemetaprogrammingutils.hpp"
 
 #include <memory>
@@ -65,25 +65,25 @@ void writeUtf16(UnicodeCodePoint cp, Int16Iter & at);
 //Modifies the argument iter to point to the next piece of data. 
 //On invalid input, it throws std::exception and the position of iter is unspecified. 
 template <typename Int8Iter>
-CodePoint readUtf8Forward(Int8Iter & iter);
+CodePoint readUtf8Forward(Int8Iter & current, Int8Iter const end);
 
 //Reads the next codepoint from a stream of utf16 data. 
 //Modifies the argument iter to point to the next piece of data. 
 //On invalid input, it throws std::exception and the position of iter is unspecified. 
 template <typename Int16Iter>
-CodePoint readUtf16Forward(Int16Iter & iter);
+CodePoint readUtf16Forward(Int16Iter & iter, Int16Iter const end);
 
 //Reads the previous codepoint from a bidi stream of utf8 data. 
 //Modifies the argument it to point to the start of the code point segment. 
 //On invalid input, it throws std::exception and the position of iter is unspecified. 
 template <typename Int8Iter>
-CodePoint readUtf8Backward(Int8Iter & iter);
+CodePoint readUtf8Backward(Int8Iter const begin, Int8Iter & iter);
 
 //Reads the previous codepoint from a bidi stream of utf16 data. 
 //Modifies the argument it to point to the start of the code point segment. 
 //On invalid input, it throws std::exception and the position of iter is unspecified. 
 template <typename Int16Iter>
-CodePoint readUtf16Backward(Int16Iter & iter);
+CodePoint readUtf16Backward(Int16Iter const begin, Int16Iter & iter);
 
 
 // ---- ---- ---- ---- 
@@ -143,7 +143,7 @@ namespace Internal
 }
 
 template <typename Int8Iter>
-CodePoint readUtf8Forward(Int8Iter & at)
+CodePoint readUtf8Forward(Int8Iter & at, Int8Iter const end)
 {   
     const int b = IsConvertibleTo<
             typename std::iterator_traits<Int8Iter>::iterator_category, 
@@ -152,11 +152,15 @@ CodePoint readUtf8Forward(Int8Iter & at)
     JSTATICASSERT(b);
 
     using namespace Internal;
+    if (at == end)
+        throw std::runtime_error("readUtf8Forward() out of bounds.");
     std::uint8_t eu = *at; ++at; 
     if (isUtf8Encoding1_byte1(eu))
         return eu; 
     if (isUtf8Encoding2_byte1(eu))
     {   UnicodeCodePoint cp = (0x1F & eu);
+        if (at == end)
+            throw std::runtime_error("readUtf8Forward() out of bounds.");
         eu = *at; ++at;
         if (!isUtf8_byte2_plus(eu))
             throw std::runtime_error("readUtf8Forward() invalid utf8 input data.");
@@ -166,11 +170,15 @@ CodePoint readUtf8Forward(Int8Iter & at)
     }
     if (isUtf8Encoding3_byte1(eu))
     {   UnicodeCodePoint cp = (0x0F & eu);
+        if (at == end)
+            throw std::runtime_error("readUtf8Forward() out of bounds.");
         eu = *at; ++at;
         if (!isUtf8_byte2_plus(eu))
             throw std::runtime_error("readUtf8Forward() invalid utf8 input data.");
         cp <<= 6;
         cp |= 0x3F & eu;
+        if (at == end)
+            throw std::runtime_error("readUtf8Forward() out of bounds.");
         eu = *at; ++at;
         if (!isUtf8_byte2_plus(eu))
             throw std::runtime_error("readUtf8Forward() invalid utf8 input data.");
@@ -180,16 +188,22 @@ CodePoint readUtf8Forward(Int8Iter & at)
     }
     if (isUtf8Encoding4_byte1(eu))
     {   UnicodeCodePoint cp = (0x07 & eu);
+        if (at == end)
+            throw std::runtime_error("readUtf8Forward() out of bounds.");
         eu = *at; ++at;
         if (!isUtf8_byte2_plus(eu))
             throw std::runtime_error("readUtf8Forward() invalid utf8 input data.");
         cp <<= 6;
         cp |= 0x3F & eu;
+        if (at == end)
+            throw std::runtime_error("readUtf8Forward() out of bounds.");
         eu = *at; ++at;
         if (!isUtf8_byte2_plus(eu))
             throw std::runtime_error("readUtf8Forward() invalid utf8 input data.");
         cp <<= 6;
         cp |= 0x3F & eu;
+        if (at == end)
+            throw std::runtime_error("readUtf8Forward() out of bounds.");
         eu = *at; ++at;
         if (!isUtf8_byte2_plus(eu))
             throw std::runtime_error("readUtf8Forward() invalid utf8 input data.");
@@ -201,7 +215,7 @@ CodePoint readUtf8Forward(Int8Iter & at)
 }
 
 template <typename Int8Iter>
-CodePoint readUtf8Backward(Int8Iter & at)
+CodePoint readUtf8Backward(Int8Iter const begin, Int8Iter & at)
 {
     const int b = IsConvertibleTo<std::iterator_traits<Int8Iter>::iterator_category, std::bidirectional_iterator_tag>::b;
     JSTATICASSERT(b);
@@ -209,6 +223,8 @@ CodePoint readUtf8Backward(Int8Iter & at)
     using namespace Internal;
     UnicodeCodePoint cp = 0;
     UnicodeCodePoint shift = 0;
+    if (at == begin)
+        throw std::runtime_error("readUtf8Backward() out of bounds.");
     std::uint8_t eu = *--at;
 
     if (isUtf8Encoding1_byte1(eu))
@@ -217,6 +233,8 @@ CodePoint readUtf8Backward(Int8Iter & at)
         throw std::runtime_error("readUtf8Backward() invalid utf8 input data.");
     cp |= (0x3F & eu) << shift;
     shift += 6;
+    if (at == begin)
+        throw std::runtime_error("readUtf8Backward() out of bounds.");
     eu = *--at;
 
     if (isUtf8Encoding2_byte1(eu))
@@ -227,6 +245,8 @@ CodePoint readUtf8Backward(Int8Iter & at)
         throw std::runtime_error("readUtf8Backward() invalid utf8 input data.");
     cp |= (0x3F & eu) << shift;
     shift += 6;
+    if (at == begin)
+        throw std::runtime_error("readUtf8Backward() out of bounds.");
     eu = *--at;
 
     if (isUtf8Encoding3_byte1(eu))
@@ -237,6 +257,8 @@ CodePoint readUtf8Backward(Int8Iter & at)
         throw std::runtime_error("readUtf8Backward() invalid utf8 input data.");
     cp |= (0x3F & eu) << shift;
     shift += 6;
+    if (at == begin)
+        throw std::runtime_error("readUtf8Backward() out of bounds.");
     eu = *--at;
 
     if (isUtf8Encoding4_byte1(eu))
@@ -291,7 +313,7 @@ namespace Internal
 }
 
 template <typename Int16Iter>
-CodePoint readUtf16Forward(Int16Iter & at)
+CodePoint readUtf16Forward(Int16Iter & at, Int16Iter const end)
 {   
     const int b = IsConvertibleTo<
             typename std::iterator_traits<Int16Iter>::iterator_category, 
@@ -300,11 +322,15 @@ CodePoint readUtf16Forward(Int16Iter & at)
     JSTATICASSERT(b);
 
     using namespace Internal;
+    if (at == end)
+        throw std::runtime_error("readUtf16Forward() out of bounds.");
     std::uint16_t eu = *at; ++at;
     if (isUtf16OneUnitEncoding(eu))
         return eu; 
     if (isUtf16HighSurrogate(eu))
     {   UnicodeCodePoint cp = 0x3FF & eu;
+        if (at == end)
+            throw std::runtime_error("readUtf16Forward() out of bounds.");
         eu = *at; ++at;
         if (!isUtf16LowSurrogate(eu))
             throw std::runtime_error("readUtf16Forward() invalid utf16 input data.");
@@ -317,17 +343,21 @@ CodePoint readUtf16Forward(Int16Iter & at)
 }
 
 template <typename Int16Iter>
-CodePoint readUtf16Backward(Int16Iter & at)
+CodePoint readUtf16Backward(Int16Iter const begin, Int16Iter & at)
 {
     const int b = IsConvertibleTo<std::iterator_traits<Int16Iter>::iterator_category, std::bidirectional_iterator_tag>::b;
     JSTATICASSERT(b);
 
     using namespace Internal;
+    if (at == begin)
+        throw std::runtime_error("readUtf16Backward() out of bounds.");
     std::uint16_t eu = *--at;
     if (isUtf16OneUnitEncoding(eu))
         return eu; 
     if (isUtf16LowSurrogate(eu))
     {   UnicodeCodePoint cp = (0x3FF & eu) << 10;
+        if (at == begin)
+            throw std::runtime_error("readUtf16Backward() out of bounds.");
         eu = *--at;
         if (!isUtf16HighSurrogate(eu))
             throw std::runtime_error("readUtf16Backward() invalid utf16 input data.");

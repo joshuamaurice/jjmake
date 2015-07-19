@@ -11,6 +11,11 @@
 
 #include <climits>
 #include <cstdlib>
+#ifndef _WIN32
+    #include <sys/types.h>
+    #include <cstdint>
+    #include <stdint.h>
+#endif
 
 #ifdef _WIN32
     #ifdef _WIN64
@@ -24,10 +29,8 @@
             typedef signed int       int32_t;
             typedef unsigned long long  uint64_t;
             typedef signed long long    int64_t;
-
-            typedef unsigned long long  size_t; //done to assert that the ssize_t is the proper typedef
-            typedef          long long  ssize_t;
         }
+        typedef  long long  ssize_t;
     #else
         namespace std
         {   
@@ -39,11 +42,17 @@
             typedef signed int       int32_t;
             typedef unsigned long long  uint64_t;
             typedef signed long long     int64_t;
-
-            typedef unsigned int   size_t; //done to assert that the ssize_t is the proper typedef
-            typedef          int   ssize_t;
         }
+        typedef  int  ssize_t;
     #endif
+    using std::uint8_t;
+    using std::int8_t;
+    using std::uint16_t;
+    using std::int16_t;
+    using std::uint32_t;
+    using std::int32_t;
+    using std::uint64_t;
+    using std::int64_t;
 
     JSTATICASSERT(CHAR_BIT == 8)
     JSTATICASSERT(sizeof(std::uint8_t) == 1)
@@ -54,6 +63,7 @@
     JSTATICASSERT(sizeof(std:: int32_t) == 4)
     JSTATICASSERT(sizeof(std::uint64_t) == 8)
     JSTATICASSERT(sizeof(std:: int64_t) == 8)
+    JSTATICASSERT(sizeof(std::size_t) == sizeof(ssize_t))
 #else
     #include <cstdint>
 #endif
