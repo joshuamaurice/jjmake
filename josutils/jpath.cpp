@@ -232,11 +232,17 @@ namespace
     }
     inline pair<size_t, size_t> getNextComponent(U8Str const& path, size_t const pos0)
     {   
-        return getNextComponent(path.data() + pos0, path.sizeBytes() - pos0); 
+        pair<size_t, size_t> result = getNextComponent(path.data() + pos0, path.sizeBytes() - pos0); 
+        result.first += pos0; 
+        result.second += pos0; 
+        return result; 
     }
     inline pair<size_t, size_t> getNextComponent(std::string const& path, size_t const pos0)
     {   
-        return getNextComponent(path.data() + pos0, path.size() - pos0); 
+        pair<size_t, size_t> result = getNextComponent(path.data() + pos0, path.size() - pos0); 
+        result.first += pos0; 
+        result.second += pos0; 
+        return result; 
     }
 
 }
