@@ -45,14 +45,12 @@ unsigned int toUInt(string const& x)
     unsigned int retval = 0;
     ss >> std::hex >> retval;
     if (!ss)
-    {
-        cerr << "Bad string to unsigned int \"" << x << "\"" << endl;
+    {   cerr << __FILE__ << " " << __LINE__ << " Bad string to unsigned int \"" << x << "\"" << endl;
         exit(1);
     }
     ss.get();
     if (!!ss)
-    {
-        cerr << "Bad string to unsigned int \"" << x << "\"" << endl;
+    {   cerr << __FILE__ << " " << __LINE__ << " Bad string to unsigned int \"" << x << "\"" << endl;
         exit(1);
     }
     return retval;
@@ -68,11 +66,17 @@ public:
 bool operator< (UIntRange a, UIntRange b) //works only on non-overlapping ranges
 {
     if (a.first <= b.first && b.last <= a.last)
+    {   cerr << __FILE__ << " " << __LINE__ << endl;
         exit(1); //overlapping ranges
+    }
     if (a.first <= b.first && b.first < a.last && a.last <= b.last)
+    {   cerr << __FILE__ << " " << __LINE__ << endl;
         exit(1); //overlapping ranges
+    }
     if (b.first <= a.first && a.first < b.last && b.last <= a.last)
+    {   cerr << __FILE__ << " " << __LINE__ << endl;
         exit(1); //overlapping ranges
+    }
     return a.first < b.first;
 }
 
@@ -159,7 +163,9 @@ int main()
 
     ifstream in("GraphemeBreakProperty.txt");
     if (!in)
+    {   cerr << __FILE__ << " " << __LINE__ << endl;
         exit(1); 
+    }
     for (string originalLine; getline(in, originalLine); )
     {
         stringstream ss;
@@ -277,11 +283,16 @@ int main()
         unsigned int const first = x->first.first;
         unsigned int const lastNotInclusive = x->first.last;
         if (prevLastNotInclusive != first && first != 0)
-            cout << "    0x" << first - 1 << " , 0x" << mapCategoryNameToFlag["other"] << " , " << '\n';
-        cout << "    0x" << lastNotInclusive - 1 << " , 0x" << mapCategoryNameToFlag[x->second] << " , /* " << x->second << " */" << '\n';
+        {   cout << "    { 0x" << first - 1 
+                    << " , 0x" << mapCategoryNameToFlag["other"] 
+                    << " } , " << '\n';
+        }
+        cout << "    { 0x" << lastNotInclusive - 1 
+                << " , 0x" << mapCategoryNameToFlag[x->second] 
+                << " } , /* " << x->second << " */" << '\n';
         prevLastNotInclusive = lastNotInclusive;
     }
-    cout << "    0xFFFFFFFF , 0x" << mapCategoryNameToFlag["other"] << '\n';
+    cout << "    { 0xFFFFFFFF , 0x" << mapCategoryNameToFlag["other"] << " } " << '\n';
     cout << "    };" << '\n';
 
 //#ifdef _WIN32

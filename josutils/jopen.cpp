@@ -204,17 +204,18 @@ namespace
 
         #if (defined(_POSIX_VERSION) && _POSIX_VERSION >= 200809L)
             posixopenflags |= O_CLOEXEC;
-            for (;;)
-            {   int const fd = ::open(path, posixopenflags, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-                if (-1 == fd)
-                {   if (EINTR == errno)
-                        continue;
-                    return FileHandle();
-                }
-                return FileHandle(fd);
-            }
         #else
-            #error Unsupported platform. 
+            #warning TODO set close on exec flag on fd
         #endif
+        
+        for (;;)
+        {   int const fd = ::open(path, posixopenflags, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+            if (-1 == fd)
+            {   if (EINTR == errno)
+                    continue;
+                return FileHandle();
+            }
+            return FileHandle(fd);
+        }
     }
 #endif

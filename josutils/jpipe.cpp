@@ -15,6 +15,7 @@
     #include <windows.h>
 #else
     #include <fcntl.h>
+    #include <unistd.h>
     //#include <sys/time.h>
     //#include <sys/types.h>
     //#include <sys/stat.h>
@@ -62,7 +63,9 @@ jjm::Pipe jjm::Pipe::create()
         errno = 0;
         int const x = ::pipe2(handles, O_CLOEXEC); 
     #else
-        #error Unsupported platform. 
+        errno = 0;
+        int const x = ::pipe(handles); 
+        #warning TODO set close on exec flags
     #endif
 
     if (x != 0)
