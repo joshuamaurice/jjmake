@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2011, Informatica Corporation, Joshua Maurice
+// Copyright (c) 2010-2015, Informatica Corporation, Joshua Maurice
 //       Distributed under the 3-clause BSD License
 //      (See accompanying file LICENSE.TXT or copy at
 //  http://www.w3.org/Consortium/Legal/2008/03-bsd-license.html)
@@ -24,7 +24,7 @@ Do not use this in situations where only async-signal safe may be used. */
 
 
 /*User needs to provide this. */
-typedef void (*JjmFatalHandlerType)(char const * const filename, int linenum, int info_n, char const* info_cstr);
+typedef void (*JjmFatalHandlerType)(char const * filename, int linenum, int info_n, char const* info_cstr);
 inline JjmFatalHandlerType& jjmGetFatalHandler() { static JjmFatalHandlerType x = 0; return x; }
 
 /*Utility functions so users of JFATAL() can use other arguments,

@@ -20,43 +20,62 @@ namespace jjm
 The Path class changes behavior depending on the taget platform of the 
 compiler. 
 
-Definition: file-separator. Certain characters are file separators. 
-When compiled for POSIX systems, the only file-separator is slash '/'. 
-When compiled for Windows systems, slash '/' and backslash '\\' are the 
-file-separator characters. 
 
-Definition: A path consists of the three members: 
-- prefix: A string, possibly empty. (The drive designator for windows, i.e. "C:".) 
-- isAbsolute. A boolean. 
-- components. A list of strings, where each string has length 1 or more. 
+Definition: Separator, File Separator,
 
-Definition: A path with isAbsolute == false is called relative. 
+Certain characters are file separators. When compiled for POSIX systems, the 
+only file-separator is slash '/'. When compiled for Windows systems, slash '/' 
+and backslash '\\' are the file separator characters. 
 
-Specific cases: 
 
-Path: empty prefix, isAbsolute false, no components
-This path does not name a file nor directory. This path is called empty. 
+Definition: Component
 
-Path: empty prefix, isAbsolute true, no compnoents
-This path names a directory. It names a root directory. For filesystems 
-without prefixes (i.e. POSIX filesystems), there is a single unique root 
-directory. 
+A component is a non-empty string. Separator-chars cannot be in
+a component. A null char '\0' cannot be in a component. 
 
-Path: non-empty prefix, isAbsolute false, no components
-This path does not name a file nor directory. If you wanted to name the current
-working directory of a particular prefix, then specify the prefix, isAbsolute 
-false, and a single component ".". 
+Windows filesystems have additional restrictions, but they are not enforced 
+directly by this class (except for makeRealPath()). 
+
+
+Definition: Path
+
+A path is a single string which has the following parts in the following order: 
+
+- Prefix. Prefixes are not used for POSIX file systems. Windows filesystems 
+often make use of prefixes. For example, "C:" is a prefix. 
+
+- Zero or more separator characters. A path with one or more separator chars
+in this position is called absolute. Path which are not absolute are called 
+relative. 
+
+- Zero or more components, separated by one or more separator chars. 
+
+- Zero or more separator chars. These separator chars are ignored. 
+However, trailing separator chars for a path with zero components are 
+significant. It's the difference between relative paths and absolute paths. 
+
+
+Definition: Empty Path
+
+An empty string is the empty path. It has zero components. It is relative. 
+(It is not absolute because it does not have any separator chars.) 
+
+A relative path with zero components may not have a prefix. Such a thing is an
+invalid path. (If necessary, use the "." component, ex:  "C:."  .) 
+
+
+Definition: Root Path
+
+A root path is an absolute path with zero components. It may or may not have a 
+prefix. 
 */
 
 class Path
 {
 public:
-    Path() : absolute(false) {}
-    Path(Path const& rhs) : prefix(rhs.prefix), absolute(rhs.absolute), components(rhs.components) {}
+    Path() {} 
+    Path(Path const& rhs) : path(rhs.path) {}
 
-    /* The string constructors create paths by parsing the string according to 
-    the normal conventions. Trailing separators are ignored (except to 
-    determine if the string is absolute). */
     explicit Path(std::string const& utf8path); 
     explicit Path(Utf8String const& path); 
     explicit Path(Utf16String const& path); 
@@ -65,85 +84,77 @@ public:
 
     Path& operator= (Path rhs) { this->swap(rhs); return *this; } 
 
-    void swap(Path & rhs)
-    {
-        using std::swap; 
-        swap(prefix, rhs.prefix); 
-        swap(absolute, rhs.absolute); 
-        swap(components, rhs.components); 
-    }
-
+    void swap(Path & rhs) { using std::swap; swap(path, rhs.path); } 
     friend void swap(Path & x, Path & y) { x.swap(y); }
 
+    //Returns a string representation of this path in UTF8. 
+    std::string toStdString() const { return std::string(path.data(), path.sizeBytes()); }
+    Utf8String const& getStringRep() const { return path; }
 
-    Utf8String toString() const; 
-
-
-    //setPrefix() Sets the prefix. Returns *this. 
-    Path& setPrefix(std::string const& utf8prefix_) { prefix = U8Str::utf8(utf8prefix_); return *this; }
-    Path& setPrefix(Utf8String const& prefix_) { prefix = prefix_; return *this; }
-    Path& setPrefix(Utf16String const& prefix_) { prefix = U8Str::cp(prefix_); return *this; }
-
-    Utf8String const& getPrefix() const { return prefix; }
-
-
-    bool isAbsolute() const { return absolute; }
-    Path& setAbsolute(bool absolute_) { absolute = absolute_; return *this; } 
+    bool isEmpty() const; 
+    bool isAbsolute() const; 
+    bool isRootPath() const; 
 
     //append(): Adds a component to the end of the list of components. returns *this. 
     //If component contains a separator character, std::exception will be thrown. 
-    Path& append(std::string const& utf8component) { components.push_back(U8Str::utf8(utf8component)); return *this; }
-    Path& append(Utf8String const& component) { components.push_back(component); return *this; }
-    Path& append(Utf16String const& component) { components.push_back(U8Str::cp(component)); return *this; }
+    Path& append(std::string const& utf8component); 
+    Path& append(Utf8String const& component); 
+    Path& append(Utf16String const& component); 
     
-    std::vector<Utf8String> const& getComponents() const { return components; }
+    Utf8String getPrefix() const; 
 
-
-    //If *this has no components, then it returns an empty string. 
-    //Otherwise, it returns the last component. 
-    Utf8String const& getFileName() const { if (components.size() == 0) return getEmptyString(); else return components.back(); }
+    //If *this has no components, then getFileName() return an empty string. 
+    //Otherwise, these functions return the last component. 
+    Utf8String getFileName() const; 
 
 
     /* getParent()
-    First it makes a copy. Then it removes all trailing "." components from 
-    the copy. Then it applies the applicable applicable rule to the copy: 
-    - zero components         --> clear components,         set relative,    same prefix
-    - one component, absolute --> clear components,         set absolute,    same prefix
-    - one component, relative --> reset to 1 component ".", set relative,    same prefix
-    - two or more components  --> remove last component,    same isAbsolute, same prefix
+    The return value depends on the value of this according to the following 
+    rules: 
+    - zero components         --> return value: 0 components, is relative, empty prefix ... the empty path
+    - one component, relative --> return value: 0 components, is relative, empty prefix ... the empty path
+    - one component, absolute --> return value: 0 components, is absolute, same prefix ... a root path
+    - two components          --> return value: removed last component, same absolute/relative, same prefix
     */
     Path getParent() const; 
 
     
-    /* resolve() combines *this path and the root path. 
-    In short, it modifies *this path by considering it as a path in the
-    directory named by root. 
-
+    /* 
     resolve() has the following formal behavior: 
-    - If this->prefix is no-empty, and root.prefix is non-empty, and 
-        this->prefix != root.prefix, then the call has no effect.
-    - Otherwise, the call has the following effect: 
-        if (this->getPrefix().sizeBytes() == 0)
-            this->setPrefix(root.getPrefix());
-        if (this->isAbsolute() == false)
-        {   this->setAbsolute(root.isAbsolute()); 
-            this->components.prepend(root.getComponents()); 
-        }
 
-    Note: The components "." and ".." are preserved. If you want to resolve 
-    "." and "..", then call getRealPath(). 
+    If this and root have incompatible prefixes (both non-empty and unequal), 
+    then resolve() returns a simple copy of this with no modification. 
 
-    In all cases, resolve() returns *this. 
+    Otherwise, if this is absolute, then resolve() returns the following path: 
+        - The non-empty prefix (if any) of this and root. 
+        - The result is absolute.
+        - The components of this. 
+
+    Otherwise, this is relative, and resolve() returns the following path: 
+        - The non-empty prefix (if any) of this and root. 
+        - The result is absolute iff root is absolute
+        - The components of root followed by the components of this. 
+    
+    Note: The components "." and ".." are not treated specially. If you want 
+    to resolve these components, then call getRealPath(). 
     */
-    Path& resolve(Path const& root); 
+    Path resolve(Path const& root) const; 
 
 
     //Same behavior as: Path tmp(child); tmp.resolve(root); return tmp; 
     static Path join(Path const& root, Path const& child)
-            { Path tmp(child); tmp.resolve(root); return tmp; }
+            { return child.resolve(root); }
 
 
-    /* makeAbsolute() changes *this path to be absolute.
+    //If this path is already absolute, then this function returns a copy. 
+    //Otherwise, this function returns an absolute path with the same prefix
+    //and the same components. 
+    Path getAbsoluteVersion() const; 
+
+
+    /* 
+    getAbsolutePath() consults the current working directory and returns
+    an absolute path which names the same file or directory as *this path. 
     
     On POSIX, this call has the following effect: 
         this->resolve(getCurrentWorkingDirectory())
@@ -154,7 +165,15 @@ public:
         if (this->isAbsolute() == false)
             this->resolve(getCurrentWorkingDirectoryOfDrive(getPrefix() + ".");
 
-    makeAbsolute() returns this. 
+    Finally, "." components and ".." components are handled in the following 
+    way. 
+
+    All "." components are removed. 
+
+    If the path contains a ".." components with a preceding component which is
+    not a ".." component, then remove both components; repeat this process for
+    as long as you can. If a ".." component remains, then return the empty 
+    path. 
 
     Posix Note: 
 
@@ -176,21 +195,30 @@ public:
     done when constructing the process. (The same suggestion also applies to
     environmental variables.) 
     */
-    Path& makeAbsolute(); 
-
-    //Same behavior as: Path tmp(*this); tmp.makeAbsolute(); return tmp; 
-    Path getAbsolutePath() const { Path tmp(*this); tmp.makeAbsolute(); return tmp; }
+    Path getAbsolutePath() const; 
 
 
-    //TODO
-    Path getRealpath() const; 
+    /* 
+    If the path does not name a file or directory, then getRealPath() throws
+    std::exception. 
+    TODO docs
+    */
+    Path getRealPath() const; 
+
+    /* 
+    As getRealPath2(), except if *this does not name a file or directory on the
+    filesystem, then getRealPath() returns the empty path. 
+    TODO docs
+    */
+    Path getRealPath2() const; 
+
 
 private:
-    static U8Str const& getEmptyString(); 
-
-    U8Str prefix; 
-    bool absolute; 
-    std::vector<U8Str> components; 
+    //The path member variable is kept in a normalized form: 
+    //No trailing separators (except for root paths). 
+    //No adjacent separators. 
+    //The only separator chars are the platform's preferred separator char. 
+    U8Str path; 
 };
 
 } //namespace jjm

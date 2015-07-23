@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2011, Informatica Corporation, Joshua Maurice
+// Copyright (c) 2010-2015, Informatica Corporation, Joshua Maurice
 //       Distributed under the 3-clause BSD License
 //      (See accompanying file LICENSE.TXT or copy at
 //  http://www.w3.org/Consortium/Legal/2008/03-bsd-license.html)
@@ -7,6 +7,7 @@
 #define JOSUTILS_JFILEHANDLE_HPP_HEADER_GUARD
 
 #include "jbase/jstdint.hpp"
+#include "jbase/juniqueptr.hpp"
 #include <stdio.h> //for SEEK_CUR, etc.,
 
 namespace jjm
@@ -16,40 +17,54 @@ namespace jjm
 This class is a thin wrapper on top of HANDLE for windows and int for POSIX. 
 This class has shallow-copy semantics. 
 */
+
+class FileHandle;
+bool operator== (FileHandle x, FileHandle y); 
+bool operator!= (FileHandle x, FileHandle y); 
+
 class FileHandle
 {
 public: 
     #ifdef _WIN32
-        typedef  void*  Handle; 
+        typedef  void*  NativeHandle; 
     #else
-        typedef  int  Handle; 
+        typedef  int  NativeHandle; 
     #endif
 
 private:
     #ifdef _WIN32
-        static inline Handle invalidHandle() { return (Handle)static_cast<ssize_t>(-1); } 
+        static inline NativeHandle invalidHandle() { return (NativeHandle)static_cast<ssize_t>(-1); } 
     #else
-        static inline Handle invalidHandle() { return -1; }
+        static inline NativeHandle invalidHandle() { return -1; }
     #endif
 
 public:
     //Creates an invalid file handle
     FileHandle() : mhandle(invalidHandle()) {}
 
+    //
+    explicit FileHandle(NativeHandle handle_) : mhandle(handle_) {}
 
     //No-op. It is up to the user to explicitly call "close()" when needed. 
     //The user is free to use a UniquePtr or other RAII tools for that purpose. 
     ~FileHandle() {} 
 
-
     FileHandle(FileHandle const& x) : mhandle(x.mhandle) {}
     FileHandle& operator= (FileHandle const& x) { mhandle= x.mhandle; return *this; }
 
+    void native(NativeHandle h) { mhandle = h; }
+    NativeHandle native() const { return mhandle; }
 
-    void native(Handle h) { mhandle = h; }
-    Handle native() const { return mhandle; }
+    friend inline bool operator== (FileHandle x, FileHandle y) { return x.mhandle == y.mhandle; }
+    friend inline bool operator!= (FileHandle x, FileHandle y) { return x.mhandle != y.mhandle; }
 
     
+    /* Closes the handle, and sets this object to the invalid file handle. 
+    close() is a no-op on the invalid file handle. 
+    close() invokes JFATAL on errors. */
+    void close(); 
+
+
     /* Closes the handle. 
     On success, it sets this object to the invalid file handle. 
     close2() is a no-op on the invalid file handle. 
@@ -57,11 +72,6 @@ public:
     To determine the cause of the error, you can use GetLastError() on Windows
     and errno on POSIX. */
     int close2(); 
-
-    /* Closes the handle, and sets this object to the invalid file handle. 
-    close() is a no-op on the invalid file handle. 
-    close() invokes JFATAL on errors. */
-    void close(); 
 
 
     /* "whence" is defined according to POSIX. It is one of: 
@@ -144,14 +154,20 @@ public:
     It is a fatal error to call seek on an invalid file handle. */
     ssize_t write2(void const* buf, std::size_t bytes);  
 
+
     /* write() is like write2(), except on errors write() throws a std::exception
     which descriibes the error. */
     ssize_t write(void const* buf, std::size_t bytes);  
 
 
 private:
-    Handle mhandle; 
+    NativeHandle mhandle; 
 };
+
+
+class FileHandleCloser { public: void operator() (FileHandle h) const { h.close(); } };
+typedef  jjm::UniquePtr<FileHandle, FileHandleCloser>  FileHandleOwner; 
+
 
 } //namespace jjm
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2011, Informatica Corporation, Joshua Maurice
+// Copyright (c) 2010-2015, Informatica Corporation, Joshua Maurice
 //       Distributed under the 3-clause BSD License
 //      (See accompanying file LICENSE.TXT or copy at
 //  http://www.w3.org/Consortium/Legal/2008/03-bsd-license.html)
@@ -174,13 +174,59 @@ void jjm::BufferedInputStream::read2(void * argBlock_, std::size_t argBlockSize)
                 continue;
             }
             if (x == -1)
-            {   m_isGood = false;
+            {   //eof
+                m_isGood = false;
                 m_isEof = true; 
                 return; 
             }
+            //some error
             m_isGood = false;
             return; 
         }
+    }
+}
+
+void jjm::BufferedInputStream::read2(std::string & str, std::size_t bytesToRead)
+{
+    for (;;)
+    {
+        if (bytesToRead == 0)
+            return; 
+
+        //First use whatever is in our internal buffer to satisfy the request. 
+        {
+            ssize_t toCopy = std::min<ssize_t>(bytesToRead, m_dataEnd - m_dataBegin);
+            if (toCopy > 0)
+            {   str.insert(str.end(), m_dataBegin, m_dataBegin + toCopy); 
+                m_dataBegin += toCopy; 
+                bytesToRead -= toCopy;
+                m_gcount += toCopy; 
+
+                if (bytesToRead == 0)
+                    return; 
+            }
+        }
+
+        //At this point, our internal buffer must be empty. 
+        m_dataBegin = m_allocBegin;
+        m_dataEnd = m_allocBegin;
+
+        //refill our internal buffer, 
+        ssize_t const x = m_inputStream->read(m_dataBegin, m_allocEnd - m_dataBegin);
+        if (x >= 0)
+        {   //success
+            m_dataEnd = m_dataBegin + x; 
+            continue;
+        }
+        if (x == -1)
+        {   //eof
+            m_isGood = false;
+            m_isEof = true; 
+            return; 
+        }
+        //some error
+        m_isGood = false;
+        return; 
     }
 }
 

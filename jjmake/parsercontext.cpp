@@ -1,5 +1,7 @@
 #include "parsercontext.hpp"
 
+#include "jjmakecontext.hpp"
+#include "jbase/juniqueptr.hpp"
 #include "jbase/jfatal.hpp"
 #include "jbase/jstdint.hpp"
 #include "jbase/jinttostring.hpp"
@@ -802,6 +804,7 @@ void jjm::ParserContext::registerNativeFunction(std::string const& name, NativeF
 
 jjm::ParserContext::ParserContext()
 {
+    jjmakeContext = 0; 
     parent = 0; 
 }
 
@@ -811,10 +814,18 @@ jjm::ParserContext::~ParserContext()
         delete owned[i]; 
 }
 
-jjm::ParserContext* jjm::ParserContext::newRoot()
+jjm::ParserContext* jjm::ParserContext::newRoot(JjmakeContext * jjmakeContext_)
 {
-    return new ParserContext; 
+    ParserContext * c = new ParserContext; 
+    c->jjmakeContext = jjmakeContext_;
+    return c;
 }
+
+void jjm::ParserContext::newNode(jjm::Node * node_)
+{
+    jjmakeContext->newNode(node_); 
+}
+
 
 jjm::ParserContext* jjm::ParserContext::split()
 {

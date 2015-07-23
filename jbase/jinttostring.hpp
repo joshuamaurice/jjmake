@@ -3,6 +3,9 @@
 //      (See accompanying file LICENSE.TXT or copy at
 //  http://www.w3.org/Consortium/Legal/2008/03-bsd-license.html)
 
+#ifndef JBASE_JINTTOSTRING_HPP_HEADER_GUARD
+#define JBASE_JINTTOSTRING_HPP_HEADER_GUARD
+
 #include <iomanip>
 #include <sstream>
 
@@ -56,3 +59,5 @@ bool decHexToInteger(IntegerT & result, std::string const& str)
 }
 
 } //namespace
+
+#endif

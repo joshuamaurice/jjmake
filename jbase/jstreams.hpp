@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2011, Informatica Corporation, Joshua Maurice
+// Copyright (c) 2010-2015, Informatica Corporation, Joshua Maurice
 //       Distributed under the 3-clause BSD License
 //      (See accompanying file LICENSE.TXT or copy at
 //  http://www.w3.org/Consortium/Legal/2008/03-bsd-license.html)
@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <stdio.h> //for SEEK_CUR, etc.,
 #include <string.h>
+#include <string>
 
 
 namespace jjm 
@@ -189,6 +190,13 @@ public:
     This call returns *this. */
     BufferedInputStream & read(void * buf, std::size_t bytes);
 
+
+    /*
+    This function behaves like read(void* buf, size_t byes), except it appends
+    bytes to str. If str already has data new data is appended. 
+    */
+    BufferedInputStream & read(std::string & str, std::size_t bytes);
+
     
     /* Utility. 
     Writes the binary contents of the plain-old-data type object. 
@@ -238,6 +246,7 @@ private:
     unsigned char * m_dataEnd;
 
     void read2(void * buf, std::size_t bytes);
+    void read2(std::string & str, std::size_t bytes);
 
     BufferedInputStream(BufferedInputStream const& ); //not defined, not copyable
     BufferedInputStream& operator= (BufferedInputStream const& ); //not defined, not copyable
@@ -621,6 +630,23 @@ inline BufferedInputStream & BufferedInputStream::read(void * buf, std::size_t b
         return *this;
     }
     read2(buf, bytes);
+    return *this;
+}
+
+inline BufferedInputStream & BufferedInputStream::read(std::string & str, std::size_t bytes)
+{
+    m_gcount = 0; 
+    if (!*this)
+        return *this;
+
+    //if the requested size can be satisfied with our internal buffer, do that. 
+    if (bytes + m_dataBegin <= m_dataEnd)
+    {   str.insert(str.end(), m_dataBegin, m_dataBegin + bytes);
+        m_dataBegin += bytes; 
+        m_gcount = bytes; 
+        return *this;
+    }
+    read2(str, bytes);
     return *this;
 }
 

@@ -1,6 +1,13 @@
-bin/**
-tmp/**
-*.opensdf
-*.sdf
-*.v12.suo
-**/*.vcxproj.user
+# files in the root dir
+/*
+!/.gitignore
+
+# files in any dir
+/**/*.opensdf
+/**/*.sdf
+/**/*.vcxproj.user
+/**/*.v12.suo
+
+# and always ignore stuff in bin and tmp
+/bin/**
+/tmp/**

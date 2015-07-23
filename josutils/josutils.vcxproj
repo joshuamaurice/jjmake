@@ -21,13 +21,21 @@
   <ItemGroup>
     <ClCompile Include="jfilehandle.cpp" />
     <ClCompile Include="jfilestreams.cpp" />
+    <ClCompile Include="jfiletype.cpp" />
+    <ClCompile Include="jopen.cpp" />
     <ClCompile Include="jpath.cpp" />
+    <ClCompile Include="jpipe.cpp" />
+    <ClCompile Include="jstat.cpp" />
     <ClCompile Include="jthreading.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="jfilehandle.hpp" />
     <ClInclude Include="jfilestreams.hpp" />
+    <ClInclude Include="jfiletype.hpp" />
+    <ClInclude Include="jopen.hpp" />
     <ClInclude Include="jpath.hpp" />
+    <ClInclude Include="jpipe.hpp" />
+    <ClInclude Include="jstat.hpp" />
     <ClInclude Include="jthreading.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

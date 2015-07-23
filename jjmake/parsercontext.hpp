@@ -14,10 +14,13 @@
 namespace jjm
 {
 
+class JjmakeContext;
+class Node;
+
 class ParserContext
 {
 public:
-    static ParserContext* newRoot(); //caller owns return, must deallocate with delete 
+    static ParserContext* newRoot(JjmakeContext * jjmakeContext); //caller owns return, must deallocate with delete 
     ~ParserContext(); 
 
     std::vector<std::string> eval(std::string const& text); 
@@ -72,12 +75,16 @@ public:
     //Does not take ownership
     static void registerNativeFunction(std::string const& name, NativeFunction* nativeFunction); 
 
+    //takes ownership always
+    void newNode(jjm::Node * node); 
+
 private:
     ParserContext(ParserContext const& ); //not defined, not copyable
     ParserContext& operator= (ParserContext const& ); //not defined, not copyable
 
     ParserContext(); 
 
+    JjmakeContext * jjmakeContext; 
     ParserContext* parent; 
     std::vector<ParserContext*> owned; 
     std::map<std::string, Value> variables; 

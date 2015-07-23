@@ -5,11 +5,24 @@
 
 #include "parsercontext.hpp"
 
+#include "node.hpp"
 #include "jbase/jfatal.hpp"
-#include "jbase/jstdint.hpp"
 #include "jbase/jinttostring.hpp"
+#include "jbase/jstdint.hpp"
+#include "jbase/juniqueptr.hpp"
+#include "josutils/jfilehandle.hpp"
+#include "josutils/jfilestreams.hpp"
+#include "josutils/jopen.hpp"
+#include "josutils/jpath.hpp"
+#include "josutils/jstat.hpp"
 #include "junicode/jstdouterr.hpp"
+#include <errno.h>
 #include <fstream>
+#include <vector>
+
+#ifdef _WIN32
+    #include <Windows.h>
+#endif
 
 using namespace jjm;
 using namespace std;
@@ -190,17 +203,12 @@ namespace
         virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
         {
             if (arguments.size() != 2)
-                throw std::runtime_error("Function '" + arguments[0] + "' takes exactly 1 additional argument."); 
-
-            //TODO change to not use ifstream
-            string contents; 
-            std::ifstream fin(arguments[1].c_str(), std::ios::binary); 
-            if (!fin)
-                throw std::runtime_error("Function '" + arguments[0] + "' unable to open file \"" + arguments[1] + "\"."); 
-            for (string line; getline(fin, line); )
-            {   contents += line;
-                contents += '\n'; 
-            }
+                throw std::runtime_error("Function '" + arguments[0] + "' takes exactly 1 additional argument.");
+            
+            string prevDotPwd;
+            jjm::ParserContext::Value const* prevDotPwdClass = c->getValue(".PWD");
+            if (prevDotPwdClass && prevDotPwdClass->value.size())
+                prevDotPwd = prevDotPwdClass->value[0]; 
 
             string prevFile;
             jjm::ParserContext::Value const* prevFileClass = c->getValue(".FILE");
@@ -217,10 +225,49 @@ namespace
             if (prevColClass && prevColClass->value.size())
                 prevCol = prevColClass->value[0]; 
 
-            c->setValue(".FILE", arguments[1]); 
+            Path const path = Path::join(Path(prevDotPwd), Path(arguments[1]).getAbsolutePath()); 
+
+            //TODO need to use current locale for POSIX multi-byte string
+            FileHandleOwner file;
+            try
+            {   file.reset(FileOpener().readOnly().openExistingOnly().open(path));
+            }catch (std::exception & e)
+            {   string message;
+                message += string() + "Function 'include' unable to open file \"" + path.toStdString() + "\". Cause:\n"; 
+                message += e.what(); 
+                throw std::runtime_error(message); 
+            }
+            FileStream inputStream(file.release()); 
+            BufferedInputStream in( & inputStream); 
+
+            string contents; 
+            for (;;)
+            {   in.read(contents, 16 * 1024); 
+                if (in)
+                    continue;
+                if (in.isEof())
+                    break;
+#ifdef _WIN32
+                DWORD const lastError = GetLastError(); 
+                throw std::runtime_error(string() 
+                        + "Function 'include': Failure when reading from file \"" + path.toStdString() + "\". "
+                        + "GetLastError() " + toDecStr(lastError) + "."); 
+#else
+                int lastErrno = errno; 
+                throw std::runtime_error(string() 
+                        + "Function 'include': Failure when reading from file \"" + path.toStdString() + "\". "
+                        + "errno " + toDecStr(lastErrno) + "."); 
+#endif
+            }
+
+            c->setValue(".PWD", path.getParent().toStdString()); 
+            c->setValue(".FILE", path.toStdString()); 
             c->setValue(".LINE", "1"); 
-            c->setValue(".COL", "1"); 
+            c->setValue(".COL", "1");  
+
             c->eval(contents); 
+
+            c->setValue(".PWD", prevDotPwd); 
             c->setValue(".FILE", prevFile); 
             c->setValue(".LINE", prevLine); 
             c->setValue(".COL", prevCol); 
@@ -296,6 +343,79 @@ namespace
             return result; 
         }
     };
+
+    class TouchNode : public jjm::Node
+    {
+    public:
+        TouchNode(Path const& path_, vector<Path> const& inputPaths_, vector<Path> const& outputPaths_)
+            : Node(path_.toStdString(), inputPaths_, outputPaths_),
+            targetPath(path_)
+            {}
+        Path targetPath; 
+        Stat targetStat; 
+        virtual void execute()
+        {   
+            targetStat = Stat::stat(targetPath); 
+
+            if (targetStat.type == FileType::NoExist)
+            {   touchFile(); 
+                return; 
+            }
+            if (targetStat.type == FileType::RegularFile)
+            {   if (hasNewerDependency())
+                    touchFile(); 
+                return; 
+            }
+            if (targetStat.type == FileType::Directory)
+                throw std::runtime_error("Cannot create regular file \"" + targetPath.toStdString() + "\" because a directory exists that has the same name."); 
+            if (targetStat.type == FileType::Symlink)
+                JFATAL(targetStat.type.toEnum(), targetPath.toStdString()); 
+            if (targetStat.type == FileType::Other)
+                throw std::runtime_error("Cannot create regular file \"" + targetPath.toStdString() + "\" because a file of an unusual type exists that has the same name."); 
+            JFATAL(targetStat.type.toEnum(), targetPath.toStdString()); 
+        }
+        void touchFile()
+        {
+            FileHandleOwner file(FileOpener().createOrOpen().readWrite().open(targetPath)); 
+            //TODO set timestamp
+        }
+        bool hasNewerDependency()
+        {
+            return true; 
+        }
+    }; 
+
+    class TouchNodeFunction : public jjm::ParserContext::NativeFunction
+    {
+    public: 
+        TouchNodeFunction() {}
+        virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
+        {
+            if (arguments.size() < 2)
+                throw std::runtime_error("Function '" + arguments[0] + "' takes 1 or more additional argument."); 
+
+            //.PWD guaranteed to already be canonized via Path::getRealPath()
+            ParserContext::Value const * pwdClass = c->getValue(".PWD"); 
+            if (pwdClass == 0 || pwdClass->value.size() != 1)
+                JFATAL(0, 0);
+            Path pwdPath(pwdClass->value[0]); 
+            if ( ! pwdPath.isAbsolute())
+                JFATAL(0, 0); 
+            
+            vector<Path> inputPaths;
+            for (size_t i = 2; i < arguments.size(); ++i)
+                inputPaths.push_back(Path::join(pwdPath, Path(arguments[i]))); 
+
+            vector<Path> outputPaths; 
+            outputPaths.push_back(Path::join(pwdPath, Path(arguments[1]))); 
+
+            UniquePtr<TouchNode*> node(new TouchNode(outputPaths[0], inputPaths, outputPaths)); 
+            c->newNode(node.release()); 
+
+            return vector<string>(); 
+        }
+    };
+
 }
 
 void jjm::ParserContext::registerBuiltInFunctions()
@@ -313,6 +433,7 @@ void jjm::ParserContext::registerBuiltInFunctions()
     r["print"]   = new PrintFunction; 
     r["set"]     = new SetFunction; 
     r["seta"]    = new SetaFunction; 
+    r["touch-node"] = new TouchNodeFunction; 
 }
 
 bool jjm::ParserContext::registerBuiltInFunctions2 = (jjm::ParserContext::registerBuiltInFunctions(), false); 

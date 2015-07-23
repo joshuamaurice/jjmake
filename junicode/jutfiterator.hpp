@@ -83,6 +83,17 @@ makeUtf8ToCpRange(Iter current, Iter end)
     return x; 
 }
 
+template <typename Iter>
+std::pair<Utf8ToCpInputIterator<Iter>, Utf8ToCpInputIterator<Iter> >
+makeUtf8ToCpRange(std::pair<Iter, Iter> & range)
+{
+    JSTATICASSERT(sizeof(*(range.first)) == 1); 
+    std::pair<Utf8ToCpInputIterator<Iter>, Utf8ToCpInputIterator<Iter> > x;
+    x.first  = Utf8ToCpInputIterator<Iter>(range.first,  range.second); 
+    x.second = Utf8ToCpInputIterator<Iter>(range.second, range.second); 
+    return x; 
+}
+
 
 //Requires that the default constructed Int16Iter() be a stable, single 
 //value that can be used to indicate "one-past-the-end" value. 
@@ -125,10 +136,21 @@ template <typename Iter>
 std::pair<Utf16ToCpInputIterator<Iter>, Utf16ToCpInputIterator<Iter> >
 makeUtf16ToCpRange(Iter current, Iter end)
 {
-    JSTATICASSERT(sizeof(*current) == 1); 
+    JSTATICASSERT(sizeof(*(current)) == 2); 
     std::pair<Utf16ToCpInputIterator<Iter>, Utf16ToCpInputIterator<Iter> > x;
     x.first  = Utf16ToCpInputIterator<Iter>(current, end); 
     x.second = Utf16ToCpInputIterator<Iter>(end    , end); 
+    return x; 
+}
+
+template <typename Iter>
+std::pair<Utf16ToCpInputIterator<Iter>, Utf16ToCpInputIterator<Iter> >
+makeUtf16ToCpRange(std::pair<Iter, Iter> & range)
+{
+    JSTATICASSERT(sizeof(*(range.first)) == 2); 
+    std::pair<Utf16ToCpInputIterator<Iter>, Utf16ToCpInputIterator<Iter> > x;
+    x.first  = Utf16ToCpInputIterator<Iter>(range.first,  range.second); 
+    x.second = Utf16ToCpInputIterator<Iter>(range.second, range.second); 
     return x; 
 }
 

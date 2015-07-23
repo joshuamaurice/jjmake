@@ -7,13 +7,12 @@
 #define JUNICODE_JUSTRING_HPP_HEADER_GUARD
 
 #include "jutfiterator.hpp"
-
+#include "jbase/jnulltermiter.hpp"
 #include "jbase/jtemplatemetaprogrammingutils.hpp"
 
 
 namespace jjm
 {
-;
 
 template <typename allocator_tye> 
 class BasicUtf8String;
@@ -28,7 +27,7 @@ template <typename allocator_type = std::allocator<char> >
 class BasicUtf8String
 {
 public:
-    typedef allocator_type          AllocatorType;
+    typedef  allocator_type         AllocatorType;
 
     typedef  char                   EncodingUnit;
     typedef  unsigned char          UnsignedEncodingUnit;
@@ -47,6 +46,7 @@ public:
     The utf16 and cp functions do validate input (throws std::exception on 
     invalid input). */
 
+    static                           BasicUtf8String utf8(char const* nullTerm,               allocator_type const& alloc = allocator_type());
     template <typename Range> static BasicUtf8String utf8(Range const& range,                 allocator_type const& alloc = allocator_type());
     template <typename Iter>  static BasicUtf8String utf8(Iter const& begin, Iter const& end, allocator_type const& alloc = allocator_type());
 
@@ -97,9 +97,9 @@ public:
     template <typename CpIterator2> BasicUtf8String& appendCP(CpIterator2 begin_, CpIterator2 end_);
 
     //Only add complete codepoints! Otherwise bad things may happen. 
+    BasicUtf8String& appendEU(char x);
     BasicUtf8String& appendEU(EncodingUnit const* begin_, EncodingUnit const* end_);
-    template <typename EuIter>
-    BasicUtf8String& appendEU(EuIter begin_, EuIter end_);
+    template <typename EuIter> BasicUtf8String& appendEU(EuIter begin_, EuIter end_);
 
     void swap(BasicUtf8String& x);
 
@@ -190,6 +190,7 @@ public:
     template <typename Range> static BasicUtf16String utf8(Range const& range,                 allocator_type const& alloc = allocator_type());
     template <typename Iter>  static BasicUtf16String utf8(Iter const& begin, Iter const& end, allocator_type const& alloc = allocator_type());
 
+    static                           BasicUtf16String utf16(EncodingUnit const* nullTerm,       allocator_type const& alloc = allocator_type());
     template <typename Range> static BasicUtf16String utf16(Range const& range,                 allocator_type const& alloc = allocator_type());
     template <typename Iter>  static BasicUtf16String utf16(Iter const& begin, Iter const& end, allocator_type const& alloc = allocator_type());
 
@@ -237,9 +238,9 @@ public:
     template <typename CpIterator2> BasicUtf16String& appendCP(CpIterator2 begin_, CpIterator2 end_);
 
     //Only add complete code point encodings! Otherwise bad things may happen. 
+    BasicUtf16String& appendEU(EncodingUnit x);
     BasicUtf16String& appendEU(EncodingUnit const* begin_, EncodingUnit const* end_);
-    template <typename EuIter>
-    BasicUtf16String& appendEU(EuIter begin_, EuIter end_);
+    template <typename EuIter> BasicUtf16String& appendEU(EuIter begin_, EuIter end_);
 
     void swap(BasicUtf16String& x);
 
@@ -354,6 +355,17 @@ namespace Internal
 
 
 
+
+template <typename allocator_type>
+BasicUtf8String<allocator_type>  BasicUtf8String<allocator_type>::utf8(
+    char const* nullTerm, allocator_type const& alloc)
+{
+    BasicUtf8String str(alloc); 
+    auto range = jjm::makeNullTermRange(nullTerm); 
+    str.appendEU(range.first, range.second); 
+    return str; 
+}
+
 template <typename allocator_type>
 template <typename Range>
 BasicUtf8String<allocator_type>  BasicUtf8String<allocator_type>::utf8(
@@ -362,6 +374,7 @@ BasicUtf8String<allocator_type>  BasicUtf8String<allocator_type>::utf8(
     BasicUtf8String str(alloc);
     using jjm::Internal::getUtf8EuRangeBegin; 
     using jjm::Internal::getUtf8EuRangeEnd; 
+    JSTATICASSERT(sizeof( * getUtf8EuRangeBegin(range)) == 1); 
     str.appendEU(getUtf8EuRangeBegin(range), getUtf8EuRangeEnd(range)); 
     return str; 
 }
@@ -372,6 +385,7 @@ BasicUtf8String<allocator_type>  BasicUtf8String<allocator_type>::utf8(
     Iter const& begin_, Iter const& end_, allocator_type const& alloc)
 {
     BasicUtf8String str(alloc);
+    JSTATICASSERT(sizeof( * begin_) == 1); 
     str.appendEU(begin_, end_); 
     return str; 
 }
@@ -384,6 +398,7 @@ BasicUtf8String<allocator_type>  BasicUtf8String<allocator_type>::utf16(
     BasicUtf8String str(alloc);
     using jjm::Internal::getUtf16EuRangeBegin; 
     using jjm::Internal::getUtf16EuRangeEnd; 
+    JSTATICASSERT(sizeof( * getUtf16EuRangeBegin(range)) == 2); 
     str.appendCP(
             makeUtf16ToCpInputIterator(getUtf16EuRangeBegin(range), getUtf16EuRangeEnd(range)), 
             makeUtf16ToCpInputIterator(getUtf16EuRangeEnd(  range), getUtf16EuRangeEnd(range))
@@ -396,6 +411,7 @@ template <typename Iter>
 BasicUtf8String<allocator_type>  BasicUtf8String<allocator_type>::utf16(
     Iter const& begin_, Iter const& end_, allocator_type const& alloc)
 {
+    JSTATICASSERT(sizeof( * begin_) == 2); 
     BasicUtf8String str(alloc);
     Utf16ToCpInputIterator<Iter> a1(begin_, end_); 
     Utf16ToCpInputIterator<Iter> a2(end_,   end_); 
@@ -418,7 +434,10 @@ BasicUtf8String<allocator_type>  BasicUtf8String<allocator_type>::cp(
     Range const& range, allocator_type const& alloc)
 {
     BasicUtf8String str(alloc);
-    str.appendCP(range.beginCP(), range.endCP()); 
+    using jjm::Internal::getCpRangeBegin; 
+    using jjm::Internal::getCpRangeEnd; 
+    JSTATICASSERT(sizeof( * getCpRangeBegin(range)) == 4); 
+    str.appendCP(getCpRangeBegin(range), getCpRangeEnd(range)); 
     return str; 
 }
 
@@ -427,10 +446,9 @@ template <typename Iter>
 BasicUtf8String<allocator_type>  BasicUtf8String<allocator_type>::cp(
     Iter const& begin_, Iter const& end_, allocator_type const& alloc)
 {
-    BasicUtf8String str(alloc);
-    str.appendCP(begin_, end_); 
-    return str; 
+    return cp(std::pair<Iter, Iter>(begin_, end_)); 
 }
+
 
 template <typename allocator_type>
 BasicUtf8String<allocator_type>::BasicUtf8String(allocator_type const& alloc)
@@ -605,6 +623,14 @@ BasicUtf8String<allocator_type>& BasicUtf8String<allocator_type>::appendCP(CpRan
 }
 
 template <typename allocator_type>
+BasicUtf8String<allocator_type>& BasicUtf8String<allocator_type>::appendEU(EncodingUnit x)
+{
+    EncodingUnit y[2] = { x, 0 };
+    appendEU(y, y + 1); 
+    return *this;
+}
+
+template <typename allocator_type>
 BasicUtf8String<allocator_type>& BasicUtf8String<allocator_type>::appendEU(
     EncodingUnit const* x, EncodingUnit const* y)
 {
@@ -730,6 +756,7 @@ BasicUtf16String<allocator_type>  BasicUtf16String<allocator_type>::utf8(
     using jjm::Internal::getUtf8RangeEnd; 
     Utf8ToCpInputIterator<Iter> a1(getUtf8RangeBegin(range), getUtf8RangeEnd(range)); 
     Utf8ToCpInputIterator<Iter> a2(getUtf8RangeEnd(  range), getUtf8RangeEnd(range)); 
+    JSTATICASSERT(sizeof( * getUtf8RangeBegin(range)) == 1); 
     str.appendCP(a1, a2); 
     return str; 
 }
@@ -742,7 +769,19 @@ BasicUtf16String<allocator_type>  BasicUtf16String<allocator_type>::utf8(
     BasicUtf16String str(alloc);
     Utf8ToCpInputIterator<Iter> a1(begin_, end_); 
     Utf8ToCpInputIterator<Iter> a2(end_,   end_); 
+    JSTATICASSERT(sizeof( * begin_) == 1); 
     str.appendCP(a1, a2); 
+    return str; 
+}
+
+template <typename allocator_type>
+BasicUtf16String<allocator_type>  BasicUtf16String<allocator_type>::utf16(
+    EncodingUnit const* nullTerm, allocator_type const& alloc)
+{
+    BasicUtf16String str(alloc); 
+    auto range = jjm::makeNullTermRange(nullTerm); 
+    JSTATICASSERT(sizeof( * range.first) == 2); 
+    str.appendEU(range.first, range.second); 
     return str; 
 }
 
@@ -752,9 +791,10 @@ BasicUtf16String<allocator_type>  BasicUtf16String<allocator_type>::utf16(
     Range const& range, allocator_type const& alloc)
 {
     BasicUtf16String str(alloc); 
-    using jjm::Internal::getUtf16RangeBegin; 
-    using jjm::Internal::getUtf16RangeEnd; 
-    str.appendEU(getUtf16RangeBegin(range), getUtf16RangeEnd(range)); 
+    using jjm::Internal::getUtf16EuRangeBegin; 
+    using jjm::Internal::getUtf16EuRangeEnd; 
+    JSTATICASSERT(sizeof( * getUtf16EuRangeBegin(range)) == 2); 
+    str.appendEU(getUtf16EuRangeBegin(range), getUtf16EuRangeEnd(range)); 
     return str; 
 }
 
@@ -764,6 +804,7 @@ BasicUtf16String<allocator_type>  BasicUtf16String<allocator_type>::utf16(
     Iter const& begin_, Iter const& end_, allocator_type const& alloc)
 {
     BasicUtf16String str(alloc); 
+    JSTATICASSERT(sizeof( * begin_) == 2); 
     str.appendEU(begin_, end_); 
     return str; 
 }
@@ -785,6 +826,7 @@ BasicUtf16String<allocator_type>  BasicUtf16String<allocator_type>::cp(
     BasicUtf16String str(alloc);
     using jjm::Internal::getCpRangeBegin; 
     using jjm::Internal::getCpRangeEnd;  
+    JSTATICASSERT(sizeof( * getCpRangeBegin(range)) == 4); 
     str.appendCP(getCpRangeBegin(range), getCpRangeEnd(range));  
     return str; 
 }
@@ -794,9 +836,7 @@ template <typename Iter>
 BasicUtf16String<allocator_type>  BasicUtf16String<allocator_type>::cp(
     Iter const& begin_, Iter const& end_, allocator_type const& alloc)
 {
-    BasicUtf16String str(alloc);
-    str.appendCP(begin_, end_); 
-    return str; 
+    return cp(std::pair<Iter, Iter>(begin_, end_)); 
 }
 
 template <typename allocator_type>
@@ -968,6 +1008,14 @@ BasicUtf16String<allocator_type>& BasicUtf16String<allocator_type>::appendCP(CpR
     Internal::AppendUtf16CpRangeHelper<
         allocator_type, CpRange, std::numeric_limits<CpRange>::is_specialized>
         ()(*this, r);
+    return *this;
+}
+
+template <typename allocator_type>
+BasicUtf16String<allocator_type>& BasicUtf16String<allocator_type>::appendEU(EncodingUnit x)
+{
+    EncodingUnit y[2] = { x, 0};
+    appendEU(y, y + 1);
     return *this;
 }
 

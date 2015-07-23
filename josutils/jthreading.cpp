@@ -152,7 +152,9 @@ public:
         {   UniquePtr<Thread::Runnable*> task;
             for (;;)
             {   if (pool->stopflag)
+                {   pool->idleCondition.notify_all();
                     return;
+                }
                 if (pool->pendingTasks.size())
                 {   task.reset(pool->pendingTasks.back());
                     pool->pendingTasks.pop_back();
