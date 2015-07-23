@@ -101,7 +101,8 @@ public:
     Path& append(Utf8String const& component); 
     Path& append(Utf16String const& component); 
     
-    Utf8String getPrefix() const; 
+    std::string getStdPrefix() const; 
+    Utf8String getU8Prefix() const; 
 
     //If *this has no components, then getFileName() return an empty string. 
     //Otherwise, these functions return the last component. 
@@ -157,9 +158,13 @@ public:
     an absolute path which names the same file or directory as *this path. 
     
     On POSIX, this call has the following effect: 
+        if (isEmpty())
+            return *this;
         this->resolve(getCurrentWorkingDirectory())
 
     On Windows, this call has the following behavior: 
+        if (isEmpty())
+            return *this;
         if (this->getPrefix().sizeBytes() == 0)
             this->setPrefix(getCurrentWorkingDrive() + ":");
         if (this->isAbsolute() == false)
@@ -211,6 +216,17 @@ public:
     TODO docs
     */
     Path getRealPath2() const; 
+
+
+#ifndef _WIN32
+    //Uses iconv
+    //Works together with another jjm utility to call setlocale(LC_ALL, ""). 
+    std::string getLocalizedString() const; 
+
+    //Uses iconv
+    //Works together with another jjm utility to call setlocale(LC_ALL, ""). 
+    static Path fromLocalizedString(std::string const& localizedString); 
+#endif
 
 
 private:

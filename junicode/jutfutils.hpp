@@ -12,8 +12,10 @@
 #include "jbase/jstdint.hpp"
 #include "jbase/jtemplatemetaprogrammingutils.hpp"
 
+#include <limits>
 #include <memory>
 #include <utility>
+#include <stdexcept>
 
 
 namespace jjm
@@ -102,8 +104,8 @@ inline int utf8LengthOf(UnicodeCodePoint cp)
 template <typename Int8Iter>
 void writeUtf8(UnicodeCodePoint cp, Int8Iter & at)
 {
-    int const b = IsConvertibleTo<std::iterator_traits<Int8Iter>::iterator_category, std::output_iterator_tag>::b
-            || IsConvertibleTo<std::iterator_traits<Int8Iter>::iterator_category, std::forward_iterator_tag>::b;
+    int const b = IsConvertibleTo<typename std::iterator_traits<Int8Iter>::iterator_category, std::output_iterator_tag>::b
+            || IsConvertibleTo<typename std::iterator_traits<Int8Iter>::iterator_category, std::forward_iterator_tag>::b;
     JSTATICASSERT(b);
 
     if (cp <= 0x007F)
@@ -217,7 +219,7 @@ CodePoint readUtf8Forward(Int8Iter & at, Int8Iter const end)
 template <typename Int8Iter>
 CodePoint readUtf8Backward(Int8Iter const begin, Int8Iter & at)
 {
-    const int b = IsConvertibleTo<std::iterator_traits<Int8Iter>::iterator_category, std::bidirectional_iterator_tag>::b;
+    const int b = IsConvertibleTo<typename std::iterator_traits<Int8Iter>::iterator_category, std::bidirectional_iterator_tag>::b;
     JSTATICASSERT(b);
 
     using namespace Internal;
@@ -283,8 +285,8 @@ inline int utf16LengthOf(UnicodeCodePoint cp)
 template <typename Int16Iter>
 void writeUtf16(UnicodeCodePoint cp, Int16Iter & at)
 {
-    int const b = IsConvertibleTo<std::iterator_traits<Int16Iter>::iterator_category, std::output_iterator_tag>::b
-            || IsConvertibleTo<std::iterator_traits<Int16Iter>::iterator_category, std::forward_iterator_tag>::b;
+    int const b = IsConvertibleTo<typename std::iterator_traits<Int16Iter>::iterator_category, std::output_iterator_tag>::b
+            || IsConvertibleTo<typename std::iterator_traits<Int16Iter>::iterator_category, std::forward_iterator_tag>::b;
     JSTATICASSERT(b);
 
     if (cp < 0x10000)
@@ -345,7 +347,7 @@ CodePoint readUtf16Forward(Int16Iter & at, Int16Iter const end)
 template <typename Int16Iter>
 CodePoint readUtf16Backward(Int16Iter const begin, Int16Iter & at)
 {
-    const int b = IsConvertibleTo<std::iterator_traits<Int16Iter>::iterator_category, std::bidirectional_iterator_tag>::b;
+    const int b = IsConvertibleTo<typename std::iterator_traits<Int16Iter>::iterator_category, std::bidirectional_iterator_tag>::b;
     JSTATICASSERT(b);
 
     using namespace Internal;

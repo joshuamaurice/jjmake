@@ -20,9 +20,10 @@ int jjm::writeToStdOut(char const* utf8, size_t bytes)
     auto cpRange = makeUtf8ToCpRange(byteRange.first, byteRange.second); 
     U16Str r3 = U16Str::cp(cpRange); 
     std::wcout.write(r3.data(), r3.sizeEU()); 
-    return (! std::wcout) ? -1 : 0; 
+    return ( ! std::wcout) ? -1 : 0; 
 #else
-    JFATAL(0, 0); //TODO
+    std::cout.write(utf8, bytes); //TODO
+    return ( ! std::cout) ? -1 : 0; 
 #endif
 }
 
@@ -38,7 +39,8 @@ int jjm::writeToStdOut(char const* utf8)
     std::wcout.write(r4.data(), r4.sizeEU()); 
     return (! std::wcout) ? -1 : 0; 
 #else
-    JFATAL(0, 0); //TODO
+    std::cout << utf8; //TODO
+    return ( ! std::cout) ? -1 : 0; 
 #endif
 }
 
@@ -53,6 +55,7 @@ int jjm::flushStdOut()
     std::wcout << flush; 
     return (! std::wcout) ? -1 : 0; 
 #else
-    JFATAL(0, 0); //TODO
+    std::cout << flush; //TODO
+    return ( ! std::cout) ? -1 : 0; 
 #endif
 }

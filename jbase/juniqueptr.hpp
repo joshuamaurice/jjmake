@@ -13,32 +13,38 @@
 namespace jjm
 {
 
-struct PointerDeleter
+
+struct InvokeFree
+{
+    template <typename pointer_t> 
+    void operator() (pointer_t p) const
+    {
+        ::free(p); 
+    }
+};
+
+struct InvokeDelete
 {   
     template <typename pointer_t> 
     void operator() (pointer_t p) const
     {   
         //Ensure that we're not deleting a pointer to void or a pointer to
         //an incomplete type. 
-        pointer_t tmp;
-        tmp;
-        typedef char staticassert[sizeof(*tmp) ? 1 : -1];
+        typedef char staticassert[sizeof(*p) ? 1 : -1];
         (void) sizeof(staticassert);
 
         delete p;
     }
 };
 
-struct ArrayDeleter
+struct InvokeDeleteArray
 {   
     template <typename pointer_t> 
     void operator() (pointer_t p) const
     {   
         //Ensure that we're not deleting a pointer to void or a pointer to
         //an incomplete type. 
-        pointer_t tmp;
-        tmp; 
-        typedef char staticassert[sizeof(*tmp) ? 1 : -1];
+        typedef char staticassert[sizeof(*p) ? 1 : -1];
         (void) sizeof(staticassert);
 
         delete[] p; 
@@ -49,8 +55,8 @@ struct ArrayDeleter
 //Note: if you were using std::auto_ptr<T>, you want to use UniquePtr<T*>. 
 //Note: UniquePtr<pimpl*> is safe to use for the pimpl aka compiler firewall 
 //idiom. This will fail with a loud annoying compiler error if it tries to 
-//delete a pointer to an incomplete type with PointerDeleter. 
-template <typename T, typename deleter_t = PointerDeleter>
+//delete a pointer to an incomplete type with InvokeDelete. 
+template <typename T, typename deleter_t = InvokeDelete>
 class UniquePtr
 {
 private:
@@ -111,7 +117,7 @@ private:
 };
 
 
-template <typename T, typename deleter_t = ArrayDeleter >
+template <typename T, typename deleter_t = InvokeDeleteArray >
 class UniqueArray;
 template <typename T, typename deleter_t>
 class UniqueArray<T*, deleter_t>

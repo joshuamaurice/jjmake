@@ -1,3 +1,4 @@
+
 // Copyright (c) 2010-2015, Informatica Corporation, Joshua Maurice
 //       Distributed under the 3-clause BSD License
 //      (See accompanying file LICENSE.TXT or copy at
@@ -129,7 +130,7 @@ void jjm::BufferedInputStream::read2(void * argBlock_, std::size_t argBlockSize)
         {
             ssize_t toCopy = std::min<ssize_t>(argBlockSize, m_dataEnd - m_dataBegin);
             if (toCopy > 0)
-            {   std::memcpy(argBlock, m_dataBegin, toCopy);
+            {   memcpy(argBlock, m_dataBegin, toCopy);
                 m_dataBegin += toCopy; 
                 argBlock += toCopy;
                 argBlockSize -= toCopy;
@@ -186,23 +187,23 @@ void jjm::BufferedInputStream::read2(void * argBlock_, std::size_t argBlockSize)
     }
 }
 
-void jjm::BufferedInputStream::read2(std::string & str, std::size_t bytesToRead)
+void jjm::BufferedInputStream::read2(std::string & str, std::size_t argBlockSize)
 {
     for (;;)
     {
-        if (bytesToRead == 0)
+        if (argBlockSize == 0)
             return; 
 
         //First use whatever is in our internal buffer to satisfy the request. 
         {
-            ssize_t toCopy = std::min<ssize_t>(bytesToRead, m_dataEnd - m_dataBegin);
+            ssize_t toCopy = std::min<ssize_t>(argBlockSize, m_dataEnd - m_dataBegin);
             if (toCopy > 0)
             {   str.insert(str.end(), m_dataBegin, m_dataBegin + toCopy); 
                 m_dataBegin += toCopy; 
-                bytesToRead -= toCopy;
+                argBlockSize -= toCopy;
                 m_gcount += toCopy; 
 
-                if (bytesToRead == 0)
+                if (argBlockSize == 0)
                     return; 
             }
         }
@@ -247,7 +248,7 @@ void jjm::BufferedOutputStream::write2(void const * argBlock_, std::size_t argBl
         {
             //put what can fit into our internal buffer, and flush our internal buffer
             ssize_t const toCopy = std::min<ssize_t>(m_allocEnd - m_dataEnd, argBlockSize); 
-            std::memcpy(m_dataEnd, argBlock, toCopy);
+            memcpy(m_dataEnd, argBlock, toCopy);
             m_dataEnd += toCopy;
             argBlock += toCopy;
             argBlockSize -= toCopy;
@@ -256,7 +257,7 @@ void jjm::BufferedOutputStream::write2(void const * argBlock_, std::size_t argBl
                 return; 
 
             //write the remaining amount to our now-empty internal buffer
-            std::memcpy(m_dataEnd, argBlock, argBlockSize);
+            memcpy(m_dataEnd, argBlock, argBlockSize);
             m_dataEnd += argBlockSize; 
             m_gcount += argBlockSize;
             return; 

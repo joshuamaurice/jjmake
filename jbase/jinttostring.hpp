@@ -46,7 +46,6 @@ bool decStrToInteger(IntegerT & result, std::string const& str)
 template <typename IntegerT>
 bool decHexToInteger(IntegerT & result, std::string const& str)
 {
-    IntegerT result; 
     std::stringstream ss;
     ss << str; 
     ss >> std::hex >> result; 

@@ -17,8 +17,8 @@ jjm::JjmakeContext::JjmakeContext(Arguments const& args)
     dependencyMode(args.dependencyMode), 
     specifiedGoals(args.goals),
     numThreads(args.numThreads),
-    threadPool(args.numThreads),
     rootEvalText(args.rootEvalText),
+    threadPool(args.numThreads),
     keepGoing(args.keepGoing), 
     failFlag(false)
 {
@@ -313,6 +313,7 @@ public:
             context->setFailFlag(); 
 
             string message; 
+            message += "Failure during execution of node \"" + node->goalName + "\". Cause:\n"; 
             message += typeid(e).name() ;
             message += ": ";
             message += e.what(); 

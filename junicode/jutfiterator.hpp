@@ -26,13 +26,23 @@ class Utf16ToCpBidiIterator;
 
 template <typename Int8Iter>
 bool operator== (Utf8ToCpInputIterator<Int8Iter> const& a, Utf8ToCpInputIterator<Int8Iter> const& b);
-template <typename Int16Iter>
-bool operator== (Utf16ToCpInputIterator<Int16Iter> const& a, Utf16ToCpInputIterator<Int16Iter> const& b);
-
 template <typename Int8Iter>
 bool operator!= (Utf8ToCpInputIterator<Int8Iter> const& a, Utf8ToCpInputIterator<Int8Iter> const& b);
+
+template <typename Int16Iter>
+bool operator== (Utf16ToCpInputIterator<Int16Iter> const& a, Utf16ToCpInputIterator<Int16Iter> const& b);
 template <typename Int16Iter>
 bool operator!= (Utf16ToCpInputIterator<Int16Iter> const& a, Utf16ToCpInputIterator<Int16Iter> const& b);
+
+template <typename Int8Iter>
+bool operator== (Utf8ToCpBidiIterator<Int8Iter> const& a, Utf8ToCpBidiIterator<Int8Iter> const& b);
+template <typename Int8Iter>
+bool operator!= (Utf8ToCpBidiIterator<Int8Iter> const& a, Utf8ToCpBidiIterator<Int8Iter> const& b);
+
+template <typename Int16Iter>
+bool operator== (Utf16ToCpBidiIterator<Int16Iter> const& a, Utf16ToCpBidiIterator<Int16Iter> const& b);
+template <typename Int16Iter>
+bool operator!= (Utf16ToCpBidiIterator<Int16Iter> const& a, Utf16ToCpBidiIterator<Int16Iter> const& b);
 
 
 //Requires that the default constructed Int8Iter() be a stable, single 
@@ -174,6 +184,10 @@ public:
     Utf8ToCpBidiIterator    operator-- (int); //postfix
     value_type          operator* () const;
     Int8Iter    getIter() const { return current; }
+
+    friend bool operator== <> (Utf8ToCpBidiIterator<Int8Iter> const& a, Utf8ToCpBidiIterator<Int8Iter> const& b);
+    friend bool operator!= <> (Utf8ToCpBidiIterator<Int8Iter> const& a, Utf8ToCpBidiIterator<Int8Iter> const& b);
+
 private:
     Int8Iter begin;
     Int8Iter current;

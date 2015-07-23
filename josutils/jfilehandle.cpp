@@ -84,7 +84,7 @@ int64_t jjm::FileHandle::seek2(int64_t off, int whence)
     return newPosition.QuadPart; 
 #else
     errno = 0; 
-    return ::lseek(m_fd, off, whence); 
+    return ::lseek(mhandle, off, whence); 
 #endif
 }
 
@@ -98,7 +98,7 @@ int64_t jjm::FileHandle::seek(int64_t off, int whence)
     throw std::runtime_error("jjm::FileHandle::seek failed. GetLastError() " + toDecStr(lastError) + "."); 
 #else
     int const lastErrno = errno; 
-    throw std::runtime_error("jjm::FileHandle::seek failed. errno " + toDecStr(errno) + "."); 
+    throw std::runtime_error("jjm::FileHandle::seek failed. errno " + toDecStr(lastErrno) + "."); 
 #endif
 }
 
@@ -126,7 +126,7 @@ ssize_t jjm::FileHandle::read2(void * buf, size_t bytes)
     return -2; 
 #else
     errno = 0; 
-    ssize_t const x = ::read(m_fd, buf, bytes);
+    ssize_t const x = ::read(mhandle, buf, bytes);
     if (x > 0)
         return x; //success
     if (x == -1 && EINTR == errno)
@@ -151,7 +151,7 @@ ssize_t jjm::FileHandle::read(void * buf, size_t bytes)
     throw std::runtime_error("jjm::FileHandle::read failed. GetLastError() " + toDecStr(lastError) + "."); 
 #else
     int const lastErrno = errno; 
-    throw std::runtime_error("jjm::FileHandle::read failed. errno " + toDecStr(errno) + "."); 
+    throw std::runtime_error("jjm::FileHandle::read failed. errno " + toDecStr(lastErrno) + "."); 
 #endif
 }
 
@@ -171,10 +171,11 @@ ssize_t jjm::FileHandle::write2(void const* buf, size_t bytes)
     return -1; 
 #else
     errno = 0; 
-    ssize_t const x = ::write(m_fd, buf, bytes);
+    ssize_t const x = ::write(mhandle, buf, bytes);
+    int const lastErrno = errno; 
     if (x >= 0)
         return x; //success
-    if (x == -1 && EINTR == errno)
+    if (x == -1 && EINTR == lastErrno)
         return 0;
     return -1; 
 #endif
@@ -190,6 +191,6 @@ ssize_t jjm::FileHandle::write(void const* buf, size_t bytes)
     throw std::runtime_error("jjm::FileHandle::write failed. GetLastError() " + toDecStr(lastError) + "."); 
 #else
     int const lastErrno = errno; 
-    throw std::runtime_error("jjm::FileHandle::write failed. errno " + toDecStr(errno) + "."); 
+    throw std::runtime_error("jjm::FileHandle::write failed. errno " + toDecStr(lastErrno) + "."); 
 #endif
 }

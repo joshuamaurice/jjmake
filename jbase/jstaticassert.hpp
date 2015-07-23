@@ -8,9 +8,13 @@
 
 #include "jwarningpragmas.hpp"
 
-template <bool > class JjmStaticAssertClassTemplate {};
-#define JSTATICASSERT(bool_const_expr) \
-        typedef JjmStaticAssertClassTemplate<true> JjmStaticAssertTypedef; \
-        typedef JjmStaticAssertClassTemplate<bool_const_expr> JjmStaticAssertTypedef;
+#if defined(_WIN32)
+    template <bool > class JjmStaticAssertClassTemplate {};
+    #define JSTATICASSERT(bool_const_expr) \
+            typedef JjmStaticAssertClassTemplate<true> JjmStaticAssertTypedef; \
+            typedef JjmStaticAssertClassTemplate<bool_const_expr> JjmStaticAssertTypedef;
+#else
+    #define JSTATICASSERT(bool_const_expr) static_assert(bool_const_expr, ""); 
+#endif
 
 #endif

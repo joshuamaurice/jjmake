@@ -9,6 +9,8 @@
 #include "jtemplatemetaprogrammingutils.hpp"
 
 #include <iterator>
+#include <stdexcept>
+#include <typeinfo>
 
 namespace jjm
 {

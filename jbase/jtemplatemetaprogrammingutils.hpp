@@ -31,8 +31,8 @@ namespace jjm
     struct IsConvertibleTo
     {
     private:
-        static Internal::True helper(int , Target const& ) {}
-        static Internal::False helper(int , ... ) {}
+        static Internal::True helper(int , Target const& ) { return Internal::True(); }
+        static Internal::False helper(int , ... ) { return Internal::False(); }
     public:
         static int const b = (sizeof(Internal::True) == sizeof(helper(1, Source())) ? 1 : 0);
     };

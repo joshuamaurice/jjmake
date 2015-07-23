@@ -10,6 +10,8 @@
 #include "jbase/jnulltermiter.hpp"
 #include "jbase/jtemplatemetaprogrammingutils.hpp"
 
+#include <string.h>
+
 
 namespace jjm
 {
@@ -462,7 +464,7 @@ BasicUtf8String<allocator_type>::BasicUtf8String(BasicUtf8String const& x)
     if (x.sizeEU())
     {
         reserveEUInternal(x.sizeEU() + 1);
-        std::memcpy(m_begin, x.m_begin, x.sizeBytes());
+        memcpy(m_begin, x.m_begin, x.sizeBytes());
         m_endSize = m_begin + x.sizeEU();
         *m_endSize = 0;
     }
@@ -488,7 +490,7 @@ BasicUtf8String<allocator_type>& BasicUtf8String<allocator_type>::reserveEU(std:
     if (capacityEU() < n)
     {
         reserveEUInternal(n);
-        std::memset(m_begin + sizeEU(), 0, (m_endCapacity - m_endSize) * sizeof(EncodingUnit));
+        memset(m_begin + sizeEU(), 0, (m_endCapacity - m_endSize) * sizeof(EncodingUnit));
     }
     return *this;
 }
@@ -503,7 +505,7 @@ BasicUtf8String<allocator_type>& BasicUtf8String<allocator_type>::reserveEUInter
         newstr.m_endSize = newstr.m_begin + sizeEU();
         newstr.m_endCapacity = newstr.m_begin + n;
         if (sizeEU())
-            std::memcpy(newstr.m_begin, m_begin, sizeBytes());
+            memcpy(newstr.m_begin, m_begin, sizeBytes());
         swap(newstr);
     }
     return *this;
@@ -528,11 +530,11 @@ BasicUtf8String<allocator_type>::insert(CpIterator at, BasicUtf8String const& st
         }
         else
         {
-            std::memmove(
+            memmove(
                 m_begin + atEuIndex + str.sizeEU(),
                 m_begin + atEuIndex,
                 (sizeEU() - atEuIndex) * sizeof(EncodingUnit));
-            std::memcpy(
+            memcpy(
                 m_begin + atEuIndex,
                 str.data(),
                 str.sizeBytes());
@@ -556,8 +558,8 @@ void BasicUtf8String<allocator_type>::erase(CpIterator beginToErase, CpIterator 
 {
     EncodingUnit * beginToErase1 = m_begin + (beginToErase.getIter() - m_begin);
     EncodingUnit * endToErase1 = m_begin + (endToErase.getIter() - m_begin);
-    std::memmove(beginToErase1, endToErase1, (m_endSize - endToErase1) * sizeof(EncodingUnit));
-    std::memset(m_endSize - (endToErase1 - beginToErase1), 0, (endToErase1 - beginToErase1) * sizeof(EncodingUnit));
+    memmove(beginToErase1, endToErase1, (m_endSize - endToErase1) * sizeof(EncodingUnit));
+    memset(m_endSize - (endToErase1 - beginToErase1), 0, (endToErase1 - beginToErase1) * sizeof(EncodingUnit));
     m_endSize -= (endToErase1 - beginToErase1);
 }
 
@@ -637,7 +639,7 @@ BasicUtf8String<allocator_type>& BasicUtf8String<allocator_type>::appendEU(
     if (y - x)
     {
         reserveEUInternal(sizeEU() + (y - x) + 1);
-        std::memcpy(m_begin + sizeEU(), x, (y - x) * sizeof(EncodingUnit));
+        memcpy(m_begin + sizeEU(), x, (y - x) * sizeof(EncodingUnit));
         m_endSize += (y - x);
         *m_endSize = 0;
     }
@@ -649,10 +651,10 @@ template <typename EuIter>
 BasicUtf8String<allocator_type>& BasicUtf8String<allocator_type>::appendEU(
     EuIter x, EuIter y)
 {
-    int const isRandomAccessIter = IsConvertibleTo<std::iterator_traits<EuIter>::iterator_category*, std::random_access_iterator_tag*>::b; 
+    int const isRandomAccessIter = IsConvertibleTo<typename std::iterator_traits<EuIter>::iterator_category*, std::random_access_iterator_tag*>::b; 
     if (isRandomAccessIter)
     {   typename std::iterator_traits<EuIter>::difference_type inputRangeLength = 
-                Internal::JustringIterDiff<EuIter, std::iterator_traits<EuIter>::iterator_category>()(y, x);
+                Internal::JustringIterDiff<EuIter, typename std::iterator_traits<EuIter>::iterator_category>()(y, x);
         reserveEUInternal(sizeEU() + inputRangeLength + 1);
         for ( ; x != y; )
         {   *m_endSize = *x; 
@@ -752,12 +754,11 @@ BasicUtf16String<allocator_type>  BasicUtf16String<allocator_type>::utf8(
     Range const& range, allocator_type const& alloc)
 {
     BasicUtf16String str(alloc);
-    using jjm::Internal::getUtf8RangeBegin; 
-    using jjm::Internal::getUtf8RangeEnd; 
-    Utf8ToCpInputIterator<Iter> a1(getUtf8RangeBegin(range), getUtf8RangeEnd(range)); 
-    Utf8ToCpInputIterator<Iter> a2(getUtf8RangeEnd(  range), getUtf8RangeEnd(range)); 
-    JSTATICASSERT(sizeof( * getUtf8RangeBegin(range)) == 1); 
-    str.appendCP(a1, a2); 
+    using jjm::Internal::getUtf8EuRangeBegin; 
+    using jjm::Internal::getUtf8EuRangeEnd; 
+    JSTATICASSERT(sizeof( * getUtf8EuRangeBegin(range)) == 1); 
+    auto a1 = jjm::makeUtf8ToCpRange(getUtf8EuRangeBegin(range), getUtf8EuRangeEnd(range));
+    str.appendCP(a1.first, a1.second); 
     return str; 
 }
 
@@ -851,7 +852,7 @@ BasicUtf16String<allocator_type>::BasicUtf16String(BasicUtf16String const& x)
     if (x.sizeEU())
     {
         reserveEUInternal(x.sizeEU() + 1);
-        std::memcpy(m_begin, x.m_begin, x.sizeBytes());
+        memcpy(m_begin, x.m_begin, x.sizeBytes());
         m_endSize = m_begin + x.sizeEU();
         *m_endSize = 0;
     }
@@ -877,7 +878,7 @@ BasicUtf16String<allocator_type>& BasicUtf16String<allocator_type>::reserveEU(st
     if (capacityEU() < n)
     {
         reserveEUInternal(n);
-        std::memset(m_begin + sizeEU(), 0, (m_endCapacity - m_endSize) * sizeof(EncodingUnit));
+        memset(m_begin + sizeEU(), 0, (m_endCapacity - m_endSize) * sizeof(EncodingUnit));
     }
     return *this;
 }
@@ -892,7 +893,7 @@ BasicUtf16String<allocator_type>& BasicUtf16String<allocator_type>::reserveEUInt
         newstr.m_endSize = newstr.m_begin + sizeEU();
         newstr.m_endCapacity = newstr.m_begin + n;
         if (sizeEU())
-            std::memcpy(newstr.m_begin, m_begin, sizeBytes());
+            memcpy(newstr.m_begin, m_begin, sizeBytes());
         swap(newstr);
     }
     return *this;
@@ -917,11 +918,11 @@ BasicUtf16String<allocator_type>::insert(CpIterator at, BasicUtf16String const& 
         }
         else
         {
-            std::memmove(
+            memmove(
                 m_begin + atEuIndex + str.sizeEU(),
                 m_begin + atEuIndex,
                 (sizeEU() - atEuIndex) * sizeof(EncodingUnit));
-            std::memcpy(
+            memcpy(
                 m_begin + atEuIndex,
                 str.data(),
                 str.sizeBytes());
@@ -945,8 +946,8 @@ void BasicUtf16String<allocator_type>::erase(CpIterator beginToErase, CpIterator
 {
     EncodingUnit * beginToErase1 = m_begin + (beginToErase.getIter() - m_begin);
     EncodingUnit * endToErase1 = m_begin + (endToErase.getIter() - m_begin);
-    std::memmove(beginToErase1, endToErase1, (m_endSize - endToErase1) * sizeof(EncodingUnit));
-    std::memset(m_endSize - (endToErase1 - beginToErase1), 0, (endToErase1 - beginToErase1) * sizeof(EncodingUnit));
+    memmove(beginToErase1, endToErase1, (m_endSize - endToErase1) * sizeof(EncodingUnit));
+    memset(m_endSize - (endToErase1 - beginToErase1), 0, (endToErase1 - beginToErase1) * sizeof(EncodingUnit));
     m_endSize -= (endToErase1 - beginToErase1);
 }
 
@@ -1025,7 +1026,7 @@ BasicUtf16String<allocator_type>& BasicUtf16String<allocator_type>::appendEU(
 {
     if (y - x)
     {   reserveEUInternal(sizeEU() + (y - x) + 1);
-        std::memcpy(m_begin + sizeEU(), x, (y - x) * sizeof(EncodingUnit));
+        memcpy(m_begin + sizeEU(), x, (y - x) * sizeof(EncodingUnit));
         m_endSize += (y - x);
         *m_endSize = 0;
     }
@@ -1037,10 +1038,10 @@ template <typename EuIter>
 BasicUtf16String<allocator_type>& BasicUtf16String<allocator_type>::appendEU(
     EuIter x, EuIter y)
 {
-    int const isRandomAccessIter = IsConvertibleTo<std::iterator_traits<EuIter>::iterator_category*, std::random_access_iterator_tag*>::b; 
+    int const isRandomAccessIter = IsConvertibleTo<typename std::iterator_traits<EuIter>::iterator_category*, std::random_access_iterator_tag*>::b; 
     if (isRandomAccessIter)
     {   typename std::iterator_traits<EuIter>::difference_type inputRangeLength = 
-                Internal::JustringIterDiff<EuIter, std::iterator_traits<EuIter>::iterator_category>()(y, x);
+                Internal::JustringIterDiff<EuIter, typename std::iterator_traits<EuIter>::iterator_category>()(y, x);
         reserveEUInternal(sizeEU() + inputRangeLength + 1);
         for ( ; x != y; )
         {   *m_endSize = *x; 

@@ -85,7 +85,7 @@ void jjm::Thread::joinImpl(Lock & g)
         joinCond.notify_all();
     }else if (state == joining)
     {   while (state == joining)
-            g.wait(joinCond);
+            wait(g, joinCond);
     }else if (state == joined)
         ;
     else
@@ -106,7 +106,7 @@ void jjm::Thread::joinImpl(Lock & g)
 
 void jjm::Thread::start(Runnable* runnable)
 {
-    auto_ptr<Runnable> runObject(runnable);
+    UniquePtr<Runnable*> runObject(runnable);
 #ifdef _WIN32
     uintptr_t const tmpThreadHandle = _beginthreadex(
             0, //default security attributes

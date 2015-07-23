@@ -232,14 +232,14 @@ map<string, void (jjm::ParserContext::Evaluator::*)()> jjm::ParserContext::Evalu
     static map<string, void (jjm::ParserContext::Evaluator::*)()> * x = 0;
     if (x == 0)
     {   x = new map<string, void (jjm::ParserContext::Evaluator::*)()>;
-        (*x)["if"] = & ifControl;
-        (*x)["elif"] = & elifControl;
-        (*x)["then"] = & thenControl;
-        (*x)["else"] = & elseControl;
-        (*x)["fi"] = & fiControl;
-        (*x)["while"] = & whileControl;
-        (*x)["do"] = & doControl;
-        (*x)["done"] = & doneControl;
+        (*x)["if"] =    & jjm::ParserContext::Evaluator::ifControl;
+        (*x)["elif"] =  & jjm::ParserContext::Evaluator::elifControl;
+        (*x)["then"] =  & jjm::ParserContext::Evaluator::thenControl;
+        (*x)["else"] =  & jjm::ParserContext::Evaluator::elseControl;
+        (*x)["fi"] =    & jjm::ParserContext::Evaluator::fiControl;
+        (*x)["while"] = & jjm::ParserContext::Evaluator::whileControl;
+        (*x)["do"] =    & jjm::ParserContext::Evaluator::doControl;
+        (*x)["done"] =  & jjm::ParserContext::Evaluator::doneControl;
     }
     return *x; 
 }

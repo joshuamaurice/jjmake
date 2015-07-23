@@ -34,7 +34,6 @@ inline char const* JjmFatalHandlerUtil(std::string const& info_str) { return inf
 
 
 #define JFATAL_IMPL(file, line, info_n, info_str) \
-        if (true) \
         {   try \
             {   using ::JjmFatalHandlerUtil; \
                 JjmFatalHandlerType h = jjmGetFatalHandler(); \
@@ -42,6 +41,7 @@ inline char const* JjmFatalHandlerUtil(std::string const& info_str) { return inf
                     (*h)(file, line, info_n, JjmFatalHandlerUtil(info_str)); \
             } catch (...) {} \
             abort(); \
-        } else (void)0
+        }
+        
 
 #endif

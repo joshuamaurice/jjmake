@@ -16,6 +16,8 @@
 
 #ifdef _WIN32
     #include <windows.h>
+#else
+    #include <unistd.h>
 #endif
 
 using namespace std;
@@ -32,9 +34,9 @@ namespace
 #endif
 
 #ifdef _WIN32
-    CodePoint const preferredSeparator = '\\';
+    char const preferredSeparator = '\\';
 #else
-    CodePoint const preferredSeparator = '/';
+    char const preferredSeparator = '/';
 #endif
 
     bool isSeparator(CodePoint c)
@@ -145,15 +147,19 @@ jjm::Path::Path(Utf16String const& path_) { U8Str path2 = U8Str::cp(path_); path
 
 namespace
 {
-    pair<size_t, size_t> getPrefix(U8Str const& path)
+    pair<size_t, size_t> getPrefix(char const * const data, size_t endPos)
     {
     #ifdef _WIN32
-        if (path.sizeBytes() >= 2 && isLatinLetter(path.data()[0]) && path.data()[1] == ':')
+        if (endPos >= 2 && isLatinLetter(data[0]) && data[1] == ':')
             return std::pair<size_t, size_t>(0, 2); 
         return std::pair<size_t, size_t>(0, 0); 
     #else
-        return std::pair<size_t, size_t>(0, 0); 
+        return std::pair<size_t, size_t>(0, 0); //TODO
     #endif
+    }
+    pair<size_t, size_t> getPrefix(U8Str const& path)
+    {
+        return getPrefix(path.data(), path.sizeBytes()); 
     }
 
     inline pair<size_t, size_t> getPrevComponent(U8Str const& path, size_t const pos0)
@@ -195,22 +201,22 @@ namespace
         }
     }
 
-    inline pair<size_t, size_t> getNextComponent(U8Str const& path, size_t const pos0)
+    inline pair<size_t, size_t> getNextComponent(char const * const data, size_t const size)
     {
-        pair<size_t, size_t> result(pos0, path.sizeBytes()); 
+        pair<size_t, size_t> result(0, size); 
 
-        //otherwise empty path
+        //nothing left
         if (result.first == result.second)
             return result; 
 
         //do we have a leading separator? skip it
-        if (path.data()[result.first] == preferredSeparator)
+        if (data[result.first] == preferredSeparator)
         {   ++result.first; 
             if (result.first == result.second)
                 return result; 
         }
-        if (path.data()[result.first] == preferredSeparator)
-            JFATAL(0, path); 
+        if (data[result.first] == preferredSeparator)
+            JFATAL(0, string(data, data + size)); 
 
         //find the next separator to complete the component
         size_t pos = result.first; 
@@ -218,15 +224,30 @@ namespace
         {   if (pos == result.second)
                 return result; 
             ++pos;
-            if (path.data()[pos] == preferredSeparator)
+            if (data[pos] == preferredSeparator)
             {   result.second = pos;
                 return result; 
             }
         }
     }
+    inline pair<size_t, size_t> getNextComponent(U8Str const& path, size_t const pos0)
+    {   
+        return getNextComponent(path.data() + pos0, path.sizeBytes() - pos0); 
+    }
+    inline pair<size_t, size_t> getNextComponent(std::string const& path, size_t const pos0)
+    {   
+        return getNextComponent(path.data() + pos0, path.size() - pos0); 
+    }
+
 }
 
-jjm::Utf8String  jjm::Path::getPrefix() const
+string  jjm::Path::getStdPrefix() const
+{
+    pair<size_t, size_t> prefix = ::getPrefix(path); 
+    return string(path.data() + prefix.second, path.data() + path.sizeBytes()); 
+}
+
+jjm::Utf8String  jjm::Path::getU8Prefix() const
 {
     pair<size_t, size_t> prefix = ::getPrefix(path); 
     return U8Str::utf8(path.data() + prefix.second, path.data() + path.sizeBytes()); 
@@ -411,6 +432,9 @@ namespace
 jjm::Path  jjm::Path::getAbsolutePath() const
 {
 #ifdef _WIN32
+    if (isEmpty())
+        return *this; 
+
     pair<size_t, size_t> prefix = ::getPrefix(path); 
     bool const hasPrefix = prefix.first != prefix.second; 
     bool const isAbs = isAbsolute(); 
@@ -470,11 +494,26 @@ jjm::Path  jjm::Path::getAbsolutePath() const
     }
     return result2; 
 #else
+    if (isEmpty())
+        return *this; 
+
     pair<size_t, size_t> prefix = ::getPrefix(path); 
     if (prefix.first != prefix.second)
         throw std::runtime_error("jjm::Path::makeAbsolute() on POSIX systems does not support prefixes"); 
-    if (absolute == false)
-        return resolve(getCurrentWorkingDirectory());
+    if (isAbsolute() == false)
+    {
+        errno = 0; 
+        UniquePtr<char*, jjm::InvokeFree> currentWorkingDirectory(::getcwd(0, 0)); 
+        int const lastErrno = errno;
+
+        if (currentWorkingDirectory.get() == 0)
+        {   string msg = string() + "jjm::Path::getAbsolutePath() failed. "
+                    + "::getcwd(0, 0) failed. "; 
+            //TODO throw runtime_error(msg + "errno " + toDecStr(lastErrno) + " " + getErrnoName(lastErrno) + ".");
+            throw runtime_error(msg + "errno " + toDecStr(lastErrno) + ".");
+        }
+        return resolve(Path(currentWorkingDirectory.get()));
+    }
     return *this; 
 #endif
 }
@@ -551,6 +590,33 @@ jjm::Path  jjm::Path::getRealPath() const
     //complaining that the buffer wasn't big enough, when we gave a big enough buffer. 
     JFATAL(0, 0); 
 #else
+    string initialUtf8PathString = getAbsolutePath().toStdString(); 
+
+    string localizedInput = initialUtf8PathString; //TODO
+
+    errno = 0; 
+    UniquePtr<char*, jjm::InvokeFree> localizedResult(::realpath(localizedInput.c_str(), 0)); 
+    int const lastErrno = errno; 
+
+    if (localizedResult.get() == 0)
+    {   if (lastErrno == ENOENT)
+        {   throw std::runtime_error("jjm::Path::getRealPath() failed. "
+                    "UTF8 path before localization \"" + initialUtf8PathString + "\". Cause:\n"
+                    "::realpath failed. Cause:\n" "errno ENOENT, the path does not name a file on the filesystem.");
+        }
+        if (lastErrno == ENOTDIR)
+        {   throw std::runtime_error("jjm::Path::getRealPath() failed. "
+                    "UTF8 path before localization \"" + initialUtf8PathString + "\". Cause:\n"
+                    "::realpath failed. Case: \n" "Cause: errno ENOTDIR, the path does not name a file on the filesystem.");
+        }
+        throw std::runtime_error("jjm::Path::getRealPath() failed. "
+                "UTF8 path before localization \"" + initialUtf8PathString + "\". Cause:\n"
+                "::realpath failed. Cause:\n" "errno " + toDecStr(lastErrno) + ".");
+    }
+
+    string utf8Result(localizedResult.get()); //TODO
+    return Path(utf8Result); 
+
 #endif
 }
 
@@ -626,146 +692,43 @@ jjm::Path  jjm::Path::getRealPath2() const
     //complaining that the buffer wasn't big enough, when we gave a big enough buffer. 
     JFATAL(0, 0); 
 #else
+    string initialUtf8PathString = getAbsolutePath().toStdString(); 
+
+    string localizedInput = initialUtf8PathString; //TODO
+
+    errno = 0; 
+    UniquePtr<char*, jjm::InvokeFree> localizedResult(::realpath(localizedInput.c_str(), 0)); 
+    int const lastErrno = errno; 
+
+    if (localizedResult.get() == 0)
+    {   if (lastErrno == ENOENT)
+            return Path(); 
+        if (lastErrno == ENOTDIR)
+            return Path(); 
+        throw std::runtime_error("jjm::Path::getRealPath2() failed. "
+                "UTF8 path before localization \"" + initialUtf8PathString + "\". Cause:\n"
+                "::realpath failed. Cause:\n" "errno " + toDecStr(lastErrno) + ".");
+    }
+
+    string utf8Result(localizedResult.get()); //TODO
+    return Path(utf8Result); 
 #endif
 }
 
 
-
-#if 0
-{
-    template <typename String, typename Iter>
-    inline String getFileParentImpl(String const& input)
+#ifndef _WIN32
+    string jjm::Path::getLocalizedString() const
     {
-        Iter const begin = pathUtilsGetBeginIterator(input); 
-        Iter const end   = pathUtilsGetEndIterator(  input); 
-        Iter const afterDriveDesignator = gotoEndOfDriveDesignator(begin, end);
-
-        Iter endOfLastComponent   = gotoEndOfLastComponent(afterDriveDesignator, end);
-        Iter beginOfLastComponent = gotoBeginOfLastComponent(afterDriveDesignator, endOfLastComponent);
-
-        //if no components
-        if (beginOfLastComponent == endOfLastComponent)
-            return String(); 
-
-        //if one component, relative path
-        if (afterDriveDesignator == beginOfLastComponent)
-            return pathUtilsSubstring(input, begin, afterDriveDesignator) + pathUtilsDot(input); 
-
-        Iter endOfSecondLastComponent = beginOfLastComponent;
-        --endOfSecondLastComponent;
-        endOfSecondLastComponent = gotoEndOfLastComponent(afterDriveDesignator, endOfSecondLastComponent);
-
-        //if one component, absolute path
-        Iter x = endOfSecondLastComponent;
-        if (x == afterDriveDesignator || isSeparator(*--x))
-            return pathUtilsSubstring(input, begin, ++Iter(afterDriveDesignator)); 
-
-        //two or more components
-        return pathUtilsSubstring(input, begin, endOfSecondLastComponent); 
+        //TODO
+        return toStdString();  
     }
-}
-std::string jjm::getFileParent(std::string const& path) { return getFileParentImpl<std::string, std::string::const_iterator>(path); }
-Utf8String  jjm::getFileParent(Utf8String const& path) { return getFileParentImpl<U8Str, U8Str::EuIterator>(path); }
-Utf16String jjm::getFileParent(Utf16String const& path) { return getFileParentImpl<U16Str, U16Str::EuIterator>(path); }
 
-
-namespace
-{
-    template <typename String, typename Iter>
-    inline bool isAbsolutePathImpl(String const& input)
+    jjm::Path jjm::Path::fromLocalizedString(string const& localizedString)
     {
-        Iter const begin = pathUtilsGetBeginIterator(input); 
-        Iter const end   = pathUtilsGetEndIterator(  input); 
-        Iter const afterDriveDesignator = gotoEndOfDriveDesignator(begin, end);
-
-        //if the path is empty, or if the path only has a drive designator, 
-        if (afterDriveDesignator == end)
-            return false;
-
-        //if it starts with a separator, then it's an absolute path
-        return isSeparator(*afterDriveDesignator); 
+        //TODO
+        return Path(localizedString); 
     }
-}
-bool jjm::isAbsolutePath(std::string const& path) { return isAbsolutePathImpl<std::string, std::string::const_iterator>(path); }
-bool jjm::isAbsolutePath(Utf8String const& path) { return isAbsolutePathImpl<U8Str, U8Str::EuIterator>(path); }
-bool jjm::isAbsolutePath(Utf16String const& path) { return isAbsolutePathImpl<U16Str, U16Str::EuIterator>(path); }
-
-
-
-std::string jjm::getAbsolutePath(std::string const& input)
-{
-#ifdef _WIN32
-    Utf8ToCpBidiIterator<char const*> a1(input.c_str(), input.c_str()               , input.c_str() + input.size()); 
-    Utf8ToCpBidiIterator<char const*> a2(input.c_str(), input.c_str() + input.size(), input.c_str() + input.size()); 
-    U16Str c = getAbsolutePath(U16Str::cp(a1, a2)); 
-    std::string d; 
-    for (U16Str::CpIterator ci = c.beginCP(); ci != c.endCP(); ++ci)
-    {   CodePoint cp = *ci; 
-        char buf[4]; 
-        char* buf2 = buf; 
-        writeUtf8(cp, buf2);
-        d.insert(d.end(), buf, buf2); 
-    }
-    return d; 
-#else
-    JFATAL(0, 0); //TODO impl
 #endif
-}
-Utf8String  jjm::getAbsolutePath(Utf8String  const& input)
-{
-#ifdef _WIN32
-    U16Str x = U16Str::cp(input); 
-    U16Str y = getAbsolutePath(x); 
-    return U8Str::cp(y); 
-#else
-    JFATAL(0, 0); //TODO impl
-#endif
-}
-Utf16String jjm::getAbsolutePath(Utf16String const& input)
-{
-#ifdef _WIN32
-    size_t const outputSize = 260; 
-    wchar_t output[outputSize]; 
-    SetLastError(0); 
-    DWORD const return1 = GetFullPathNameW(input.c_str(), outputSize, output, 0); 
-    if (return1 < outputSize)
-    {   //normal success
-        if (output[return1] != 0)
-            JFATAL(0, 0); //should be null terminated by the win32 API
-        return U16Str::utf16(&output[0], output + return1); 
-    }
-    if (return1 == 0)
-    {   //unexpected error
-        DWORD error = GetLastError(); 
-        throw std::runtime_error("jjm::getAbsolutePath(std::string const& ) failed. "
-                "GetFullPathNameW failed. GetLastError() " + toDecStr(error) + ".");
-    }
-    //otherwise, the given buffer was not big enough, try again with a bigger buffer
-    DWORD const outputSize2 = return1 + 1; 
-    jjm::UniqueArray<wchar_t*> output2(new wchar_t[outputSize2]); 
-    SetLastError(0); 
-    DWORD const return2 = GetFullPathNameW(input.c_str(), outputSize2, output2.get(), 0); 
-    if (return2 < outputSize2)
-    {   //success
-        if (output2.get()[return2] != 0)
-            JFATAL(0, 0); //should be null terminated by the win32 API
-        return U16Str::utf16(output2.get(), output2.get() + return2); 
-    }
-    if (return2 == 0)
-    {   //unexpected error
-        DWORD error = GetLastError(); 
-        throw std::runtime_error("jjm::getAbsolutePath(std::string const& ) failed. "
-                "GetFullPathNameW failed. GetLastError() " + toDecStr(error) + ".");
-    }
-    //To get here, GetFullPathNameW needs to have failed a second time, 
-    //complaining that the buffer wasn't big enough, when we gave a big enough buffer. 
-    JFATAL(0, 0); 
-#else
-    U8Str x = U8Str::cp(input); 
-    U8Str y = getAbsolutePath(x); 
-    return U16Str::cp(y); 
-#endif
-}
 
 
 #if 0
@@ -881,7 +844,5 @@ namespace
         ASSERT_EQUALS(string(""), getFileParent(string("//"))); 
     }
 }
-
-#endif
 
 #endif

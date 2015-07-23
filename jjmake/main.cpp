@@ -10,6 +10,7 @@
 #include "junicode/jutfstring.hpp"
 #include "junicode/jstdouterr.hpp"
 #include "jbase/jnulltermiter.hpp"
+#include <iostream>
 #include <stdlib.h>
 #include <string>
 #include <typeinfo>
@@ -33,8 +34,7 @@ namespace
         if (info_cstr)
             message += string() + ", \"" + info_cstr + "\"";
         message += ".\n"; 
-        jjm::writeToStdOut(message); 
-        jjm::flushStdOut(); 
+        cerr << message << flush; 
     }
     bool installFatalHandler = (jjmGetFatalHandler() = & fatalHandler, false); 
 }
@@ -59,7 +59,10 @@ namespace jjm { int jjmakemain(vector<string> const& args); }
     int main(int argc, char** argv)
     {
         //TODO use setlocale(LC_ALL, ""); and iconv
-        JFATAL(0, 0); 
+        vector<string> args;
+        for (int x = 1; x < argc; ++x)
+            args.push_back(string(argv[x])); 
+        return jjm::jjmakemain(args);
     }
 #endif
 
