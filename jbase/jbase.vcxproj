@@ -22,7 +22,6 @@
     <ClInclude Include="jfatal.hpp" />
     <ClInclude Include="jinttostring.hpp" />
     <ClInclude Include="jnulltermiter.hpp" />
-    <ClInclude Include="jstaticassert.hpp" />
     <ClInclude Include="jstdint.hpp" />
     <ClInclude Include="jstreams.hpp" />
     <ClInclude Include="jtemplatemetaprogrammingutils.hpp" />
@@ -81,23 +80,23 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\$(ProjectName)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\$(ProjectName)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\$(ProjectName)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)\tmp\$(PlatformName)-$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\$(ProjectName)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

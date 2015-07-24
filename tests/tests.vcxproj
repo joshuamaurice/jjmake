@@ -18,9 +18,12 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{9A894767-9632-4970-B1D1-79017FB82E98}</ProjectGuid>
-    <RootNamespace>jjmake</RootNamespace>
+    <ProjectGuid>{5A8B133F-A273-4314-BF29-42FA9C74556E}</ProjectGuid>
+    <RootNamespace>tests</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -218,18 +221,6 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="corefunctions.cpp" />
-    <ClCompile Include="jjmakecontext.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="node.cpp" />
-    <ClCompile Include="parsercontext.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="jjmakecontext.hpp" />
-    <ClInclude Include="node.hpp" />
-    <ClInclude Include="parsercontext.hpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

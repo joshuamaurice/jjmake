@@ -33,6 +33,11 @@ typedef  std::basic_string<Utf16EncodingUnit>   Utf16String;
 inline Utf8String makeU8Str(Utf16String const& u16str);
 inline Utf16String makeU16Str(Utf8String const& u8str);
 
+template <typename Utf8Iter>
+Utf8String makeU8StrFromUtf8(std::pair<Utf8Iter, Utf8Iter> const& range);
+template <typename Utf16Iter>
+Utf16String makeU16StrFromUtf16(std::pair<Utf16Iter, Utf16Iter> const& range);
+
 template <typename CpIter> 
 Utf8String makeU8StrFromCpRange(std::pair<CpIter, CpIter> const& cpRange);
 template <typename CpIter> 
@@ -67,6 +72,18 @@ inline Utf8String makeU8Str(Utf16String const& u16str)
 inline Utf16String makeU16Str(Utf8String const& u8str)
 {
     return makeU16StrFromCpRange(makeCpRange(u8str)); 
+}
+
+template <typename Utf8Iter>
+Utf8String makeU8StrFromUtf8(std::pair<Utf8Iter, Utf8Iter> const& range)
+{
+    return Utf8String(range.first, range.second); 
+}
+
+template <typename Utf16Iter>
+Utf16String makeU16StrFromUtf16(std::pair<Utf16Iter, Utf16Iter> const& range)
+{
+    return Utf16String(range.first, range.second); 
 }
 
 template <typename CpIter> 

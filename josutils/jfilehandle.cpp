@@ -165,7 +165,6 @@ ssize_t jjm::FileHandle::write2(void const* buf, size_t bytes)
     SetLastError(0); 
     errno = 0; 
     DWORD const x = WriteFile(mhandle, buf, bytes2, & numBytesWrittenToFile, 0);
-    DWORD const lastError = GetLastError(); 
 
     if (x != 0)
         return numBytesWrittenToFile; 

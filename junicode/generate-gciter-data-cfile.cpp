@@ -152,7 +152,11 @@ void initGraphemeBreakTable(
     
 
 
-int main()
+#ifdef _WIN32
+    int wmain()
+#else
+    int main()
+#endif
 {
     static_assert(CHAR_BIT == 8, "ERROR"); 
     static_assert(sizeof(int) >= 4, "ERROR"); 
@@ -302,4 +306,5 @@ int main()
 //#ifdef _WIN32
 //    cout << "#pragma data_seg()" << '\n';
 //#endif
+    return 0; 
 }

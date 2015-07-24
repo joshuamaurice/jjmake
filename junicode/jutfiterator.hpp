@@ -493,7 +493,7 @@ bool operator== (
     BasicUtfToCpInputIterator<EncodingUnitIterator, utfKind> const& a, 
     BasicUtfToCpInputIterator<EncodingUnitIterator, utfKind> const& b)
 {
-    return a.cp == -1 && b.cp == -1;
+    return a.cp == static_cast<UnicodeCodePoint>(-1) && b.cp == static_cast<UnicodeCodePoint>(-1);
 }
 
 template <typename EncodingUnitIterator, UtfKind utfKind>

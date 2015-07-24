@@ -6,7 +6,7 @@
 #ifndef JWARNINGPRAGMAS_HPP_HEADER_GUARD
 #define JWARNINGPRAGMAS_HPP_HEADER_GUARD
 
-#ifdef _WIN32
+#if defined(_WIN32) && defined(_MSC_VER)
     #pragma warning (disable : 4100) //unreferenced formal parameter
     #pragma warning (disable : 4127) //conditional expression is constant
     #pragma warning (disable : 4244) //conversion from 'XX' to 'XX', possible loss of data
