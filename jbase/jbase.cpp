@@ -5,11 +5,9 @@
 
 #include "jwarningpragmas.hpp"
 
-#include "jboundscheckediterator.hpp"
 #include "jfatal.hpp"
 #include "jinttostring.hpp"
 #include "jnulltermiter.hpp"
-#include "jstaticassert.hpp"
 #include "jstdint.hpp"
 #include "jtemplatemetaprogrammingutils.hpp"
 #include "juniqueptr.hpp"

@@ -233,7 +233,7 @@ namespace
             {   file.reset(FileOpener().readOnly().openExistingOnly().open(path));
             }catch (std::exception & e)
             {   string message;
-                message += string() + "Function 'include' unable to open file \"" + path.toStdString() + "\". Cause:\n"; 
+                message += string() + "Function 'include' unable to open file \"" + path.getStringRep() + "\". Cause:\n"; 
                 message += e.what(); 
                 throw std::runtime_error(message); 
             }
@@ -250,18 +250,18 @@ namespace
 #ifdef _WIN32
                 DWORD const lastError = GetLastError(); 
                 throw std::runtime_error(string() 
-                        + "Function 'include': Failure when reading from file \"" + path.toStdString() + "\". "
+                        + "Function 'include': Failure when reading from file \"" + path.getStringRep() + "\". "
                         + "GetLastError() " + toDecStr(lastError) + "."); 
 #else
                 int lastErrno = errno; 
                 throw std::runtime_error(string() 
-                        + "Function 'include': Failure when reading from file \"" + path.toStdString() + "\". "
+                        + "Function 'include': Failure when reading from file \"" + path.getStringRep() + "\". "
                         + "errno " + toDecStr(lastErrno) + "."); 
 #endif
             }
 
-            c->setValue(".PWD", path.getParent().toStdString()); 
-            c->setValue(".FILE", path.toStdString()); 
+            c->setValue(".PWD", path.getParent().getStringRep()); 
+            c->setValue(".FILE", path.getStringRep()); 
             c->setValue(".LINE", "1"); 
             c->setValue(".COL", "1");  
 
@@ -348,7 +348,7 @@ namespace
     {
     public:
         TouchNode(Path const& path_, vector<Path> const& inputPaths_, vector<Path> const& outputPaths_)
-            : Node(path_.toStdString(), inputPaths_, outputPaths_),
+            : Node(path_.getStringRep(), inputPaths_, outputPaths_),
             targetPath(path_)
             {}
         Path targetPath; 
@@ -367,12 +367,12 @@ namespace
                 return; 
             }
             if (targetStat.type == FileType::Directory)
-                throw std::runtime_error("Cannot create regular file \"" + targetPath.toStdString() + "\" because a directory exists that has the same name."); 
+                throw std::runtime_error("Cannot create regular file \"" + targetPath.getStringRep() + "\" because a directory exists that has the same name."); 
             if (targetStat.type == FileType::Symlink)
-                JFATAL(targetStat.type.toEnum(), targetPath.toStdString()); 
+                JFATAL(targetStat.type.toEnum(), targetPath.getStringRep()); 
             if (targetStat.type == FileType::Other)
-                throw std::runtime_error("Cannot create regular file \"" + targetPath.toStdString() + "\" because a file of an unusual type exists that has the same name."); 
-            JFATAL(targetStat.type.toEnum(), targetPath.toStdString()); 
+                throw std::runtime_error("Cannot create regular file \"" + targetPath.getStringRep() + "\" because a file of an unusual type exists that has the same name."); 
+            JFATAL(targetStat.type.toEnum(), targetPath.getStringRep()); 
         }
         void touchFile()
         {

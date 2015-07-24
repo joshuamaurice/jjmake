@@ -21,19 +21,6 @@
     //#include <sys/stat.h>
 #endif
 
-#ifndef _WIN32
-    namespace
-    {   void setCloseOnExec(int const fd) //TODO refactor into FileHandle
-        {   int flags = fcntl(fd, F_GETFD);
-            if (flags == -1)
-                abort();
-            flags |= FD_CLOEXEC;
-            if (fcntl(fd, F_SETFD, flags) == -1)
-                abort();
-        }
-    }
-#endif
-
 
 jjm::Pipe jjm::Pipe::create()
 {
@@ -59,13 +46,12 @@ jjm::Pipe jjm::Pipe::create()
 #else
     int handles[2];
 
-    #if (defined(__gnu_linux__) && defined(_POSIX_VERSION) && _POSIX_VERSION >= 200809L)
-        errno = 0;
+    errno = 0;
+    #if ((defined(_POSIX_VERSION) && _POSIX_VERSION >= 200809L) || defined(__CYGWIN__))
         int const x = ::pipe2(handles, O_CLOEXEC); 
     #else
-        errno = 0;
+        #warning You should upgrade your POSIX system to support O_CLOEXEC. 
         int const x = ::pipe(handles); 
-        #warning TODO set close on exec flags
     #endif
 
     if (x != 0)
@@ -76,6 +62,11 @@ jjm::Pipe jjm::Pipe::create()
     Pipe p;
     p.readable  = FileHandle(handles[0]);
     p.writeable = FileHandle(handles[1]);
+#if ((defined(_POSIX_VERSION) && _POSIX_VERSION >= 200809L) || defined(__CYGWIN__))
+#else
+    p.readable .setCloseOnExec(); 
+    p.writeable.setCloseOnExec(); 
+#endif
     return p;
 #endif
 }

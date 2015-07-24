@@ -8,6 +8,8 @@
 #include "jfilehandle.hpp"
 #include "jopen.hpp"
 #include "jstat.hpp"
+#include "jbase/jfatal.hpp"
+#include "jbase/jinttostring.hpp"
 #include "jbase/juniqueptr.hpp"
 #include <string>
 #include <sstream>
@@ -39,7 +41,7 @@ namespace
     char const preferredSeparator = '/';
 #endif
 
-    bool isSeparator(CodePoint c)
+    bool isSeparator(UnicodeCodePoint c)
     {
         if (c == '/')
             return true;
@@ -50,29 +52,17 @@ namespace
         return false; 
     }
 
-    bool isLatinLetter(CodePoint c)
+    void pathInit(Utf8String & result, Utf8String const& input) 
     {
-        if ('a' <= c && c <= 'z')
-            return true;
-        if ('A' <= c && c <= 'Z')
-            return true; 
-        return false; 
-    }
-    
-    void pathInitUtf8(
-                U8Str & path, 
-                char const * const begin, 
-                size_t const size
-                )
-    {
-        if (begin == 0)
+        if (input.size() == 0)
             return; 
-        char const * const end = begin + size; 
+        char const * const begin = &input[0];
+        char const * const end = begin + input.size(); 
 
         char const * p = begin; 
 
 #ifdef _WIN32
-        if (size >= 4 && p[0] == '\\' && p[1] == '\\' && p[2] == '.' && p[3] == '\\')
+        if (input.size() >= 4 && p[0] == '\\' && p[1] == '\\' && p[2] == '.' && p[3] == '\\')
         {   throw std::runtime_error(""
                     "jjm::Path::Path() failed. "
                     "Paths that start with \"\\\\.\\\" name devices. "
@@ -80,7 +70,7 @@ namespace
                     "This is a purposeful design decision because the author does not have sufficient understanding to deal with it.");
         }
 
-        if (size >= 4 && p[0] == '\\' && p[1] == '\\' && p[2] == '?' && p[3] == '\\')
+        if (input.size() >= 4 && p[0] == '\\' && p[1] == '\\' && p[2] == '?' && p[3] == '\\')
         {   throw std::runtime_error(""
                     "jjm::Path::Path() failed. "
                     "Paths that start with \"\\\\?\\\" are passed without modification to the underlying filesystem. "
@@ -88,7 +78,7 @@ namespace
                     "This is a purposeful design decision because the author does not have sufficient understanding to deal with it.");
         }
 
-        if (size >= 2 && p[0] == '\\' && p[1] == '\\')
+        if (input.size() >= 2 && p[0] == '\\' && p[1] == '\\')
         {   throw std::runtime_error(""
                     "jjm::Path::Path() failed. "
                     "Paths that start with \"\\\\\" have special meaning to the Windows APIs. "
@@ -96,8 +86,8 @@ namespace
                     "This is a purposeful design decision because the author does not have sufficient understanding to deal with it.");
         }
 
-        if (size >= 2 && isLatinLetter(p[0]) && p[1] == ':')
-        {   path.appendEU(p, p + 2);
+        if (input.size() >= 2 && isAsciiLetter(p[0]) && p[1] == ':')
+        {   result.append(p, p + 2);
             p += 2; 
         }
 #endif
@@ -105,7 +95,7 @@ namespace
         //is-absolute
         bool const isAbs = isSeparator(*p);
         if (isAbs)
-            path.appendEU(preferredSeparator); 
+            result.push_back(preferredSeparator); 
 
         //get components
         size_t numComponents = 0; 
@@ -124,8 +114,8 @@ namespace
             char const * const nextSeparatorOrEnd = p; 
 
             if (needsSeparator)
-                path.appendEU(preferredSeparator); 
-            path.appendEU(firstNonSeparator, nextSeparatorOrEnd); 
+                result.push_back(preferredSeparator); 
+            result.append(firstNonSeparator, nextSeparatorOrEnd); 
             needsSeparator = true; 
             ++numComponents;
         }
@@ -134,35 +124,34 @@ namespace
         {   //this path does not name a file nor directory.
             //this path is an empty path
             //remove any prefix
-            path.clear(); 
+            result.clear(); 
         }
     }
 
 
 }
 
-jjm::Path::Path(std::string const& utf8path) { pathInitUtf8(path, utf8path.data(), utf8path.size()); }
-jjm::Path::Path(Utf8String const& path_) { pathInitUtf8(path, path_.data(), path_.sizeBytes()); }
-jjm::Path::Path(Utf16String const& path_) { U8Str path2 = U8Str::cp(path_); pathInitUtf8(path, path2.data(), path2.sizeBytes()); }
+jjm::Path::Path(Utf8String const& input) { pathInit(path, input); }
+jjm::Path::Path(Utf16String const& input) { pathInit(path, makeU8Str(input)); }
 
 namespace
 {
     pair<size_t, size_t> getPrefix(char const * const data, size_t endPos)
     {
     #ifdef _WIN32
-        if (endPos >= 2 && isLatinLetter(data[0]) && data[1] == ':')
+        if (endPos >= 2 && isAsciiLetter(data[0]) && data[1] == ':')
             return std::pair<size_t, size_t>(0, 2); 
         return std::pair<size_t, size_t>(0, 0); 
     #else
         return std::pair<size_t, size_t>(0, 0); //TODO
     #endif
     }
-    pair<size_t, size_t> getPrefix(U8Str const& path)
+    pair<size_t, size_t> getPrefix(Utf8String const& path)
     {
-        return getPrefix(path.data(), path.sizeBytes()); 
+        return getPrefix(path.data(), path.size()); 
     }
 
-    inline pair<size_t, size_t> getPrevComponent(U8Str const& path, size_t const pos0)
+    inline pair<size_t, size_t> getPrevComponent(Utf8String const& path, size_t const pos0)
     {
         pair<size_t, size_t> result(0, pos0); 
 
@@ -230,50 +219,36 @@ namespace
             }
         }
     }
-    inline pair<size_t, size_t> getNextComponent(U8Str const& path, size_t const pos0)
-    {   
-        pair<size_t, size_t> result = getNextComponent(path.data() + pos0, path.sizeBytes() - pos0); 
-        result.first += pos0; 
-        result.second += pos0; 
-        return result; 
-    }
-    inline pair<size_t, size_t> getNextComponent(std::string const& path, size_t const pos0)
+    inline pair<size_t, size_t> getNextComponent(Utf8String const& path, size_t const pos0)
     {   
         pair<size_t, size_t> result = getNextComponent(path.data() + pos0, path.size() - pos0); 
         result.first += pos0; 
         result.second += pos0; 
         return result; 
     }
-
 }
 
-string  jjm::Path::getStdPrefix() const
+jjm::Utf8String  jjm::Path::getPrefix() const
 {
     pair<size_t, size_t> prefix = ::getPrefix(path); 
-    return string(path.data() + prefix.second, path.data() + path.sizeBytes()); 
-}
-
-jjm::Utf8String  jjm::Path::getU8Prefix() const
-{
-    pair<size_t, size_t> prefix = ::getPrefix(path); 
-    return U8Str::utf8(path.data() + prefix.second, path.data() + path.sizeBytes()); 
+    return Utf8String(path.data() + prefix.second, path.data() + path.size()); 
 }
 
 bool jjm::Path::isEmpty() const
 {
-    return path.sizeBytes() == 0; 
+    return path.size() == 0; 
 }
 
 bool jjm::Path::isAbsolute() const
 {
     pair<size_t, size_t> prefix = ::getPrefix(path); 
-    return path.sizeBytes() >= prefix.second + 1 && path.data()[prefix.second] == preferredSeparator; 
+    return path.size() >= prefix.second + 1 && path.data()[prefix.second] == preferredSeparator; 
 }
 
 bool jjm::Path::isRootPath() const
 {
     pair<size_t, size_t> prefix = ::getPrefix(path); 
-    return path.sizeBytes() == prefix.second + 1 && path.data()[prefix.second] == preferredSeparator; 
+    return path.size() == prefix.second + 1 && path.data()[prefix.second] == preferredSeparator; 
 }
 
 jjm::Path  jjm::Path::getAbsoluteVersion() const
@@ -282,41 +257,25 @@ jjm::Path  jjm::Path::getAbsoluteVersion() const
         return *this; 
     pair<size_t, size_t> prefix = ::getPrefix(path); 
     Path result; 
-    result.path.appendEU(path.data(), path.data() + prefix.second);
-    result.path.appendEU(preferredSeparator);
-    result.path.appendEU(path.data() + prefix.second, path.data() + path.sizeBytes());
+    result.path.append(path.data(), path.data() + prefix.second);
+    result.path.push_back(preferredSeparator);
+    result.path.append(path.data() + prefix.second, path.data() + path.size());
     return result; 
-}
-
-jjm::Path& jjm::Path::append(std::string const& utf8component)
-{
-    if ( ! isRootPath() && path.sizeBytes() > 0 && path.data()[path.sizeBytes() - 1] != preferredSeparator)
-        path.appendEU(preferredSeparator); 
-    path.appendEU(utf8component.data(), utf8component.data() + utf8component.size()); 
-    return *this; 
 }
 
 jjm::Path& jjm::Path::append(Utf8String const& component)
 {
-    if ( ! isRootPath() && path.sizeBytes() > 0 && path.data()[path.sizeBytes() - 1] != preferredSeparator)
-        path.appendEU(preferredSeparator); 
-    path.appendEU(component.data(), component.data() + component.sizeBytes()); 
-    return *this; 
-}
-
-jjm::Path& jjm::Path::append(Utf16String const& component)
-{
-    if ( ! isRootPath() && path.sizeBytes() > 0 && path.data()[path.sizeBytes() - 1] != preferredSeparator)
-        path.appendEU(preferredSeparator); 
-    path.appendCP(component); 
+    if ( ! isRootPath() && path.size() > 0 && path.data()[path.size() - 1] != preferredSeparator)
+        path.push_back(preferredSeparator); 
+    path.append(component.data(), component.data() + component.size()); 
     return *this; 
 }
 
 jjm::Utf8String jjm::Path::getFileName() const
 {
-    U8Str result; 
-    pair<size_t, size_t> const lastComponent = getPrevComponent(path, path.sizeBytes()); 
-    result.appendEU(path.data() + lastComponent.first, path.data() + lastComponent.second); 
+    Utf8String result; 
+    pair<size_t, size_t> const lastComponent = getPrevComponent(path, path.size()); 
+    result.append(path.data() + lastComponent.first, path.data() + lastComponent.second); 
     return result; 
 }
 
@@ -324,7 +283,7 @@ jjm::Path jjm::Path::getParent() const
 {
     Path result; 
 
-    pair<size_t, size_t> const lastComponent = getPrevComponent(path, path.sizeBytes()); 
+    pair<size_t, size_t> const lastComponent = getPrevComponent(path, path.size()); 
     if (lastComponent.first == lastComponent.second) //if no components
         return result; //return empty path
 
@@ -334,14 +293,14 @@ jjm::Path jjm::Path::getParent() const
             return result; //return empty path
         //here, the path has exactly one component, and absolute path
         pair<size_t, size_t> const prefix = ::getPrefix(path); 
-        result.path.appendEU(path.data() + prefix.first, path.data() + prefix.second); 
-        result.path.appendCP(preferredSeparator); 
+        result.path.append(path.data() + prefix.first, path.data() + prefix.second); 
+        result.path.push_back(preferredSeparator); 
         return result; //return a root path
     }
 
     //here, path has two or more components, 
     //just remove the last component
-    result.path.appendEU(path.beginEU(), path.beginEU() + secondToLastComponent.second + 1); 
+    result.path.append(path.begin(), path.begin() + secondToLastComponent.second + 1); 
     return result; 
 }
 
@@ -362,20 +321,20 @@ jjm::Path  jjm::Path::resolve(Path const& root) const
 
     //append the non-empty prefix of this and root
     if (thisPrefix.first != thisPrefix.second)
-        result.path.appendEU(this->path.data() + thisPrefix.first, this->path.data() + thisPrefix.second);
+        result.path.append(this->path.data() + thisPrefix.first, this->path.data() + thisPrefix.second);
     else if (rootPrefix.first != rootPrefix.second)
-        result.path.appendEU(root.path.data() + rootPrefix.first, root.path.data() + rootPrefix.second);
+        result.path.append(root.path.data() + rootPrefix.first, root.path.data() + rootPrefix.second);
 
     if ( ! isAbsolute())
     {   //if this is not absolute, then prepend the components of root, and the is-abs of root
-        result.path.appendEU(root.path.data() + rootPrefix.second, root.path.data() + root.path.sizeBytes());
+        result.path.append(root.path.data() + rootPrefix.second, root.path.data() + root.path.size());
         //then append the components of *this
-        if (thisPrefix.second != path.sizeBytes())
-        {   result.path.appendEU(preferredSeparator); 
-            result.path.appendEU(this->path.data() + thisPrefix.second, this->path.data() + this->path.sizeBytes()); 
+        if (thisPrefix.second != path.size())
+        {   result.path.push_back(preferredSeparator); 
+            result.path.append(this->path.data() + thisPrefix.second, this->path.data() + this->path.size()); 
         }
     }else
-    {   result.path.appendEU(this->path.data() + thisPrefix.second, this->path.data() + this->path.sizeBytes()); 
+    {   result.path.append(this->path.data() + thisPrefix.second, this->path.data() + this->path.size()); 
     }
 
     return result; 
@@ -385,9 +344,9 @@ jjm::Path  jjm::Path::resolve(Path const& root) const
 #ifdef _WIN32
 namespace
 {
-    inline U8Str invokeGetFullPathW(U8Str const& input)
+    inline Utf8String invokeGetFullPathW(Utf8String const& input)
     {
-        U16Str input2 = U16Str::cp(input); 
+        Utf16String input2 = makeU16Str(input); 
 
         size_t const output1Size = 260; 
         wchar_t output1[output1Size]; 
@@ -399,7 +358,7 @@ namespace
         {   //normal success
             if (output1[return1] != 0)
                 JFATAL(0, 0); //should be null terminated by the win32 API
-            return U8Str::cp(jjm::makeUtf16ToCpRange(output1 + 0, output1 + return1)); 
+            return makeU8StrFromCpRange(makeCpRangeFromUtf16(make_pair(output1 + 0, output1 + return1)));
         }
         if (return1 == 0)
         {   //unexpected error
@@ -419,7 +378,7 @@ namespace
         {   //success
             if (output2.get()[return2] != 0)
                 JFATAL(0, 0); //should be null terminated by the win32 API
-            return U8Str::cp(jjm::makeUtf16ToCpRange(output2.get(), output2.get() + return2)); 
+            return makeU8StrFromCpRange(makeCpRangeFromUtf16(make_pair(output2.get(), output2.get() + return2)));
         }
         if (return2 == 0)
         {   //unexpected error
@@ -430,7 +389,7 @@ namespace
         //To get here, GetFullPathNameW needs to have failed a second time, 
         //complaining that the buffer wasn't big enough, when we gave a big enough buffer. 
         JFATAL(0, 0); 
-        return U8Str(); 
+        return Utf8String(); 
     }
 }
 #endif
@@ -448,15 +407,15 @@ jjm::Path  jjm::Path::getAbsolutePath() const
     if (hasPrefix && isAbs)
         return *this; 
 
-    U8Str root;
+    Utf8String root;
     if (hasPrefix)
-        root.appendEU(path.data() + prefix.first, path.data() + prefix.second); 
+        root.append(path.data() + prefix.first, path.data() + prefix.second); 
     if (isAbs)
-        root.appendEU(preferredSeparator); 
+        root.push_back(preferredSeparator); 
     else
-        root.appendEU('.'); 
+        root.push_back('.'); 
 
-    U8Str root2 = invokeGetFullPathW(root); 
+    Utf8String root2 = invokeGetFullPathW(root); 
     Path root3(root2); 
     Path result = resolve(root3); 
 
@@ -491,12 +450,12 @@ jjm::Path  jjm::Path::getAbsolutePath() const
     }
 
     Path result2; 
-    result2.path.appendEU(result.path.data() + resultPrefix.first, result.path.data() + resultPrefix.second); 
+    result2.path.append(result.path.data() + resultPrefix.first, result.path.data() + resultPrefix.second); 
     if (components.size() == 0)
-        result2.path.appendEU(preferredSeparator); 
+        result2.path.push_back(preferredSeparator); 
     for (size_t i = 0; i < components.size(); ++i)
-    {   result2.path.appendEU(preferredSeparator); 
-        result2.path.appendEU(result.path.data() + components[i].first, result.path.data() + components[i].second); 
+    {   result2.path.push_back(preferredSeparator); 
+        result2.path.append(result.path.data() + components[i].first, result.path.data() + components[i].second); 
     }
     return result2; 
 #else
@@ -556,9 +515,9 @@ jjm::Path  jjm::Path::getRealPath() const
 
         bool const expectedPrefix = return1 >= 4 && buffer1[0] == '\\' && buffer1[1] == '\\' && buffer1[2] == '?' && buffer1[3] == '\\'; 
         if ( ! expectedPrefix)
-            JFATAL(0, U8Str::cp(U16Str::utf16(buffer1 + 0, buffer1 + return1))); 
+            JFATAL(0, Utf16String(buffer1 + 0, buffer1 + return1)); 
 
-        U8Str result1 = U8Str::cp(U16Str::utf16(buffer1 + 4, buffer1 + return1));
+        Utf8String result1 = makeU8StrFromCpRange(makeCpRangeFromUtf16(make_pair(buffer1 + 4, buffer1 + return1)));
         Path result2(result1);
         return result2; 
     }
@@ -578,11 +537,11 @@ jjm::Path  jjm::Path::getRealPath() const
     if (return2 < buffer2Size)
     {   //success
 
-        bool const expectedPrefix = return1 >= 4 && buffer1[0] == '\\' && buffer1[1] == '\\' && buffer1[2] == '?' && buffer1[3] == '\\'; 
+        bool const expectedPrefix = return2 >= 4 && buffer2[0] == '\\' && buffer2[1] == '\\' && buffer2[2] == '?' && buffer2[3] == '\\'; 
         if ( ! expectedPrefix)
-            JFATAL(0, U8Str::cp(U16Str::utf16(buffer1 + 0, buffer1 + return1))); 
+            JFATAL(0, Utf16String(buffer2.get(), buffer2.get() + return2)); 
 
-        U8Str result1 = U8Str::cp(U16Str::utf16(buffer1 + 4, buffer1 + return1));
+        Utf8String result1 = makeU8StrFromCpRange(makeCpRangeFromUtf16(make_pair(buffer2.get() + 4, buffer2.get() + return2)));
         Path result2(result1);
         return result2; 
     }
@@ -596,7 +555,7 @@ jjm::Path  jjm::Path::getRealPath() const
     //complaining that the buffer wasn't big enough, when we gave a big enough buffer. 
     JFATAL(0, 0); 
 #else
-    string initialUtf8PathString = getAbsolutePath().toStdString(); 
+    string initialUtf8PathString = getAbsolutePath().getStringRep(); 
 
     string localizedInput = initialUtf8PathString; //TODO
 
@@ -658,9 +617,9 @@ jjm::Path  jjm::Path::getRealPath2() const
 
         bool const expectedPrefix = return1 >= 4 && buffer1[0] == '\\' && buffer1[1] == '\\' && buffer1[2] == '?' && buffer1[3] == '\\'; 
         if ( ! expectedPrefix)
-            JFATAL(0, U8Str::cp(U16Str::utf16(buffer1 + 0, buffer1 + return1))); 
+            JFATAL(0, Utf16String(buffer1 + 0, buffer1 + return1)); 
 
-        U8Str result1 = U8Str::cp(U16Str::utf16(buffer1 + 4, buffer1 + return1));
+        Utf8String result1 = makeU8StrFromCpRange(makeCpRangeFromUtf16(make_pair(buffer1 + 4, buffer1 + return1)));
         Path result2(result1);
         return result2; 
     }
@@ -680,11 +639,11 @@ jjm::Path  jjm::Path::getRealPath2() const
     if (return2 < buffer2Size)
     {   //success
 
-        bool const expectedPrefix = return1 >= 4 && buffer1[0] == '\\' && buffer1[1] == '\\' && buffer1[2] == '?' && buffer1[3] == '\\'; 
+        bool const expectedPrefix = return2 >= 4 && buffer2[0] == '\\' && buffer2[1] == '\\' && buffer2[2] == '?' && buffer2[3] == '\\'; 
         if ( ! expectedPrefix)
-            JFATAL(0, U8Str::cp(U16Str::utf16(buffer1 + 0, buffer1 + return1))); 
+            JFATAL(0, Utf16String(buffer2.get() + 0, buffer2.get() + return2)); 
 
-        U8Str result1 = U8Str::cp(U16Str::utf16(buffer1 + 4, buffer1 + return1));
+        Utf8String result1 = makeU8StrFromCpRange(makeCpRangeFromUtf16(make_pair(buffer2.get() + 4, buffer2.get() + return2)));
         Path result2(result1);
         return result2; 
     }
@@ -698,7 +657,7 @@ jjm::Path  jjm::Path::getRealPath2() const
     //complaining that the buffer wasn't big enough, when we gave a big enough buffer. 
     JFATAL(0, 0); 
 #else
-    string initialUtf8PathString = getAbsolutePath().toStdString(); 
+    string initialUtf8PathString = getAbsolutePath().getStringRep(); 
 
     string localizedInput = initialUtf8PathString; //TODO
 
@@ -726,7 +685,7 @@ jjm::Path  jjm::Path::getRealPath2() const
     string jjm::Path::getLocalizedString() const
     {
         //TODO
-        return toStdString();  
+        return getStringRep();  
     }
 
     jjm::Path jjm::Path::fromLocalizedString(string const& localizedString)

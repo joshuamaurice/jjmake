@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="jboundscheckediterator.hpp" />
     <ClInclude Include="jfatal.hpp" />
     <ClInclude Include="jinttostring.hpp" />
     <ClInclude Include="jnulltermiter.hpp" />

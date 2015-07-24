@@ -13,40 +13,16 @@ using namespace jjm;
 using namespace std;
 
 
-int jjm::writeToStdOut(char const* utf8, size_t bytes)
+int jjm::writeToStdOut(Utf8String const& str)
 {
 #ifdef _WIN32
-    auto byteRange = make_pair(utf8, utf8 + bytes); 
-    auto cpRange = makeUtf8ToCpRange(byteRange.first, byteRange.second); 
-    U16Str r3 = U16Str::cp(cpRange); 
-    std::wcout.write(r3.data(), r3.sizeEU()); 
+    Utf16String p = jjm::makeU16Str(str); 
+    std::wcout.write(p.data(), p.size()); 
     return ( ! std::wcout) ? -1 : 0; 
 #else
-    std::cout.write(utf8, bytes); //TODO
+    std::cout.write(str.c_str(), str.size()); //TODO localization
     return ( ! std::cout) ? -1 : 0; 
 #endif
-}
-
-int jjm::writeToStdOut(char const* utf8)
-{
-#ifdef _WIN32
-    auto byteRange = jjm::makeNullTermRange(utf8);
-    auto cpRange = make_pair(
-            jjm::makeUtf8ToCpInputIterator(byteRange.first,  byteRange.second), 
-            jjm::makeUtf8ToCpInputIterator(byteRange.second, byteRange.second)
-            ); 
-    U16Str r4 = U16Str::cp(cpRange); 
-    std::wcout.write(r4.data(), r4.sizeEU()); 
-    return (! std::wcout) ? -1 : 0; 
-#else
-    std::cout << utf8; //TODO
-    return ( ! std::cout) ? -1 : 0; 
-#endif
-}
-
-int jjm::writeToStdOut(std::string const& utf8)
-{
-    return jjm::writeToStdOut(utf8.data(), utf8.size()); 
 }
 
 int jjm::flushStdOut()

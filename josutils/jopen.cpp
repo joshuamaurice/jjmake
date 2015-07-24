@@ -6,8 +6,8 @@
 #include "jopen.hpp"
 
 #include "jbase/jfatal.hpp"
+#include "jbase/jinttostring.hpp"
 #include "jbase/jnulltermiter.hpp"
-#include "jbase/jstaticassert.hpp"
 
 #include <sstream>
 #include <stdexcept>
@@ -18,6 +18,7 @@
     #include <windows.h>
 #else
     #include <fcntl.h>
+    #include <unistd.h>
     #include <sys/stat.h>
 #endif
 
@@ -76,16 +77,6 @@ namespace
 
         return posixopenflags;
     }
-
-    inline void setCloseOnExec(int const fd)
-    {   
-        int flags = fcntl(fd, F_GETFD);
-        if (flags == -1)
-            abort();
-        flags |= FD_CLOEXEC;
-        if (fcntl(fd, F_SETFD, flags) == -1)
-            abort();
-    }
 #endif
 }
 
@@ -117,9 +108,9 @@ namespace
     jjm::FileHandle jjm::FileOpener::open(jjm::Path const& path) const
     {
         if (m_accessMode == 0)
-            JFATAL(0, path.toStdString());
+            JFATAL(0, path.getStringRep());
         if (m_createMode == 0)
-            JFATAL(0, path.toStdString());
+            JFATAL(0, path.getStringRep());
 
         errno = 0; 
         FileHandle const fd = open2(path); 
@@ -129,7 +120,7 @@ namespace
             return fd;
 
         string message;
-        message += "jjm::FileOpener::open() failed. Path before localization \"" + path.toStdString() + "\". Cause:\n";
+        message += "jjm::FileOpener::open() failed. Path before localization \"" + path.getStringRep() + "\". Cause:\n";
         message += "::open(<path>, <flags>, <flags>). failed. Cause:\n";
         if (EACCES == lastErrno)
             throw runtime_error(message + "errno EACCES, does not have correct permissions for file.");
@@ -145,20 +136,24 @@ namespace
 
     
 #ifdef _WIN32
-    jjm::FileHandle jjm::FileOpener::open2(jjm::Path const& path) const
+    jjm::FileHandle jjm::FileOpener::open2(jjm::Path const& inputPath) const
     {
-        U16Str utf16Path2; 
-        for (auto cp = path.getStringRep().beginCP(); cp != path.getStringRep().endCP(); ++cp)
+        Utf16String utf16Path2; 
+
+        auto inputPathCpRange = makeCpRange(inputPath.getStringRep()); 
+        for (auto cp = inputPathCpRange.first; cp != inputPathCpRange.second; ++cp)
         {   if (*cp == '/')
-                utf16Path2.appendCP('\\');
+                utf16Path2.push_back('\\');
             else
-                utf16Path2.appendCP(*cp);
+            {   Utf16Sequence x = writeUtf16(*cp); 
+                utf16Path2.insert(utf16Path2.size(), x.seq, x.len); 
+            }
         }
 
         if (m_accessMode == 0)
-            JFATAL(0, U8Str::cp(utf16Path2).c_str());
+            JFATAL(0, utf16Path2);
         if (m_createMode == 0)
-            JFATAL(0, U8Str::cp(utf16Path2).c_str());
+            JFATAL(0, utf16Path2);
 
         DWORD const win32AccessFlags = makeWin32AccessFlags(m_accessMode, m_append);
         DWORD const win32CreationFlags = makeWin32CreationFlags(m_createMode, m_truncate);
@@ -182,9 +177,9 @@ namespace
     {
         //TODO convert based on current locale and encoding
         if (m_accessMode == 0)
-            JFATAL(0, path.toStdString());
+            JFATAL(0, path.getStringRep());
         if (m_createMode == 0)
-            JFATAL(0, path.toStdString());
+            JFATAL(0, path.getStringRep());
         FileHandle const fd = open_asyncSignalSafe(path.getStringRep().c_str());
         return fd;
     }
@@ -202,10 +197,10 @@ namespace
 
         int posixopenflags = makePosixOpenFlags(m_accessMode, m_createMode, m_append, m_truncate);
 
-        #if (defined(_POSIX_VERSION) && _POSIX_VERSION >= 200809L)
+        #if ((defined(_POSIX_VERSION) && _POSIX_VERSION >= 200809L) || defined(__CYGWIN__))
             posixopenflags |= O_CLOEXEC;
         #else
-            #warning TODO set close on exec flag on fd
+            #warning You should upgrade your POSIX system to support O_CLOEXEC. 
         #endif
         
         for (;;)
@@ -215,6 +210,11 @@ namespace
                     continue;
                 return FileHandle();
             }
+            FileHandle result(fd); 
+        #if ((defined(_POSIX_VERSION) && _POSIX_VERSION >= 200809L) || defined(__CYGWIN__))
+        #else
+            result.setCloseOnExec(); 
+        #endif
             return FileHandle(fd);
         }
     }

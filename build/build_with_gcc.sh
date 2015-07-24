@@ -1,5 +1,8 @@
 #! /bin/bash
 
+platform=gcc
+if test "$1" != "" ; then platform="$1" ; fi
+
 compile_c()
 {
   objdir="$1"
@@ -7,7 +10,7 @@ compile_c()
   shift
   shift
   opts=()
-  if test $# -ne 0 ; then opts="$@" ; fi
+  if test $# -ne 0 ; then opts=("$@") ; fi
   obj="$objdir/`basename "$c" .c`.o"
   cmd=(gcc -Wall -c -g -std=gnu9x -pthread -O0 "-I${PWD}" "$c" -o "$obj" "${opts[@]}" )
 
@@ -28,7 +31,7 @@ compile_cpp()
   shift
   shift
   opts=()
-  if test $# -ne 0 ; then opts="$@" ; fi
+  if test $# -ne 0 ; then opts=("$@") ; fi
   obj="$objdir/`basename "$cpp" .cpp`.o"
   cmd=(g++ -Wall -c -g -std=gnu++0x -pthread -O0 "-I${PWD}" "$cpp" -o "$obj" "${opts[@]}" )
 
@@ -106,18 +109,16 @@ compile_cpps()
 ##
 ##
 
-platform=gcc
-
 #jbase
-compile_cpps tmp/$platform/jbase/ jbase/*.cpp
+compile_cpps "tmp/$platform/jbase" jbase/*.cpp
 x=$?; if test $x -ne 0; then exit 1; fi
-link_staticlib tmp/$platform/jbase/jbase.a tmp/$platform/jbase/*.o
+link_staticlib "tmp/$platform/jbase/jbase.a" "tmp/$platform/jbase/"*.o
 x=$?; if test $x -ne 0; then exit 1; fi
 
 #junicode: create junicode/generate-gciter-data-cfile.exe
-compile_cpp tmp/$platform/junicode/ junicode/generate-gciter-data-cfile.cpp
+compile_cpp "tmp/$platform/junicode" junicode/generate-gciter-data-cfile.cpp
 x=$?; if test $x -ne 0; then exit 1; fi
-link_exe tmp/$platform/junicode/generate-gciter-data-cfile.exe tmp/$platform/junicode/generate-gciter-data-cfile.o
+link_exe "tmp/$platform/junicode/generate-gciter-data-cfile.exe" "tmp/$platform/junicode/generate-gciter-data-cfile.o"
 x=$?; if test $x -ne 0; then exit 1; fi
 
 #junicode: create junicode/gciter-data-cfile.c
@@ -125,7 +126,7 @@ rm -f "tmp/$platform/junicode/gciter-data-cfile.c"
 echo 'XXXX'
 echo 'XXXX'
 echo "./tmp/$platform/junicode/generate-gciter-data-cfile.exe > tmp/$platform/junicode/gciter-data-cfile.c"
-( cd junicode ; ../tmp/$platform/junicode/generate-gciter-data-cfile.exe > ../tmp/$platform/junicode/gciter-data-cfile.c ; )
+( cd junicode ; "../tmp/$platform/junicode/generate-gciter-data-cfile.exe" > "../tmp/$platform/junicode/gciter-data-cfile.c" ; )
 x=$?
 if test $x -ne 0 ; then
   rm -f "tmp/$platform/junicode/gciter-data-cfile.c"
@@ -133,7 +134,7 @@ if test $x -ne 0 ; then
 fi
 
 #junicode: compile the generated c file
-compile_c tmp/$platform/junicode/ tmp/$platform/junicode/gciter-data-cfile.c
+compile_c "tmp/$platform/junicode/" "tmp/$platform/junicode/gciter-data-cfile.c"
 x=$?; if test $x -ne 0; then exit 1; fi
 
 #junicode: compile the other cpp files
@@ -143,29 +144,29 @@ for cpp in "${cpps[@]}" ; do
   if echo "$cpp" | grep 'generate-gciter-data-cfile.cpp' > /dev/null ; then continue ; fi
   cpps2=("${cpps2[@]}" "$cpp")
 done
-compile_cpps tmp/$platform/junicode/ "${cpps2[@]}"
+compile_cpps "tmp/$platform/junicode" "${cpps2[@]}"
 x=$?; if test $x -ne 0; then exit 1; fi
 
 #junicode: link the obj files
-objs=(tmp/$platform/junicode/*.o)
+objs=("tmp/$platform/junicode/"*.o)
 objs2=()
 for obj in "${objs[@]}" ; do
   if echo "$obj" | grep 'generate-gciter-data-cfile.o' > /dev/null ; then continue ; fi
   objs2=("${objs2[@]}" "$obj")
 done
-link_staticlib tmp/$platform/junicode/junicode.a "${objs2[@]}"
+link_staticlib "tmp/$platform/junicode/junicode.a" "${objs2[@]}"
 x=$?; if test $x -ne 0; then exit 1; fi
 
 #josutils
-compile_cpps tmp/$platform/josutils/ josutils/*.cpp
+compile_cpps "tmp/$platform/josutils" josutils/*.cpp
 x=$?; if test $x -ne 0; then exit 1; fi
-link_staticlib tmp/$platform/josutils/josutils.a tmp/$platform/josutils/*.o
+link_staticlib "tmp/$platform/josutils/josutils.a" "tmp/$platform/josutils/"*.o
 x=$?; if test $x -ne 0; then exit 1; fi
 
 #jjmake
-compile_cpps tmp/$platform/jjmake/ jjmake/*.cpp
+compile_cpps "tmp/$platform/jjmake/" jjmake/*.cpp
 x=$?; if test $x -ne 0; then exit 1; fi
-link_exe bin/$platform/jjmake/jjmake tmp/$platform/jjmake/*.o tmp/$platform/jbase/jbase.a tmp/$platform/junicode/junicode.a tmp/$platform/josutils/josutils.a
+link_exe "bin/$platform/jjmake/jjmake" "tmp/$platform/jjmake/"*.o "tmp/$platform/jbase/jbase.a" "tmp/$platform/junicode/junicode.a" "tmp/$platform/josutils/josutils.a"
 x=$?; if test $x -ne 0; then exit 1; fi
 
 #

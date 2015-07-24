@@ -15,6 +15,7 @@
     #include <windows.h>
 #else
     #include <unistd.h>
+    #include <fcntl.h>
 #endif
 
 
@@ -60,7 +61,7 @@ int64_t jjm::FileHandle::seek2(int64_t off, int whence)
 {
 #ifdef _WIN32
     LARGE_INTEGER off2;
-    JSTATICASSERT(sizeof(off2.QuadPart) == sizeof(int64_t)); 
+    static_assert(sizeof(off2.QuadPart) == sizeof(int64_t), "ERROR"); 
     off2.QuadPart = off; 
 
     LARGE_INTEGER newPosition; 
@@ -194,3 +195,18 @@ ssize_t jjm::FileHandle::write(void const* buf, size_t bytes)
     throw std::runtime_error("jjm::FileHandle::write failed. errno " + toDecStr(lastErrno) + "."); 
 #endif
 }
+
+
+#ifndef _WIN32
+    //returns 0 on success, -1 on errors
+    int jjm::FileHandle::setCloseOnExec(bool b)
+    {
+        int flags = fcntl(mhandle, F_GETFD);
+        if (flags == -1)
+            return -1; 
+        flags |= FD_CLOEXEC;
+        if (fcntl(mhandle, F_SETFD, flags) == -1)
+            return -1; 
+        return 0; 
+    }
+#endif

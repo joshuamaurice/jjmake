@@ -7,7 +7,6 @@
 #define JCSTDINT_HPP_HEADER_GUARD
 
 #include "jwarningpragmas.hpp"
-#include "jstaticassert.hpp"
 
 #include <climits>
 #include <cstdlib>
@@ -54,16 +53,16 @@
     using std::uint64_t;
     using std::int64_t;
 
-    JSTATICASSERT(CHAR_BIT == 8)
-    JSTATICASSERT(sizeof(std::uint8_t) == 1)
-    JSTATICASSERT(sizeof(std:: int8_t) == 1)
-    JSTATICASSERT(sizeof(std::uint16_t) == 2)
-    JSTATICASSERT(sizeof(std:: int16_t) == 2)
-    JSTATICASSERT(sizeof(std::uint32_t) == 4)
-    JSTATICASSERT(sizeof(std:: int32_t) == 4)
-    JSTATICASSERT(sizeof(std::uint64_t) == 8)
-    JSTATICASSERT(sizeof(std:: int64_t) == 8)
-    JSTATICASSERT(sizeof(std::size_t) == sizeof(ssize_t))
+    static_assert(CHAR_BIT == 8, "ERROR");
+    static_assert(sizeof(std::uint8_t) == 1, "ERROR");
+    static_assert(sizeof(std:: int8_t) == 1, "ERROR");
+    static_assert(sizeof(std::uint16_t) == 2, "ERROR");
+    static_assert(sizeof(std:: int16_t) == 2, "ERROR");
+    static_assert(sizeof(std::uint32_t) == 4, "ERROR");
+    static_assert(sizeof(std:: int32_t) == 4, "ERROR");
+    static_assert(sizeof(std::uint64_t) == 8, "ERROR");
+    static_assert(sizeof(std:: int64_t) == 8, "ERROR");
+    static_assert(sizeof(std::size_t) == sizeof(ssize_t), "ERROR");
 #else
     #include <cstdint>
 #endif

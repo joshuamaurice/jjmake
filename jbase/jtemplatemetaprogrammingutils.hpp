@@ -6,7 +6,6 @@
 #ifndef JTEMPLATEMETAPROGRAMMING_HPP_HEADER_GUARD
 #define JTEMPLATEMETAPROGRAMMING_HPP_HEADER_GUARD
 
-#include "jstaticassert.hpp"
 #include <iterator>
 
 namespace jjm
@@ -16,7 +15,7 @@ namespace jjm
     namespace Internal
     {   struct True { char c[16]; };
         struct False { char c[1]; };
-        JSTATICASSERT(sizeof(True) != sizeof(False));
+        static_assert(sizeof(True) != sizeof(False), "ERROR");
     }
 
     // ****

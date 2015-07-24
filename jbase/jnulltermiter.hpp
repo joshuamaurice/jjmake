@@ -1,23 +1,22 @@
-// Copyright (c) 2010-2015, Informatica Corporation, Joshua Maurice
-//       Distributed under the 3-clause BSD License
-//      (See accompanying file LICENSE.TXT or copy at
-//  http://www.w3.org/Consortium/Legal/2008/03-bsd-license.html)
-
-#ifndef JBASE_JNullTermIterator_HPP_HEADER_GUARD
-#define JBASE_JNullTermIterator_HPP_HEADER_GUARD
+#ifndef JNULLTERMITER_HPP_HEADER_GUARD
+#define JNULLTERMITER_HPP_HEADER_GUARD
 
 #include <iterator>
 
 namespace jjm
 {
 
+//**** **** **** **** 
+//** Public APIs
+
 template <typename Iter>
 class NullTermIterator; 
+
 template <typename Iter>
 bool operator== (NullTermIterator<Iter> const& a, NullTermIterator<Iter> const& b);
+
 template <typename Iter>
 bool operator!= (NullTermIterator<Iter> const& a, NullTermIterator<Iter> const& b);
-
 
 template <typename Iter>
 class NullTermIterator
@@ -31,12 +30,12 @@ public:
 public:
     struct Proxy { value_type v; value_type operator* () const { return v; } };
 public: 
-    NullTermIterator() : iter(), v() {} //creates a "one-past-the-end" value
+    NullTermIterator(); //creates a "one-past-the-end" value
     NullTermIterator(Iter iter_); 
     NullTermIterator&  operator++ (); //prefix
-    Proxy          operator++ (int); //postfix
-    value_type     operator* (); 
-    Iter           getIter() const { return iter; }
+    Proxy              operator++ (int); //postfix
+    value_type         operator* () const;  
+    Iter               getIter() const { return iter; }
 
     friend bool operator== <> (NullTermIterator<Iter> const& a, NullTermIterator<Iter> const& b);
     friend bool operator!= <> (NullTermIterator<Iter> const& a, NullTermIterator<Iter> const& b);
@@ -47,59 +46,90 @@ private:
 };
 
 template <typename Iter>
-std::pair<NullTermIterator<Iter>, NullTermIterator<Iter> >  
-makeNullTermRange(Iter nullTermIter)
-{
-    std::pair<NullTermIterator<Iter>, NullTermIterator<Iter> > result; 
-    result.first = NullTermIterator<Iter>(nullTermIter); 
-    result.second = NullTermIterator<Iter>(); 
-    return result; 
-}
+std::pair<NullTermIterator<Iter>, NullTermIterator<Iter> >
+    makeNullTermRange(Iter const& iter);
 
-// ---- ---- ---- ---- 
-// impl: 
+
+
+
+//**** **** **** **** 
+//** Private Implementation
 
 template <typename Iter>
-NullTermIterator<Iter>::NullTermIterator(Iter iter_)
-    : iter(iter_)
+std::pair<NullTermIterator<Iter>, NullTermIterator<Iter> >
+    makeNullTermRange(Iter const& iter)
 {
-    v = *iter; 
+    std::pair<NullTermIterator<Iter>, NullTermIterator<Iter> > x;
+    x.first = NullTermIterator<Iter>(iter);
+    x.second = NullTermIterator<Iter>(); 
+    return x; 
+}
+
+template <typename Type, size_t N>
+std::pair<NullTermIterator<Type*>, NullTermIterator<Type*> >
+    makeNullTermRange(Type (&arr)[N])
+{
+    std::pair<NullTermIterator<Type*>, NullTermIterator<Type*> > x;
+    x.first = NullTermIterator<Type*>(arr + 0);
+    x.second = NullTermIterator<Type*>(); 
+    return x; 
 }
 
 template <typename Iter>
-NullTermIterator<Iter>&  NullTermIterator<Iter>::operator++ () //prefix
+NullTermIterator<Iter>::NullTermIterator() 
+    : iter(), v()
 {
-    ++iter; 
-    v = *iter; 
+}
+
+template <typename Iter>
+NullTermIterator<Iter>::NullTermIterator(Iter iter_) 
+    : iter(iter_), v()
+{
+    v = *iter;
+    if (v == value_type())
+        iter = Iter();
+    else
+        ++iter; 
+}
+
+template <typename Iter>
+NullTermIterator<Iter> &  NullTermIterator<Iter>::operator++ () //prefix
+{
+    v = *iter;
+    if (v == value_type())
+        iter = Iter();
+    else
+        ++iter; 
     return *this; 
 }
 
 template <typename Iter>
 typename NullTermIterator<Iter>::Proxy  NullTermIterator<Iter>::operator++ (int ) //postfix
 {
-    Proxy p = { v };
+    Proxy proxy = { v }; 
     ++*this;
-    return p;
+    return proxy; 
 }
 
 template <typename Iter>
-typename NullTermIterator<Iter>::value_type  NullTermIterator<Iter>::operator* ()
+typename NullTermIterator<Iter>::value_type  NullTermIterator<Iter>::operator* () const
 {
     return v; 
 }
 
-
 template <typename Iter>
 bool operator== (NullTermIterator<Iter> const& a, NullTermIterator<Iter> const& b)
 {
-    return a.v == 0 && b.v == 0;
+    return a.v == typename NullTermIterator<Iter>::value_type() 
+        && b.v == typename NullTermIterator<Iter>::value_type(); 
 }
 
 template <typename Iter>
 bool operator!= (NullTermIterator<Iter> const& a, NullTermIterator<Iter> const& b)
 {
-    return !(a == b); 
+    return ! (a == b);
 }
+
 
 }//namespace jjm
 

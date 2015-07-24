@@ -8,6 +8,7 @@
 #include "jfilehandle.hpp"
 #include "jopen.hpp"
 #include "jbase/jfatal.hpp"
+#include "jbase/jinttostring.hpp"
 
 #ifdef _WIN32
     #include <windows.h>
@@ -176,7 +177,7 @@ using namespace std;
                 return; 
             }
             string message;
-            message += string() + stname + " failed. UTF8 path before localization \"" + path.toStdString() + "\". Cause:\n";
+            message += string() + stname + " failed. UTF8 path before localization \"" + path.getStringRep() + "\". Cause:\n";
             message += string() + (resolveSymlinks ? "::stat" : "::lstat") + "(<path>) failed. Cause:\n";
             if (EACCES == lastErrno)
                 throw runtime_error(message + "errno EACCES, search permission is denied on a component of the path prefix, or write permission is denied on the parent directory of the directory to be created.");
@@ -189,10 +190,10 @@ using namespace std;
         else if (S_ISBLK(st.st_mode)) s->type = FileType::Other;
         else if (S_ISCHR(st.st_mode)) s->type = FileType::Other;
         else if (S_ISFIFO(st.st_mode)) s->type = FileType::Other;
-        else                           JFATAL(0, path.toStdString());
+        else                           JFATAL(0, path.getStringRep());
 
         if (resolveSymlinks && s->type == FileType::Symlink)
-            JFATAL(0, path.toStdString()); 
+            JFATAL(0, path.getStringRep()); 
 
         s->lastWriteTimeNanoSec = 0;
         s->lastWriteTimeNanoSec += (std::uint64_t)(st.st_mtim.tv_nsec);

@@ -26,6 +26,7 @@
   <ItemGroup>
     <ClInclude Include="jstdouterr.hpp" />
     <ClInclude Include="jstringliteral.hpp" />
+    <ClInclude Include="junicodebase.hpp" />
     <ClInclude Include="jutfiterator.hpp" />
     <ClInclude Include="jutfstring.hpp" />
     <ClInclude Include="jutfutils.hpp" />

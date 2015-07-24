@@ -6,8 +6,7 @@
 #ifndef JUNICODE_JSTDOUTERR_HPP_HEADER_GUARD
 #define JUNICODE_JSTDOUTERR_HPP_HEADER_GUARD
 
-#include <cstddef>
-#include <string>
+#include "jutfstring.hpp"
 
 namespace jjm
 {
@@ -21,9 +20,7 @@ the proper locale and encoding, and then write to stdout.
 
 Return 0 on success, -1 on failure. 
 */
-int writeToStdOut(std::string const& utf8);
-int writeToStdOut(char const* nullTermUtf8);
-int writeToStdOut(char const* utf8, std::size_t bytes);
+int writeToStdOut(Utf8String const& );
 
 //returns 0 on success, -1 on failure
 int flushStdOut(); 

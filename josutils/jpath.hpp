@@ -76,7 +76,6 @@ public:
     Path() {} 
     Path(Path const& rhs) : path(rhs.path) {}
 
-    explicit Path(std::string const& utf8path); 
     explicit Path(Utf8String const& path); 
     explicit Path(Utf16String const& path); 
 
@@ -87,8 +86,6 @@ public:
     void swap(Path & rhs) { using std::swap; swap(path, rhs.path); } 
     friend void swap(Path & x, Path & y) { x.swap(y); }
 
-    //Returns a string representation of this path in UTF8. 
-    std::string toStdString() const { return std::string(path.data(), path.sizeBytes()); }
     Utf8String const& getStringRep() const { return path; }
 
     bool isEmpty() const; 
@@ -97,12 +94,9 @@ public:
 
     //append(): Adds a component to the end of the list of components. returns *this. 
     //If component contains a separator character, std::exception will be thrown. 
-    Path& append(std::string const& utf8component); 
     Path& append(Utf8String const& component); 
-    Path& append(Utf16String const& component); 
     
-    std::string getStdPrefix() const; 
-    Utf8String getU8Prefix() const; 
+    Utf8String getPrefix() const; 
 
     //If *this has no components, then getFileName() return an empty string. 
     //Otherwise, these functions return the last component. 
@@ -234,7 +228,7 @@ private:
     //No trailing separators (except for root paths). 
     //No adjacent separators. 
     //The only separator chars are the platform's preferred separator char. 
-    U8Str path; 
+    Utf8String path; 
 };
 
 } //namespace jjm

@@ -3,8 +3,6 @@
 //      (See accompanying file LICENSE.TXT or copy at
 //  http://www.w3.org/Consortium/Legal/2008/03-bsd-license.html)
 
-#include "jbase/jstaticassert.hpp"
-
 #include <algorithm>
 #include <limits>
 #include <climits>
@@ -156,8 +154,8 @@ void initGraphemeBreakTable(
 
 int main()
 {
-    JSTATICASSERT(CHAR_BIT == 8)
-    JSTATICASSERT(sizeof(int) >= 4)
+    static_assert(CHAR_BIT == 8, "ERROR"); 
+    static_assert(sizeof(int) >= 4, "ERROR"); 
 
     map<string, set<UIntRange> > graphemeBreakProperties;
 

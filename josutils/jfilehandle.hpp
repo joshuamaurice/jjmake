@@ -160,6 +160,12 @@ public:
     ssize_t write(void const* buf, std::size_t bytes);  
 
 
+#ifndef _WIN32
+    //returns 0 on success, -1 on errors
+    int setCloseOnExec(bool b = true); 
+#endif
+
+
 private:
     NativeHandle mhandle; 
 };

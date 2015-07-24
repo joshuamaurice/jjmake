@@ -79,7 +79,7 @@ void jjm::JjmakeContext::execute()
 
 void jjm::JjmakeContext::phase1()
 {
-    rootParserContext->setValue(".PWD", Path(".").getRealPath().toStdString()); 
+    rootParserContext->setValue(".PWD", Path(".").getRealPath().getStringRep()); 
     UniquePtr<InitialParseNode*> initialNode(new InitialParseNode); 
     initialNode->jjmakeContext = this;
     initialNode->parserContext = this->rootParserContext.get();
@@ -96,14 +96,14 @@ void jjm::JjmakeContext::initPathMaps()
                     inputPath != node->second->inputPaths.end(); 
                     ++inputPath)
         {
-            string inputPathString = inputPath->toStdString(); 
+            string inputPathString = inputPath->getStringRep(); 
             inputPathMap[inputPathString].push_back(node->second); 
         }
         
         for (vector<Path>::const_iterator outputPath = node->second->outputPaths.begin();
                     outputPath != node->second->outputPaths.end(); 
                     ++outputPath)
-        {   string outputPathString = outputPath->toStdString(); 
+        {   string outputPathString = outputPath->getStringRep(); 
             Node * & node2 = outputPathMap[outputPathString]; 
             if (node2 != 0)
             {   throw std::runtime_error(string()
@@ -213,7 +213,7 @@ void jjm::JjmakeContext::activateSpecifiedGoals()
         Path const p1 = Path(*g).getAbsolutePath(); 
 
         if ( ! p1.isEmpty())
-        {   node = nodes.find(p1.toStdString());
+        {   node = nodes.find(p1.getStringRep());
             if (node != nodes.end())
             {   node->second->active = true; 
                 continue; 
@@ -221,7 +221,7 @@ void jjm::JjmakeContext::activateSpecifiedGoals()
         }
 
         if ( ! p1.isEmpty())
-        {   map<string, Node*>::iterator n = outputPathMap.find(p1.toStdString());
+        {   map<string, Node*>::iterator n = outputPathMap.find(p1.getStringRep());
             if (n != outputPathMap.end())
             {   node->second->active = true;
                 continue; 

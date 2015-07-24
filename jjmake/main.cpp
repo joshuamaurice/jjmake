@@ -5,6 +5,7 @@
 
 #include "jjmakecontext.hpp"
 
+#include "jbase/jinttostring.hpp"
 #include "jbase/jnulltermiter.hpp"
 #include "jbase/juniqueptr.hpp"
 #include "junicode/jutfstring.hpp"
@@ -47,9 +48,9 @@ namespace jjm { int jjmakemain(vector<string> const& args); }
         vector<string> args;
         for (int x = 1; x < argc; ++x)
         {   auto utf16range = makeNullTermRange(argv[x]);
-            U8Str u8str = U8Str::utf16(utf16range); 
-            if (u8str.sizeBytes())
-                args.push_back(std::string(u8str.c_str()));  
+            Utf8String u8str = makeU8StrFromCpRange(makeCpRangeFromUtf16(utf16range)); 
+            if (u8str.size())
+                args.push_back(u8str);  
             else
                 args.push_back(std::string());  
         }

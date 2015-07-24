@@ -28,7 +28,7 @@ typedef void (*JjmFatalHandlerType)(char const * filename, int linenum, int info
 inline JjmFatalHandlerType& jjmGetFatalHandler() { static JjmFatalHandlerType x = 0; return x; }
 
 /*Utility functions so users of JFATAL() can use other arguments,
-like std::string and jjm::Utf8String, as the second argument to JFATAL.*/
+like std::string, as the second argument to JFATAL.*/
 inline char const* JjmFatalHandlerUtil(char const* info_str) { return info_str; }
 inline char const* JjmFatalHandlerUtil(std::string const& info_str) { return info_str.c_str(); }
 

@@ -19,14 +19,6 @@ using namespace std;
 
 
 
-namespace
-{
-    inline bool isLatinLetter(char c)
-    {
-        return (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')); 
-    }
-}
-
 class jjm::ParserContext::Evaluator
 {
 public:
@@ -392,7 +384,7 @@ void jjm::ParserContext::Evaluator::controlStatementFrame()
         char c = source.next(); 
         if (c == ']')
             break; 
-        if ( ! isLatinLetter(c))
+        if ( ! isAsciiLetter(c))
             throw std::runtime_error("Invalid control statement >>[" + controlName + "...]<<."); 
         controlName += c; 
         if (controlName.size() >= 6)
