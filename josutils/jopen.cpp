@@ -145,9 +145,7 @@ namespace
         {   if (*cp == '/')
                 utf16Path2.push_back('\\');
             else
-            {   Utf16Sequence x = writeUtf16(*cp); 
-                utf16Path2.insert(utf16Path2.size(), x.seq, x.len); 
-            }
+                appendCp(utf16Path2, *cp);
         }
 
         if (m_accessMode == 0)

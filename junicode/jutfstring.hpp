@@ -30,18 +30,34 @@ typedef  std::basic_string<Utf16EncodingUnit>   Utf16String;
     typedef  std::wstring                       Utf16String; 
 #endif
 
+template <typename Iter>
+Utf8String  & appendUtf8 (Utf8String  & u8str , std::pair<Iter, Iter> const& utf8Range); 
+template <typename Iter>
+Utf16String & appendUtf16(Utf16String & u16str, std::pair<Iter, Iter> const& utf16Range); 
+
+template <typename Iter>
+Utf8String  & appendCp(Utf8String  & u8str , std::pair<Iter, Iter> const& cpRange); 
+template <typename Iter>
+Utf16String & appendCp(Utf16String & u16str, std::pair<Iter, Iter> const& cpRange); 
+
+inline Utf8String  & appendCp(Utf8String  & u8str , UnicodeCodePoint cp); 
+inline Utf16String & appendCp(Utf16String & u16str, UnicodeCodePoint cp); 
+
 inline Utf8String makeU8Str(Utf16String const& u16str);
 inline Utf16String makeU16Str(Utf8String const& u8str);
 
-template <typename Utf8Iter>
-Utf8String makeU8StrFromUtf8(std::pair<Utf8Iter, Utf8Iter> const& range);
-template <typename Utf16Iter>
-Utf16String makeU16StrFromUtf16(std::pair<Utf16Iter, Utf16Iter> const& range);
+inline std::pair<Utf8String ::const_iterator, Utf8String ::const_iterator> makeUtf8Range (Utf8String  const& u8str);
+inline std::pair<Utf16String::const_iterator, Utf16String::const_iterator> makeUtf16Range(Utf16String const& u16str);
 
-template <typename CpIter> 
-Utf8String makeU8StrFromCpRange(std::pair<CpIter, CpIter> const& cpRange);
-template <typename CpIter> 
-Utf16String makeU16StrFromCpRange(std::pair<CpIter, CpIter> const& cpRange);
+template <typename Iter>
+Utf8String makeU8StrFromUtf8(std::pair<Iter, Iter> const& range);
+template <typename Iter>
+Utf16String makeU16StrFromUtf16(std::pair<Iter, Iter> const& range);
+
+template <typename Iter> 
+Utf8String makeU8StrFromCpRange(std::pair<Iter, Iter> const& cpRange);
+template <typename Iter> 
+Utf16String makeU16StrFromCpRange(std::pair<Iter, Iter> const& cpRange);
 
 inline std::pair<Utf8ToCpBidiIterator<Utf8String::const_iterator>, Utf8ToCpBidiIterator<Utf8String::const_iterator> >
     makeCpRange(Utf8String const& ustr);
@@ -52,7 +68,8 @@ inline std::pair<Utf16ToCpBidiIterator<Utf16String::const_iterator>, Utf16ToCpBi
     makeCpRange(Utf16String const& ustr);
 inline std::pair<Utf16ToCpBidiIterator<Utf16String::const_iterator>, Utf16ToCpBidiIterator<Utf16String::const_iterator> >
     makeCpRangeFromUtf16(Utf16String const& ustr);
-}
+
+}//namespace jjm
 
 //Utility to allow passing Utf16String to JFATAL
 inline char const* JjmFatalHandlerUtil(jjm::Utf16String const& info_str) { return jjm::makeU8Str(info_str).c_str(); }
@@ -64,6 +81,56 @@ namespace jjm
 //**** **** **** **** 
 //** Private Implementation
 
+template <typename Iter>
+Utf8String & appendUtf8(Utf8String & u8str, std::pair<Iter, Iter> const& utf8Range)
+{
+    static_assert(sizeof(**(Iter*)0) == sizeof(Utf8EncodingUnit), "Invalid Template Type Parameter"); 
+    u8str.append(utf8Range.first, utf8Range.second); 
+    return u8str; 
+}
+
+template <typename Iter>
+Utf16String & appendUtf16(Utf16String & u16str, std::pair<Iter, Iter> const& utf16Range)
+{
+    static_assert(sizeof(**(Iter*)0) == sizeof(Utf16EncodingUnit), "Invalid Template Type Parameter"); 
+    u16str.append(utf16Range.first, utf16Range.second); 
+    return u16str; 
+}
+
+template <typename Iter>
+Utf8String & appendCp(Utf8String & u8str, std::pair<Iter, Iter> const& cpRange)
+{
+    static_assert(sizeof(**(Iter*)0) == sizeof(UnicodeCodePoint), "Invalid Template Type Parameter"); 
+    auto y = makeUtf8RangeFromCpRange(cpRange); 
+    u8str.append(y.first, y.second); 
+    return u8str; 
+}
+
+template <typename Iter>
+Utf16String & appendCp(Utf16String & u16str, std::pair<Iter, Iter> const& cpRange)
+{
+    static_assert(sizeof(**(Iter*)0) == sizeof(UnicodeCodePoint), "Invalid Template Type Parameter"); 
+    auto y = makeUtf8RangeFromCpRange(cpRange); 
+    u16str.append(y.first, y.second); 
+    return u16str; 
+}
+
+inline Utf8String & appendCp(Utf8String & u8str, UnicodeCodePoint cp)
+{
+    UnicodeCodePoint x[1] = { cp }; 
+    auto y = makeUtf8RangeFromCpRange(std::make_pair(x + 0, x + 1)); 
+    u8str.append(y.first, y.second); 
+    return u8str; 
+}
+
+inline Utf16String & appendCp(Utf16String & u16str, UnicodeCodePoint cp)
+{
+    UnicodeCodePoint x[1] = { cp }; 
+    auto y = makeUtf16RangeFromCpRange(std::make_pair(x + 0, x + 1)); 
+    u16str.append(y.first, y.second); 
+    return u16str; 
+}
+
 inline Utf8String makeU8Str(Utf16String const& u16str)
 {
     return makeU8StrFromCpRange(makeCpRange(u16str)); 
@@ -74,30 +141,52 @@ inline Utf16String makeU16Str(Utf8String const& u8str)
     return makeU16StrFromCpRange(makeCpRange(u8str)); 
 }
 
-template <typename Utf8Iter>
-Utf8String makeU8StrFromUtf8(std::pair<Utf8Iter, Utf8Iter> const& range)
+inline std::pair<Utf8String::const_iterator, Utf8String::const_iterator> 
+    makeUtf8Range(Utf8String const& u8str)
 {
+    std::pair<Utf8String::const_iterator, Utf8String::const_iterator> x;
+    x.first = u8str.begin();
+    x.second = u8str.end(); 
+    return x; 
+}
+
+inline std::pair<Utf16String::const_iterator, Utf16String::const_iterator> 
+    makeUtf16Range(Utf16String const& u16str)
+{
+    std::pair<Utf16String::const_iterator, Utf16String::const_iterator> x; 
+    x.first = u16str.begin();
+    x.second = u16str.end(); 
+    return x; 
+}
+
+template <typename Iter>
+Utf8String makeU8StrFromUtf8(std::pair<Iter, Iter> const& range)
+{
+    static_assert(sizeof(**(Iter*)0) == sizeof(Utf8EncodingUnit), "Invalid Template Type Parameter"); 
     return Utf8String(range.first, range.second); 
 }
 
-template <typename Utf16Iter>
-Utf16String makeU16StrFromUtf16(std::pair<Utf16Iter, Utf16Iter> const& range)
+template <typename Iter>
+Utf16String makeU16StrFromUtf16(std::pair<Iter, Iter> const& range)
 {
+    static_assert(sizeof(**(Iter*)0) == sizeof(Utf16EncodingUnit), "Invalid Template Type Parameter"); 
     return Utf16String(range.first, range.second); 
 }
 
-template <typename CpIter> 
-Utf8String makeU8StrFromCpRange(std::pair<CpIter, CpIter> const& cpRange)
+template <typename Iter> 
+Utf8String makeU8StrFromCpRange(std::pair<Iter, Iter> const& cpRange)
 {
+    static_assert(sizeof(**(Iter*)0) == sizeof(UnicodeCodePoint), "Invalid Template Type Parameter"); 
     auto utfrange = makeUtf8RangeFromCpRange(cpRange); 
     Utf8String x; 
     x.insert(x.end(), utfrange.first, utfrange.second); 
     return x; 
 }
 
-template <typename CpIter> 
-Utf16String makeU16StrFromCpRange(std::pair<CpIter, CpIter> const& cpRange)
+template <typename Iter> 
+Utf16String makeU16StrFromCpRange(std::pair<Iter, Iter> const& cpRange)
 {
+    static_assert(sizeof(**(Iter*)0) == sizeof(UnicodeCodePoint), "Invalid Template Type Parameter"); 
     auto utfrange = makeUtf16RangeFromCpRange(cpRange); 
     Utf16String x; 
     x.insert(x.end(), utfrange.first, utfrange.second); 
