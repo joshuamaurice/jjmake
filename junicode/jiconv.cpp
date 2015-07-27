@@ -9,6 +9,7 @@
 #include "jbase/jfatal.hpp"
 
 #include <errno.h>
+#include <string.h>
 
 #ifdef _WIN32
     #include <windows.h>
@@ -78,10 +79,14 @@ void jjm::IconvConverter::convert()
     size_t inputSizeLeft = inputSize; 
     size_t outputSizeLeft = outputCapacity; 
 
+#ifdef _WIN32
     SetLastError(0); 
+#endif
     errno = 0; 
     size_t const iconvReturn = iconv(converter, & inbuf, & inputSizeLeft, & outbuf, & outputSizeLeft); 
+#ifdef _WIN32
     DWORD const lastError = GetLastError(); 
+#endif
     int const lastErrno = errno; 
 
     memmove(input.get() + (inbuf - input.get()), input.get(), inbuf - input.get()); 
@@ -109,6 +114,10 @@ void jjm::IconvConverter::convert()
     string message; 
     message += "jjm::IconvConverter::IconvConverter() failed. Cause:\n";
     message += "iconv(...) failed. Cause:\n";
+#ifdef _WIN32
     message += "GetLastError() " + toDecStr(lastError) + ". errno " + toDecStr(lastErrno) + "."; 
+#else
+    message += "errno " + toDecStr(lastErrno) + "."; 
+#endif
     throw std::runtime_error(message); 
 }

@@ -18,6 +18,7 @@ if test "$1" = "gcc" ; then
   cpp_compiler_opts=(-Wall -c -g -std=gnu++0x -pthread -O0)
   
   staticlib_linker=ar
+  staticlib_linker_opts=()
   
   exe_linker=g++
   exe_linker_opts=(-Wall -g -std=gnu++0x -pthread -O0)
@@ -96,7 +97,7 @@ link_staticlib()
     echo Bad obj "$obj"
     return 1
   done
-  cmd=("$staticlib_linker" crs "$lib" "${objs[@]}")
+  cmd=("$staticlib_linker" "${staticlib_linker[@]}" crs "$lib" "${objs[@]}")
 
   rm -f "$lib"
   echo 'XXXX'
@@ -205,13 +206,13 @@ x=$?; if test $x -ne 0; then exit 1; fi
 #jjmake
 compile_cpps "tmp/$platform/jjmake/" jjmake/*.cpp
 x=$?; if test $x -ne 0; then exit 1; fi
-link_exe "bin/$platform/jjmake/jjmake" "tmp/$platform/jjmake/"*$obj_ext "tmp/$platform/jbase/jbase$staticlib_ext" "tmp/$platform/junicode/junicode$staticlib_ext" "tmp/$platform/josutils/josutils$staticlib_ext"  -liconv
+link_exe "bin/$platform/jjmake/jjmake" "tmp/$platform/jjmake/"*$obj_ext "tmp/$platform/jbase/jbase$staticlib_ext" "tmp/$platform/josutils/josutils$staticlib_ext" "tmp/$platform/junicode/junicode$staticlib_ext" -liconv
 x=$?; if test $x -ne 0; then exit 1; fi
 
 #tests
 compile_cpps "tmp/$platform/tests/" tests/*.cpp
 x=$?; if test $x -ne 0; then exit 1; fi
-link_exe "bin/$platform/tests/tests" "tmp/$platform/tests/"*$obj_ext "tmp/$platform/jbase/jbase$staticlib_ext" "tmp/$platform/junicode/junicode$staticlib_ext" "tmp/$platform/josutils/josutils$staticlib_ext"  -liconv
+link_exe "bin/$platform/tests/tests" "tmp/$platform/tests/"*$obj_ext "tmp/$platform/jbase/jbase$staticlib_ext" "tmp/$platform/josutils/josutils$staticlib_ext" "tmp/$platform/junicode/junicode$staticlib_ext" -liconv
 x=$?; if test $x -ne 0; then exit 1; fi
 
 #

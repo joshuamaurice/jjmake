@@ -14,7 +14,7 @@
 #ifdef _WIN32
     #include "libiconv/include/iconv.h"
 #else
-    #include <iconv.hpp>
+    #include <iconv.h>
 #endif
 
 namespace jjm
