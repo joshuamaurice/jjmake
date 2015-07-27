@@ -132,7 +132,16 @@ namespace
 }
 
 jjm::Path::Path(Utf8String const& input) { pathInit(path, input); }
-jjm::Path::Path(Utf16String const& input) { pathInit(path, makeU8Str(input)); }
+
+#ifdef _WIN32
+    jjm::Path  jjm::Path::win32device(Utf8String const& name)
+    {
+        Path path; 
+        path.path += "\\\\.\\"; 
+        path.path += name; 
+        return path; 
+    }
+#endif
 
 namespace
 {
@@ -352,7 +361,6 @@ namespace
         wchar_t output1[output1Size]; 
 
         SetLastError(0); 
-        errno = 0; 
         DWORD const return1 = GetFullPathNameW(input2.c_str(), output1Size - 1, output1, 0); 
         if (return1 < output1Size)
         {   //normal success
@@ -372,7 +380,6 @@ namespace
         jjm::UniqueArray<wchar_t*> output2(new wchar_t[outputSize2]); 
 
         SetLastError(0); 
-        errno = 0; 
         DWORD const return2 = GetFullPathNameW(input2.c_str(), outputSize2 - 1, output2.get(), 0); 
         if (return2 < outputSize2)
         {   //success
@@ -508,7 +515,6 @@ jjm::Path  jjm::Path::getRealPath() const
     wchar_t buffer1[buffer1Size]; 
 
     SetLastError(0);
-    errno = 0; 
     DWORD const return1 = GetFinalPathNameByHandleW(file.get().native(), buffer1, buffer1Size - 1, FILE_NAME_NORMALIZED); 
     if (return1 < buffer1Size)
     {   //success
@@ -532,7 +538,6 @@ jjm::Path  jjm::Path::getRealPath() const
     UniqueArray<wchar_t*> buffer2(new wchar_t[buffer2Size]);
 
     SetLastError(0);
-    errno = 0; 
     DWORD const return2 = GetFinalPathNameByHandleW(file.get().native(), buffer2.get(), buffer2Size - 1, FILE_NAME_NORMALIZED); 
     if (return2 < buffer2Size)
     {   //success
@@ -610,7 +615,6 @@ jjm::Path  jjm::Path::getRealPath2() const
     wchar_t buffer1[buffer1Size]; 
 
     SetLastError(0);
-    errno = 0; 
     DWORD const return1 = GetFinalPathNameByHandleW(file.get().native(), buffer1, buffer1Size - 1, FILE_NAME_NORMALIZED); 
     if (return1 < buffer1Size)
     {   //success
@@ -634,7 +638,6 @@ jjm::Path  jjm::Path::getRealPath2() const
     UniqueArray<wchar_t*> buffer2(new wchar_t[buffer2Size]);
 
     SetLastError(0);
-    errno = 0; 
     DWORD const return2 = GetFinalPathNameByHandleW(file.get().native(), buffer2.get(), buffer2Size - 1, FILE_NAME_NORMALIZED); 
     if (return2 < buffer2Size)
     {   //success

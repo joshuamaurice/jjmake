@@ -17,7 +17,6 @@
     #include <sys/time.h>
     #include <sys/stat.h>
     #include <unistd.h>
-    //#include <sys/types.h> 
 #endif
 
 #include <algorithm>
@@ -64,7 +63,6 @@ using namespace std;
     {
         FILE_ATTRIBUTE_TAG_INFO fileAttributeInfo; 
         SetLastError(0);
-        errno = 0; 
         BOOL const x1 = GetFileInformationByHandleEx(
                 file.native(), FileAttributeTagInfo, & fileAttributeInfo, sizeof(fileAttributeInfo)); 
         if (0 == x1)
@@ -79,7 +77,6 @@ using namespace std;
 
         FILE_BASIC_INFO fileBasicInfo; 
         SetLastError(0);
-        errno = 0; 
         BOOL const x2 = GetFileInformationByHandleEx(
                 file.native(), FileStandardInfo, & fileBasicInfo, sizeof(fileBasicInfo)); 
         if (0 == x2)

@@ -3,11 +3,9 @@
 //      (See accompanying file LICENSE.TXT or copy at
 //  http://www.w3.org/Consortium/Legal/2008/03-bsd-license.html)
 
-#include "jutfiterator.hpp"
-
-//#include "junicode.hpp"
-#include "junicodebase.hpp"
 #include "jstringliteral.hpp"
+#include "jutfiterator.hpp"
+#include "junicodebase.hpp"
 #include "jutfstring.hpp"
 
 

@@ -77,7 +77,14 @@ public:
     Path(Path const& rhs) : path(rhs.path) {}
 
     explicit Path(Utf8String const& path); 
-    explicit Path(Utf16String const& path); 
+
+#ifdef _WIN32
+    //creates a path with string exactly equal to 
+    //      \\.\      (that's 4 characters)
+    //followed directly by the value of argument name. 
+    //No sanity checking at all is performed. 
+    static Path win32device(Utf8String const& name); 
+#endif
 
     ~Path() {}
 
@@ -226,7 +233,7 @@ public:
 private:
     //The path member variable is kept in a normalized form: 
     //No trailing separators (except for root paths). 
-    //No adjacent separators. 
+    //No adjacent separators (except for a prefix). 
     //The only separator chars are the platform's preferred separator char. 
     Utf8String path; 
 };

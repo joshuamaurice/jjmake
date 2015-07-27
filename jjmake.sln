@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
+# Visual Studio Express 2013 for Windows Desktop
 VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jjmake", "jjmake\jjmake.vcxproj", "{9A894767-9632-4970-B1D1-79017FB82E98}"
@@ -24,6 +24,7 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "josutils", "josutils\josutils.vcxproj", "{A33367D7-1FF3-467F-8257-FE5DF748809C}"
 	ProjectSection(ProjectDependencies) = postProject
 		{1BB2BD18-43F1-48AC-9282-4B8987A41380} = {1BB2BD18-43F1-48AC-9282-4B8987A41380}
+		{AE078AD2-C841-4EB8-AB6D-FAC243E75D86} = {AE078AD2-C841-4EB8-AB6D-FAC243E75D86}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jbase", "jbase\jbase.vcxproj", "{1BB2BD18-43F1-48AC-9282-4B8987A41380}"
@@ -35,7 +36,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tests", "tests\tests.vcxpro
 		{9A894767-9632-4970-B1D1-79017FB82E98} = {9A894767-9632-4970-B1D1-79017FB82E98}
 		{AE078AD2-C841-4EB8-AB6D-FAC243E75D86} = {AE078AD2-C841-4EB8-AB6D-FAC243E75D86}
 		{A33367D7-1FF3-467F-8257-FE5DF748809C} = {A33367D7-1FF3-467F-8257-FE5DF748809C}
+		{09A49CFC-2495-4335-9386-BF92FF927658} = {09A49CFC-2495-4335-9386-BF92FF927658}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libiconv", "libiconv\libiconv.vcxproj", "{09A49CFC-2495-4335-9386-BF92FF927658}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -93,6 +97,14 @@ Global
 		{5A8B133F-A273-4314-BF29-42FA9C74556E}.Release|Win32.Build.0 = Release|Win32
 		{5A8B133F-A273-4314-BF29-42FA9C74556E}.Release|x64.ActiveCfg = Release|x64
 		{5A8B133F-A273-4314-BF29-42FA9C74556E}.Release|x64.Build.0 = Release|x64
+		{09A49CFC-2495-4335-9386-BF92FF927658}.Debug|Win32.ActiveCfg = Debug|Win32
+		{09A49CFC-2495-4335-9386-BF92FF927658}.Debug|Win32.Build.0 = Debug|Win32
+		{09A49CFC-2495-4335-9386-BF92FF927658}.Debug|x64.ActiveCfg = Debug|x64
+		{09A49CFC-2495-4335-9386-BF92FF927658}.Debug|x64.Build.0 = Debug|x64
+		{09A49CFC-2495-4335-9386-BF92FF927658}.Release|Win32.ActiveCfg = Release|Win32
+		{09A49CFC-2495-4335-9386-BF92FF927658}.Release|Win32.Build.0 = Release|Win32
+		{09A49CFC-2495-4335-9386-BF92FF927658}.Release|x64.ActiveCfg = Release|x64
+		{09A49CFC-2495-4335-9386-BF92FF927658}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

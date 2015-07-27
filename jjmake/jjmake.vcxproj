@@ -222,6 +222,7 @@
     <ClCompile Include="corefunctions.cpp" />
     <ClCompile Include="jjmakecontext.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="msvc.cpp" />
     <ClCompile Include="node.cpp" />
     <ClCompile Include="parsercontext.cpp" />
   </ItemGroup>

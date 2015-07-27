@@ -20,15 +20,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="generate-gciter-data-cfile.cpp" />
-    <ClCompile Include="jstdouterr.cpp" />
     <ClCompile Include="junicode.cpp" />
+    <ClCompile Include="jwinlocale.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="jstdouterr.hpp" />
     <ClInclude Include="jstringliteral.hpp" />
     <ClInclude Include="junicodebase.hpp" />
     <ClInclude Include="jutfiterator.hpp" />
     <ClInclude Include="jutfstring.hpp" />
+    <ClInclude Include="jwinlocale.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{ae078ad2-c841-4eb8-ab6d-fac243e75d86}</ProjectGuid>

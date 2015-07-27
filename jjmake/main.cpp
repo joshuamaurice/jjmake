@@ -8,9 +8,9 @@
 #include "jbase/jinttostring.hpp"
 #include "jbase/jnulltermiter.hpp"
 #include "jbase/juniqueptr.hpp"
-#include "junicode/jutfstring.hpp"
-#include "junicode/jstdouterr.hpp"
 #include "jbase/jnulltermiter.hpp"
+#include "junicode/jutfstring.hpp"
+#include "josutils/jstdinouterr.hpp"
 #include <iostream>
 #include <stdlib.h>
 #include <string>
@@ -99,53 +99,53 @@ namespace
 
     void printHelpMessage()
     {
-        jjm::writeToStdOut("-A\n");
-        jjm::writeToStdOut("--always-make\n");
-        jjm::writeToStdOut("        All targets are treated as out-of-date.\n"); 
-        jjm::writeToStdOut("\n");
-        jjm::writeToStdOut("-D<var>=<val>\n");
-        jjm::writeToStdOut("-D <var>=<val>\n");
-        jjm::writeToStdOut("        Create a variable with the given name and\n"); 
-        jjm::writeToStdOut("        value in the root context.\n"); 
-        jjm::writeToStdOut("\n");
-        jjm::writeToStdOut("-G<goal>\n");
-        jjm::writeToStdOut("-G <goal>\n");
-        jjm::writeToStdOut("--goal=<goal>\n");
-        jjm::writeToStdOut("        Tell make to execute that goal.\n"); 
-        jjm::writeToStdOut("\n");
-        jjm::writeToStdOut("-h\n");
-        jjm::writeToStdOut("-help\n");
-        jjm::writeToStdOut("--help\n");
-        jjm::writeToStdOut("        Display this help message.\n"); 
-        jjm::writeToStdOut("\n");
-        jjm::writeToStdOut("-I<file>\n");
-        jjm::writeToStdOut("-I <file>\n");
-        jjm::writeToStdOut("--include=<file>\n");
-        jjm::writeToStdOut("        Include the given file in the root context.\n"); 
-        jjm::writeToStdOut("-K\n");
-        jjm::writeToStdOut("--keep-going\n");
-        jjm::writeToStdOut("        Continue as much after an error during\n");
-        jjm::writeToStdOut("        a target execution.\n");
-        jjm::writeToStdOut("\n");
-        jjm::writeToStdOut("-P\n");
-        jjm::writeToStdOut("--just-print\n");
-        jjm::writeToStdOut("        Instead of executing goals, print what goals\n");
-        jjm::writeToStdOut("        would be executed.\n");
-        jjm::writeToStdOut("\n");
-        jjm::writeToStdOut("-T<N>\n");
-        jjm::writeToStdOut("-T <N>\n");
-        jjm::writeToStdOut("--threads=<N>\n");
-        jjm::writeToStdOut("        Specify the number of goals to run\n");
-        jjm::writeToStdOut("        concurrently.\n");
-        jjm::writeToStdOut("\n");
-        jjm::writeToStdOut("-v\n"); 
-        jjm::writeToStdOut("-V\n"); 
-        jjm::writeToStdOut("-version\n"); 
-        jjm::writeToStdOut("-Version\n"); 
-        jjm::writeToStdOut("--version\n"); 
-        jjm::writeToStdOut("--Version\n"); 
-        jjm::writeToStdOut("        Display version information.\n"); 
-        jjm::flushStdOut(); 
+        jout() << "-A\n";
+        jout() << "--always-make\n";
+        jout() << "        All targets are treated as out-of-date.\n"; 
+        jout() << "\n";
+        jout() << "-D<var>=<val>\n";
+        jout() << "-D <var>=<val>\n";
+        jout() << "        Create a variable with the given name and\n"; 
+        jout() << "        value in the root context.\n"; 
+        jout() << "\n";
+        jout() << "-G<goal>\n";
+        jout() << "-G <goal>\n";
+        jout() << "--goal=<goal>\n";
+        jout() << "        Tell make to execute that goal.\n"; 
+        jout() << "\n";
+        jout() << "-h\n";
+        jout() << "-help\n";
+        jout() << "--help\n";
+        jout() << "        Display this help message.\n"; 
+        jout() << "\n";
+        jout() << "-I<file>\n";
+        jout() << "-I <file>\n";
+        jout() << "--include=<file>\n";
+        jout() << "        Include the given file in the root context.\n"; 
+        jout() << "-K\n";
+        jout() << "--keep-going\n";
+        jout() << "        Continue as much after an error during\n";
+        jout() << "        a target execution.\n";
+        jout() << "\n";
+        jout() << "-P\n";
+        jout() << "--just-print\n";
+        jout() << "        Instead of executing goals, print what goals\n";
+        jout() << "        would be executed.\n";
+        jout() << "\n";
+        jout() << "-T<N>\n";
+        jout() << "-T <N>\n";
+        jout() << "--threads=<N>\n";
+        jout() << "        Specify the number of goals to run\n";
+        jout() << "        concurrently.\n";
+        jout() << "\n";
+        jout() << "-v\n"; 
+        jout() << "-V\n"; 
+        jout() << "-version\n"; 
+        jout() << "-Version\n"; 
+        jout() << "--version\n"; 
+        jout() << "--Version\n"; 
+        jout() << "        Display version information.\n"; 
+        jout() << flush; 
     }
 }
 
@@ -277,8 +277,7 @@ int jjm::jjmakemain(vector<string> const& args)
         message += ": ";
         message += e.what(); 
         message += "\n"; 
-        jjm::writeToStdOut(message); 
-        jjm::flushStdOut(); 
+        jerr() << message << flush; 
     }
     return 1;
 }

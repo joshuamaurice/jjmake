@@ -205,13 +205,13 @@ x=$?; if test $x -ne 0; then exit 1; fi
 #jjmake
 compile_cpps "tmp/$platform/jjmake/" jjmake/*.cpp
 x=$?; if test $x -ne 0; then exit 1; fi
-link_exe "bin/$platform/jjmake/jjmake" "tmp/$platform/jjmake/"*$obj_ext "tmp/$platform/jbase/jbase$staticlib_ext" "tmp/$platform/junicode/junicode$staticlib_ext" "tmp/$platform/josutils/josutils$staticlib_ext"
+link_exe "bin/$platform/jjmake/jjmake" "tmp/$platform/jjmake/"*$obj_ext "tmp/$platform/jbase/jbase$staticlib_ext" "tmp/$platform/junicode/junicode$staticlib_ext" "tmp/$platform/josutils/josutils$staticlib_ext"  -liconv
 x=$?; if test $x -ne 0; then exit 1; fi
 
 #tests
 compile_cpps "tmp/$platform/tests/" tests/*.cpp
 x=$?; if test $x -ne 0; then exit 1; fi
-link_exe "bin/$platform/tests/tests" "tmp/$platform/tests/"*$obj_ext "tmp/$platform/jbase/jbase$staticlib_ext" "tmp/$platform/junicode/junicode$staticlib_ext" "tmp/$platform/josutils/josutils$staticlib_ext"
+link_exe "bin/$platform/tests/tests" "tmp/$platform/tests/"*$obj_ext "tmp/$platform/jbase/jbase$staticlib_ext" "tmp/$platform/junicode/junicode$staticlib_ext" "tmp/$platform/josutils/josutils$staticlib_ext"  -liconv
 x=$?; if test $x -ne 0; then exit 1; fi
 
 #

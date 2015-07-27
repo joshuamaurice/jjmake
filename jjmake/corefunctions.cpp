@@ -15,7 +15,7 @@
 #include "josutils/jopen.hpp"
 #include "josutils/jpath.hpp"
 #include "josutils/jstat.hpp"
-#include "junicode/jstdouterr.hpp"
+#include "josutils/jstdinouterr.hpp"
 #include <errno.h>
 #include <fstream>
 #include <vector>
@@ -242,18 +242,30 @@ namespace
 
             string contents; 
             for (;;)
-            {   in.read(contents, 16 * 1024); 
+            {   size_t oldSize = contents.size();
+                size_t fetchSize = 16 * 1024; 
+                contents.resize(oldSize + fetchSize); 
+
+                //Assumes std::string uses contiguous storage. 
+                //Not gauranteed by C++03. It is guaranteed by C++11. 
+                //True of all commercial implementations. 
+                in.read(&contents[0] + oldSize, fetchSize); 
+#ifdef _WIN32
+                DWORD const lastError = GetLastError(); 
+#endif
+                int const lastErrno = errno; 
+
+                ssize_t gcount = in.gcount(); 
+                contents.resize(oldSize + gcount); 
                 if (in)
                     continue;
                 if (in.isEof())
                     break;
 #ifdef _WIN32
-                DWORD const lastError = GetLastError(); 
                 throw std::runtime_error(string() 
                         + "Function 'include': Failure when reading from file \"" + path.getStringRep() + "\". "
                         + "GetLastError() " + toDecStr(lastError) + "."); 
 #else
-                int lastErrno = errno; 
                 throw std::runtime_error(string() 
                         + "Function 'include': Failure when reading from file \"" + path.getStringRep() + "\". "
                         + "errno " + toDecStr(lastErrno) + "."); 
@@ -291,9 +303,8 @@ namespace
             }
             out += '\n';
 
-            if (0 != jjm::writeToStdOut(out))
-                throw std::runtime_error("Writing to stdout failed."); 
-            if (0 != jjm::flushStdOut())
+            jout() << out << flush; 
+            if ( ! jout())
                 throw std::runtime_error("Writing to stdout failed."); 
 
             vector<string> result; 

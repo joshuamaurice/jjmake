@@ -163,7 +163,6 @@ namespace
         DWORD const win32ShareMode = (m_accessMode == 1) ? FILE_SHARE_READ : 0; //allow read sharing in read-only mode
 
         SetLastError(0);
-        errno = 0; 
         HANDLE const fileHandle = 
                 CreateFileW(utf16Path2.c_str(), win32AccessFlags, win32ShareMode, 0, win32CreationFlags, flagsAndAttributes, 0);
         if (fileHandle == INVALID_HANDLE_VALUE)

@@ -209,10 +209,10 @@ void initGraphemeBreakTable(
     for (map<string, set<UIntRange> >::const_iterator 
             x = graphemeBreakProperties.begin(); x != graphemeBreakProperties.end(); ++x)
     {   mapCategoryNameToFlag[x->first];
-        mapCategoryNameToFlag[x->first] = mapCategoryNameToFlag.size() - 1;
+        mapCategoryNameToFlag[x->first] = static_cast<unsigned int>(mapCategoryNameToFlag.size() - 1); 
     }
     mapCategoryNameToFlag["other"];
-    mapCategoryNameToFlag["other"] = mapCategoryNameToFlag.size() - 1;
+    mapCategoryNameToFlag["other"] = static_cast<unsigned int>(mapCategoryNameToFlag.size() - 1); 
 
     map<UIntRange, string> graphemeBreakProperties2;
     for (map<string, set<UIntRange> >::const_iterator 

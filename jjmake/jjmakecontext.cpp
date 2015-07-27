@@ -6,7 +6,7 @@
 #include "jjmakecontext.hpp"
 
 #include "parsercontext.hpp"
-#include "junicode/jstdouterr.hpp"
+#include "josutils/jstdinouterr.hpp"
 #include "josutils/jpath.hpp"
 
 using namespace std;
@@ -55,8 +55,7 @@ public:
             message += ": ";
             message += e.what(); 
             message += "\n"; 
-            jjm::writeToStdOut(message); 
-            jjm::flushStdOut(); 
+            jerr() << message << flush; 
         }
     }
 };
@@ -280,11 +279,10 @@ public:
                 return; 
 
             if (context->executionMode == JjmakeContext::ExecuteGoals)
-            {   jjm::writeToStdOut("[jjmake] Executing goal: " + node->goalName + "\n");
-                jjm::flushStdOut(); 
+            {   jout() << "[jjmake] Executing goal: " << node->goalName << endl; 
                 node->execute(); 
             }else if (context->executionMode == JjmakeContext::PrintGoals)
-            {   jjm::writeToStdOut("[jjmake] Goal: " + node->goalName + "\n");
+            {   jout() << "[jjmake] Goal: " << node->goalName << endl; 
             }else
                 JFATAL(context->executionMode, 0); 
 
@@ -318,8 +316,7 @@ public:
             message += ": ";
             message += e.what(); 
             message += "\n"; 
-            jjm::writeToStdOut(message); 
-            jjm::flushStdOut(); 
+            jerr() << message << flush; 
         }
     }
 };

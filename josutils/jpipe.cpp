@@ -16,9 +16,6 @@
 #else
     #include <fcntl.h>
     #include <unistd.h>
-    //#include <sys/time.h>
-    //#include <sys/types.h>
-    //#include <sys/stat.h>
 #endif
 
 
@@ -33,7 +30,6 @@ jjm::Pipe jjm::Pipe::create()
         pipeSecurityAttributes.bInheritHandle = FALSE; 
 
         SetLastError(0); 
-        errno = 0; 
         if ( ! CreatePipe(&handles[0], &handles[1], &pipeSecurityAttributes, 0))
         {   DWORD const lastError = GetLastError(); 
             throw std::runtime_error("jjm::Pipe::create() failed. GetLastError() " + toDecStr(lastError) + "."); 

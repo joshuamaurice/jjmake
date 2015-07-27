@@ -30,6 +30,12 @@ typedef  std::basic_string<Utf16EncodingUnit>   Utf16String;
     typedef  std::wstring                       Utf16String; 
 #endif
 
+//Helper typedefs
+typedef  Utf8String   U8String;
+typedef  Utf16String  U16String;
+
+//
+
 template <typename Iter>
 Utf8String  & appendUtf8 (Utf8String  & u8str , std::pair<Iter, Iter> const& utf8Range); 
 template <typename Iter>

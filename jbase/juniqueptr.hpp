@@ -68,6 +68,7 @@ public:
     T release() { T x = p; p = T(); return x; }
     void reset(T x = T()) { deleter_t()(p); p = x; }
     void swap(UniquePtr& x) { using std::swap; swap(p, x.p); }
+    T & get() { return p; }
     T const& get() const { return p; }
     operator unspecified_bool_type () const { return p ? unspecified_bool_true : 0; }
     bool operator! () const { return ! static_cast<bool>(*this); }

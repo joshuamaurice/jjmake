@@ -10,6 +10,11 @@
 #include "jbase/juniqueptr.hpp"
 #include <stdio.h> //for SEEK_CUR, etc.,
 
+#ifdef _WIN32
+    #include <windows.h>
+#endif
+
+
 namespace jjm
 {
 
@@ -33,7 +38,7 @@ public:
 
 private:
     #ifdef _WIN32
-        static inline NativeHandle invalidHandle() { return (NativeHandle)static_cast<ssize_t>(-1); } 
+        static inline NativeHandle invalidHandle() { return (NativeHandle)static_cast<ssize_t>(-1); } //has a static assert in cpp
     #else
         static inline NativeHandle invalidHandle() { return -1; }
     #endif
@@ -87,9 +92,7 @@ public:
     return -1. 
     
     The cause of an error can be detected with GetLastError() for Windows
-    and errno for POSIX. 
-
-    It is a fatal error to call seek on an invalid file handle. */
+    and errno for POSIX. */
     int64_t seek2(int64_t off, int whence); 
 
     /* seek() is like seek2(), except on errors seek() throws a std::exception 
@@ -125,15 +128,13 @@ public:
     BufferedInputStream and BufferedOutputStream. 
     
     The cause of an error can be detected with GetLastError() for Windows
-    and errno for POSIX. 
-
-    It is a fatal error to call seek on an invalid file handle. */
+    and errno for POSIX. */
     ssize_t read2(void * buf, std::size_t bytes);  
 
     /* read() is like read2(), except on errors read() throws a std::exception
     which descriibes the error. read() still returns -1 on EOF. */
     ssize_t read(void * buf, std::size_t bytes);  
-    
+
 
     /* Writes some number of bytes, between 0 and the arg "bytes", inclusive. 
     
@@ -149,20 +150,42 @@ public:
     allows the possibility of adding an interruption API on BufferedOutputStream. 
     
     The cause of an error can be detected with GetLastError() for Windows
-    and errno for POSIX. 
-
-    It is a fatal error to call seek on an invalid file handle. */
+    and errno for POSIX. */
     ssize_t write2(void const* buf, std::size_t bytes);  
-
 
     /* write() is like write2(), except on errors write() throws a std::exception
     which descriibes the error. */
     ssize_t write(void const* buf, std::size_t bytes);  
+    
+    /* writeComplete2() behaves like write2(), except it will use a loop to 
+    output the entire string. 
+    Upon an error, it will immediately break the loop and return the number of 
+    bytes succesfully written. */ 
+    ssize_t writeComplete2(void const* buf, std::size_t bytes); 
+
+    /* writeComplete() behaves like write(), except it will use a loop to 
+    output the entire string. 
+    Upon an error, it will immediately break the loop and throw a 
+    std::exception which describes the error.*/ 
+    ssize_t writeComplete(void const* buf, std::size_t bytes); 
+
 
 
 #ifndef _WIN32
     //returns 0 on success, -1 on errors
     int setCloseOnExec(bool b = true); 
+#endif
+
+
+    //utility functions to get the standard handles
+#ifdef _WIN32
+    static FileHandle getstdin () { return FileHandle(GetStdHandle(STD_INPUT_HANDLE )); }
+    static FileHandle getstdout() { return FileHandle(GetStdHandle(STD_OUTPUT_HANDLE)); }
+    static FileHandle getstderr() { return FileHandle(GetStdHandle(STD_ERROR_HANDLE )); }
+#else
+    static FileHandle getstdin () { return FileHandle(0); }
+    static FileHandle getstdout() { return FileHandle(1); }
+    static FileHandle getstderr() { return FileHandle(2); }
 #endif
 
 

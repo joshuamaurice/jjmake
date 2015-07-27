@@ -19,13 +19,20 @@
 #endif
 
 
+#ifdef _WIN32
+    //is static_assert for jjm::FileHandle::invalidHandle()
+    static_assert((HANDLE)static_cast<ssize_t>(-1) == INVALID_HANDLE_VALUE, "ERROR");
+#endif
+
+
 int jjm::FileHandle::close2()
 {
     if (mhandle == invalidHandle())
         return 0; 
 #ifdef _WIN32
+    if (mhandle == NULL)
+        return 0; //also don't try to close nullptr handles, just in case
     SetLastError(0); 
-    errno = 0; 
     if (0 == ::CloseHandle(mhandle))
         return -1; 
     mhandle = invalidHandle(); 
@@ -44,8 +51,9 @@ void jjm::FileHandle::close()
     if (mhandle == invalidHandle())
         return; 
 #ifdef _WIN32
+    if (mhandle == NULL)
+        return; //also don't try to close nullptr handles, just in case
     SetLastError(0); 
-    errno = 0; 
     if (0 == ::CloseHandle(mhandle))
         JFATAL(0, 0);
     mhandle = invalidHandle(); 
@@ -77,7 +85,6 @@ int64_t jjm::FileHandle::seek2(int64_t off, int whence)
     }
 
     SetLastError(0); 
-    errno = 0; 
     DWORD const x = SetFilePointerEx(mhandle, off2, & newPosition, whence2);
 
     if (x == 0)
@@ -107,11 +114,11 @@ int64_t jjm::FileHandle::seek(int64_t off, int whence)
 ssize_t jjm::FileHandle::read2(void * buf, size_t bytes)
 {
 #ifdef _WIN32
-    DWORD const bytes2 = std::min<size_t>(bytes, std::numeric_limits<DWORD>::max());
+    DWORD const bytes2 = (bytes > std::numeric_limits<DWORD>::max())
+            ? std::numeric_limits<DWORD>::max() : static_cast<DWORD>(bytes); 
     DWORD numBytesReadIntoBuffer = 0; 
 
     SetLastError(0); 
-    errno = 0; 
     DWORD const x = ReadFile(mhandle, buf, bytes2, & numBytesReadIntoBuffer, 0); 
     DWORD const lastError = GetLastError();
 
@@ -159,11 +166,11 @@ ssize_t jjm::FileHandle::read(void * buf, size_t bytes)
 ssize_t jjm::FileHandle::write2(void const* buf, size_t bytes)
 {
 #ifdef _WIN32
-    DWORD const bytes2 = std::min<size_t>(bytes, std::numeric_limits<DWORD>::max());
+    DWORD const bytes2 = (bytes > std::numeric_limits<DWORD>::max())
+            ? std::numeric_limits<DWORD>::max() : static_cast<DWORD>(bytes); 
     DWORD numBytesWrittenToFile = 0; 
 
     SetLastError(0); 
-    errno = 0; 
     DWORD const x = WriteFile(mhandle, buf, bytes2, & numBytesWrittenToFile, 0);
 
     if (x != 0)
@@ -188,13 +195,12 @@ ssize_t jjm::FileHandle::write(void const* buf, size_t bytes)
         return x;
 #ifdef _WIN32
     DWORD const lastError = GetLastError(); 
-    throw std::runtime_error("jjm::FileHandle::write failed. GetLastError() " + toDecStr(lastError) + "."); 
+    throw std::runtime_error("jjm::FileHandle::write() failed. Cause:\nGetLastError() " + toDecStr(lastError) + "."); 
 #else
     int const lastErrno = errno; 
-    throw std::runtime_error("jjm::FileHandle::write failed. errno " + toDecStr(lastErrno) + "."); 
+    throw std::runtime_error("jjm::FileHandle::write() failed. Cause:\nerrno " + toDecStr(lastErrno) + "."); 
 #endif
 }
-
 
 #ifndef _WIN32
     //returns 0 on success, -1 on errors
@@ -209,3 +215,40 @@ ssize_t jjm::FileHandle::write(void const* buf, size_t bytes)
         return 0; 
     }
 #endif
+
+
+ssize_t jjm::FileHandle::writeComplete(void const* buf, size_t bytes)
+{
+    char const * buf2 = reinterpret_cast<char const*>(buf); 
+    size_t bytes2 = bytes; 
+    for ( ; bytes2 > 0; )
+    {   ssize_t x = write2(buf2, bytes2); 
+        if (x < 0)
+        {
+#ifdef _WIN32
+            DWORD const lastError = GetLastError(); 
+            throw std::runtime_error("jjm::FileHandle::write() failed. Cause:\nGetLastError() " + toDecStr(lastError) + "."); 
+#else
+            int const lastErrno = errno; 
+            throw std::runtime_error("jjm::FileHandle::write() failed. Cause:\nerrno " + toDecStr(lastErrno) + "."); 
+#endif
+        }
+        buf2 += x;
+        bytes2 -= x; 
+    }
+    return bytes; 
+}
+    
+ssize_t jjm::FileHandle::writeComplete2(void const* buf, size_t bytes)
+{
+    char const * buf2 = reinterpret_cast<char const*>(buf); 
+    size_t bytes2 = bytes; 
+    for ( ; bytes2 > 0; )
+    {   ssize_t x = write2(buf2, bytes2); 
+        if (x < 0)
+            return bytes - bytes2; 
+        buf2 += x;
+        bytes2 -= x; 
+    }
+    return bytes; 
+}

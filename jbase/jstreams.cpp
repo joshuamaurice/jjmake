@@ -24,7 +24,7 @@ namespace
 jjm::BufferedInputStream::BufferedInputStream(
                 InputStream * inputStream, std::size_t bufferSize) 
     : m_inputStream(NULL), 
-    m_isGood(true),
+    m_isBad(false),
     m_isEof(false), 
     m_gcount(0), 
     m_allocBegin(NULL),
@@ -64,7 +64,7 @@ void jjm::BufferedInputStream::resetInputStream(
     }
 
     m_inputStream = inputStream;
-    m_isGood = true;
+    m_isBad = false;
     m_isEof = false;
     m_gcount = 0; 
 }
@@ -72,7 +72,7 @@ void jjm::BufferedInputStream::resetInputStream(
 jjm::BufferedOutputStream::BufferedOutputStream(
                 OutputStream * outputStream, std::size_t bufferSize) 
     : m_outputStream(NULL), 
-    m_isGood(true),
+    m_isBad(false),
     m_gcount(0), 
     m_allocBegin(NULL),
     m_allocEnd(NULL),
@@ -113,7 +113,7 @@ void jjm::BufferedOutputStream::resetOutputStream(
     }
 
     m_outputStream = outputStream;
-    m_isGood = true;
+    m_isBad = false; 
     m_gcount = 0; 
 }
 
@@ -158,11 +158,11 @@ void jjm::BufferedInputStream::read2(void * argBlock_, std::size_t argBlockSize)
                 continue;
             }
             if (x == -1)
-            {   m_isGood = false;
+            {   m_isBad = true; 
                 m_isEof = true; 
                 return; 
             }
-            m_isGood = false;
+            m_isBad = true; 
             return; 
         }else
         {
@@ -176,58 +176,14 @@ void jjm::BufferedInputStream::read2(void * argBlock_, std::size_t argBlockSize)
             }
             if (x == -1)
             {   //eof
-                m_isGood = false;
+                m_isBad = true; 
                 m_isEof = true; 
                 return; 
             }
             //some error
-            m_isGood = false;
+            m_isBad = true; 
             return; 
         }
-    }
-}
-
-void jjm::BufferedInputStream::read2(std::string & str, std::size_t argBlockSize)
-{
-    for (;;)
-    {
-        if (argBlockSize == 0)
-            return; 
-
-        //First use whatever is in our internal buffer to satisfy the request. 
-        {
-            ssize_t toCopy = std::min<ssize_t>(argBlockSize, m_dataEnd - m_dataBegin);
-            if (toCopy > 0)
-            {   str.insert(str.end(), m_dataBegin, m_dataBegin + toCopy); 
-                m_dataBegin += toCopy; 
-                argBlockSize -= toCopy;
-                m_gcount += toCopy; 
-
-                if (argBlockSize == 0)
-                    return; 
-            }
-        }
-
-        //At this point, our internal buffer must be empty. 
-        m_dataBegin = m_allocBegin;
-        m_dataEnd = m_allocBegin;
-
-        //refill our internal buffer, 
-        ssize_t const x = m_inputStream->read(m_dataBegin, m_allocEnd - m_dataBegin);
-        if (x >= 0)
-        {   //success
-            m_dataEnd = m_dataBegin + x; 
-            continue;
-        }
-        if (x == -1)
-        {   //eof
-            m_isGood = false;
-            m_isEof = true; 
-            return; 
-        }
-        //some error
-        m_isGood = false;
-        return; 
     }
 }
 
@@ -275,7 +231,7 @@ void jjm::BufferedOutputStream::write2(void const * argBlock_, std::size_t argBl
                 m_gcount += x; 
                 continue; 
             }
-            m_isGood = false;
+            m_isBad = true; 
             return; 
         }
     }
@@ -286,7 +242,7 @@ jjm::BufferedOutputStream & jjm::BufferedOutputStream::flush()
     if ( ! flushInternalBuffer())
         return *this; 
     if (0 != m_outputStream->flush())
-        m_isGood = false;
+        m_isBad = true; 
     return *this; 
 }
 
@@ -297,7 +253,7 @@ jjm::BufferedOutputStream & jjm::BufferedOutputStream::flushInternalBuffer()
     for ( ; m_dataBegin < m_dataEnd; )
     {   ssize_t x = m_outputStream->write(m_dataBegin, m_dataEnd - m_dataBegin);
         if (x < 0)
-        {   m_isGood = false;
+        {   m_isBad = true; 
             return *this;
         }
         m_dataBegin += x;
@@ -309,20 +265,20 @@ jjm::BufferedOutputStream & jjm::BufferedOutputStream::flushInternalBuffer()
 
 void jjm::BufferedOutputStream::resetState()
 {
-    m_isGood = true;
+    m_isBad = false; 
     m_gcount = 0;
 }
 
 void jjm::BufferedInputStream::resetState()
 {
-    m_isGood = true;
+    m_isBad = false; 
     m_isEof = false; 
     m_gcount = 0;
 }
 
 int64_t jjm::BufferedInputStream::seek(int64_t off, int whence)
 {
-    if ( ! m_isGood)
+    if (m_isBad)
         return -1; 
 
     //The apparent position of the buffered input stream is different than
@@ -346,14 +302,14 @@ int64_t jjm::BufferedInputStream::seek(int64_t off, int whence)
 
 int64_t jjm::BufferedOutputStream::seek(int64_t off, int whence)
 {
-    if ( ! m_isGood)
+    if (m_isBad)
         return -1; 
 
     //The apparent position of the buffered input stream is different than
     //the position of the underlying stream. 
     //That that into account by flushing our internal buffer. 
     flush();
-    if ( ! m_isGood)
+    if (m_isBad)
         return -1;
 
     int64_t result = m_outputStream->seek(off, whence);

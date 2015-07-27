@@ -10,7 +10,6 @@
 #include <stddef.h>
 #include <stdio.h> //for SEEK_CUR, etc.,
 #include <string.h>
-#include <string>
 
 
 namespace jjm 
@@ -190,13 +189,6 @@ public:
     This call returns *this. */
     BufferedInputStream & read(void * buf, std::size_t bytes);
 
-
-    /*
-    This function behaves like read(void* buf, size_t byes), except it appends
-    bytes to str. If str already has data new data is appended. 
-    */
-    BufferedInputStream & read(std::string & str, std::size_t bytes);
-
     
     /* Utility. 
     Writes the binary contents of the plain-old-data type object. 
@@ -230,12 +222,12 @@ public:
     underlying InputStream. The implementation of BufferedInputStream::seek
     properly takes the internal buffering into account, and it will give the 
     proper results. */
-    int64_t seek(int64_t off, int whence); 
+    std::int64_t seek(std::int64_t off, int whence); 
 
 
 private:
     InputStream * m_inputStream; //does not own
-    bool m_isGood; 
+    bool m_isBad; 
     bool m_isEof; 
     std::size_t m_gcount; 
 
@@ -246,7 +238,6 @@ private:
     unsigned char * m_dataEnd;
 
     void read2(void * buf, std::size_t bytes);
-    void read2(std::string & str, std::size_t bytes);
 
     BufferedInputStream(BufferedInputStream const& ); //not defined, not copyable
     BufferedInputStream& operator= (BufferedInputStream const& ); //not defined, not copyable
@@ -400,12 +391,12 @@ public:
     underlying OutputStream. The implementation of BufferedOutputStream::seek
     properly takes the internal buffering into account, and it will give the 
     proper results. */
-    int64_t seek(int64_t off, int whence); 
+    std::int64_t seek(std::int64_t off, int whence); 
 
 
 private:
     OutputStream * m_outputStream; //does not own
-    bool m_isGood; 
+    bool m_isBad; 
     std::size_t m_gcount; 
 
     //the internal buffer
@@ -440,7 +431,7 @@ public:
     
     Implementations may not support this operation. Those implementations 
     should simply return -1. */
-    virtual int64_t seek(int64_t off, int whence) = 0; 
+    virtual std::int64_t seek(std::int64_t off, int whence) = 0; 
 
 
 protected:
@@ -461,7 +452,7 @@ class InputStream : public virtual Stream
 public:
     virtual ~InputStream() {}
     virtual void close() = 0; 
-    virtual int64_t seek(int64_t off, int whence) = 0; 
+    virtual std::int64_t seek(std::int64_t off, int whence) = 0; 
 
     
     /* Reads some number of bytes, between 0 and the arg "bytes", inclusive. 
@@ -519,7 +510,7 @@ public:
     virtual void close() = 0; 
 
     
-    virtual int64_t seek(int64_t off, int whence) = 0; 
+    virtual std::int64_t seek(std::int64_t off, int whence) = 0; 
 
     
     /* Writes some number of bytes, between 0 and the arg "bytes", inclusive. 
@@ -583,12 +574,12 @@ inline InputStream const * BufferedInputStream::inputStream() const
 
 inline bool BufferedInputStream::isGood() const 
 { 
-    return m_isGood; 
+    return ! m_isBad; 
 }
 
 inline bool BufferedOutputStream::isGood() const 
 { 
-    return m_isGood; 
+    return ! m_isBad; 
 }
 
 inline bool BufferedInputStream::isEof() const 
@@ -608,12 +599,12 @@ inline std::size_t BufferedOutputStream::gcount() const
 
 inline BufferedInputStream::operator safe_bool_type() const 
 { 
-    return m_isGood ? & BufferedInputStream::safe_bool_type_func : 0; 
+    return m_isBad ? 0 : & BufferedInputStream::safe_bool_type_func; 
 }
 
 inline BufferedOutputStream::operator safe_bool_type() const 
 { 
-    return m_isGood ? & BufferedOutputStream::safe_bool_type_func : 0; 
+    return m_isBad ? 0 : & BufferedOutputStream::safe_bool_type_func; 
 }
 
 inline BufferedInputStream & BufferedInputStream::read(void * buf, std::size_t bytes)
@@ -633,22 +624,6 @@ inline BufferedInputStream & BufferedInputStream::read(void * buf, std::size_t b
     return *this;
 }
 
-inline BufferedInputStream & BufferedInputStream::read(std::string & str, std::size_t bytes)
-{
-    m_gcount = 0; 
-    if (!*this)
-        return *this;
-
-    //if the requested size can be satisfied with our internal buffer, do that. 
-    if (bytes + m_dataBegin <= m_dataEnd)
-    {   str.insert(str.end(), m_dataBegin, m_dataBegin + bytes);
-        m_dataBegin += bytes; 
-        m_gcount = bytes; 
-        return *this;
-    }
-    read2(str, bytes);
-    return *this;
-}
 
 inline BufferedOutputStream & BufferedOutputStream::write(void const * buf, std::size_t bytes)
 {
