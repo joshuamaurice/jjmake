@@ -20,10 +20,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="generate-gciter-data-cfile.cpp" />
+    <ClCompile Include="jiconv.cpp" />
     <ClCompile Include="junicode.cpp" />
     <ClCompile Include="jwinlocale.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="jiconv.hpp" />
     <ClInclude Include="jstringliteral.hpp" />
     <ClInclude Include="junicodebase.hpp" />
     <ClInclude Include="jutfiterator.hpp" />

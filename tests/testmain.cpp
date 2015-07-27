@@ -10,7 +10,6 @@
 #include "jbase/jstreams.hpp"
 #include "josutils/jthreading.hpp"
 #include "josutils/jstdinouterr.hpp"
-#include "junicode/jwinlocale.hpp"
 #include <algorithm>
 #include <errno.h>
 #include <iostream>
@@ -26,110 +25,8 @@ void jjmPathTests();
 #ifdef _WIN32
     #include <windows.h>
     #include <psapi.h>
-    #include "libiconv/include/iconv.h"
 #endif
 
-
-
-
-class IconvConverter
-{
-public:
-    IconvConverter(string const& toEncoding, string const& fromEncoding)
-        : converter((iconv_t)-1)
-    {
-        size_t const magicNumber = 4 * 1024; 
-        input.reset(new char[magicNumber]); 
-        inputSize = 0;
-        inputCapacity = magicNumber; 
-
-        output.reset(new char[magicNumber]); 
-        outputSize = 0;
-        outputCapacity = magicNumber; 
-
-        SetLastError(0); 
-        errno = 0; 
-        converter = iconv_open(toEncoding.c_str(), fromEncoding.c_str());
-        if (converter == (iconv_t)-1)
-        {   DWORD const lastError = GetLastError(); 
-            int const lastErrno = errno; 
-            string message; 
-            message += "jjm::IconvConverter::IconvConverter() failed. Cause:\n";
-            message += "iconv_open(\"" + toEncoding + "\", \"" + fromEncoding + "\") failed. Cause:\n";
-            message += "GetLastError() " + toDecStr(lastError) + ". errno " + toDecStr(lastErrno) + "."; 
-            throw std::runtime_error(message); 
-        }
-    }
-
-    ~IconvConverter()
-    {
-        if (converter != (iconv_t)-1)
-        {   errno = 0;
-            if (0 != iconv_close(converter))
-                JFATAL(0, 0); 
-        }
-    }
-
-    //will overwrite any existing contents of this->output
-    void convert()
-    {
-#ifdef _WIN32
-        char const * inbuf = input.get(); 
-#else
-        char * inbuf = input.get(); 
-#endif
-        char * outbuf = output.get();
-        size_t inputSizeLeft = inputSize; 
-        size_t outputSizeLeft = outputCapacity; 
-
-        SetLastError(0); 
-        errno = 0; 
-        size_t const iconvReturn = iconv(converter, & inbuf, & inputSizeLeft, & outbuf, & outputSizeLeft); 
-        DWORD const lastError = GetLastError(); 
-        int const lastErrno = errno; 
-
-        memmove(input.get() + (inbuf - input.get()), input.get(), inbuf - input.get()); 
-        inputSize = inputSizeLeft; 
-
-        outputSize = outputCapacity - outputSizeLeft; 
-
-        if (iconvReturn >= 0)
-            return; 
-        if (lastErrno == EILSEQ)
-        {   string message; 
-            message += "jjm::IconvConverter::IconvConverter() failed. Cause:\n";
-            message += "iconv(...) failed. Cause:\n";
-            message += "errno EILSEQ, the input contains a sequence which is invalid in the specified input encoding."; 
-            throw std::runtime_error(message); 
-        }
-        if (lastErrno == EINVAL)
-        {   //input ends in an incomplete sequence, keep it there for next time, 
-            return; 
-        }
-        if (lastErrno == E2BIG)
-        {   //out of space in the output buffer, the buffer has good stuff, return success
-            return; 
-        }
-        string message; 
-        message += "jjm::IconvConverter::IconvConverter() failed. Cause:\n";
-        message += "iconv(...) failed. Cause:\n";
-        message += "GetLastError() " + toDecStr(lastError) + ". errno " + toDecStr(lastErrno) + "."; 
-        throw std::runtime_error(message); 
-    }
-
-    //can't use std::vector because of potential alignment issues
-
-    UniqueArray<char*> input;
-    size_t inputSize; 
-    size_t inputCapacity; 
-
-    UniqueArray<char*> output;
-    size_t outputSize; 
-    size_t outputCapacity; 
-
-private:
-    iconv_t converter; 
-};
 
 
 
@@ -148,14 +45,9 @@ int main()
         appendCp(str, 0x00E7); 
         str += 'c'; 
 
-        IconvConverter converter("CP437", "UTF-8"); 
-        memcpy(converter.input.get(), str.data(), str.size()); 
-        converter.inputSize = str.size(); 
-        converter.convert(); 
+        jout() << str << endl;
 
-        std::cout.write(converter.output.get(), converter.outputSize);
-        //#std::cout << str; 
-        std::cout << endl; 
+        //IconvConverter converter("CP437", "UTF-8"); 
 
         junicodeTests(); 
         jjmPathTests(); 

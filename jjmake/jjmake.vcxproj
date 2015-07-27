@@ -107,8 +107,8 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\jbase\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\josutils\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\junicode\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>jbase.lib;josutils.lib;junicode.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\jbase\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\josutils\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\junicode\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\libiconv\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>jbase.lib;josutils.lib;junicode.lib;libiconv.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <BuildLog>
       <Path>$(IntDir)\$(SolutionName).log</Path>
@@ -139,8 +139,8 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\jbase\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\josutils\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\junicode\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>jbase.lib;josutils.lib;junicode.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\jbase\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\josutils\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\junicode\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\libiconv\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>jbase.lib;josutils.lib;junicode.lib;libiconv.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <BuildLog>
       <Path>$(IntDir)\$(SolutionName).log</Path>
@@ -173,8 +173,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\jbase\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\josutils\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\junicode\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>jbase.lib;josutils.lib;junicode.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\jbase\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\josutils\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\junicode\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\libiconv\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>jbase.lib;josutils.lib;junicode.lib;libiconv.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <BuildLog>
       <Path>$(IntDir)\$(SolutionName).log</Path>
@@ -208,8 +208,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\jbase\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\josutils\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\junicode\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>jbase.lib;josutils.lib;junicode.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\jbase\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\josutils\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\junicode\;$(SolutionDir)\tmp\msvc-$(PlatformName)-$(Configuration)\libiconv\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>jbase.lib;josutils.lib;junicode.lib;libiconv.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <BuildLog>
       <Path>$(IntDir)\$(SolutionName).log</Path>
