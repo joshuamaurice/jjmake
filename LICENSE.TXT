@@ -1,6 +1,9 @@
 The code in ./libiconv/ is licensed under LGPL. 
-For further information, see the license file: 
-    ./libiconv/LGPL-LICENSE.TXT
+For further information, see the files: 
+    ./libiconv/COPYING
+    ./libiconv/COPYING.LIB
+    ./libiconv/DESIGN
+    ./libiconv/NEWS
     
 The following file is copy of Unicode, Inc.: 
     junicode/GraphemeBreakProperty.txt 
