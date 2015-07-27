@@ -27,7 +27,7 @@
 #undef DOUBLE_SLASH_IS_DISTINCT_ROOT
 
 /* Define as good substitute value for EILSEQ. */
-#undef EILSEQ
+//#undef EILSEQ
 
 /* Define to 1 to enable a few rarely used encodings. */
 #undef ENABLE_EXTRA

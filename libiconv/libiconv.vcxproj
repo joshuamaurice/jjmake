@@ -115,7 +115,7 @@
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
       <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
       <AdditionalIncludeDirectories>./include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>BUILDING_LIBICONV;BUILDING_LIBCHARSET;NOMINMAX;NTDDI_VERSION=0x06000000;_WIN32_WINNT=0x0600;WINVER=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;BUILDING_LIBICONV;BUILDING_LIBCHARSET;NOMINMAX;NTDDI_VERSION=0x06000000;_WIN32_WINNT=0x0600;WINVER=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -148,7 +148,7 @@
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
       <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
       <AdditionalIncludeDirectories>./include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>BUILDING_LIBICONV;BUILDING_LIBCHARSET;NOMINMAX;NTDDI_VERSION=0x06000000;_WIN32_WINNT=0x0600;WINVER=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;BUILDING_LIBICONV;BUILDING_LIBCHARSET;NOMINMAX;NTDDI_VERSION=0x06000000;_WIN32_WINNT=0x0600;WINVER=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -181,7 +181,7 @@
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
       <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
       <AdditionalIncludeDirectories>./include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>BUILDING_LIBICONV;BUILDING_LIBCHARSET;NOMINMAX;NTDDI_VERSION=0x06000000;_WIN32_WINNT=0x0600;WINVER=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;BUILDING_LIBICONV;BUILDING_LIBCHARSET;NOMINMAX;NTDDI_VERSION=0x06000000;_WIN32_WINNT=0x0600;WINVER=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -217,7 +217,7 @@
       <ProgramDataBaseFileName>$(IntDir)\%(Filename).pdb</ProgramDataBaseFileName>
       <ObjectFileName>$(IntDir)\%(Filename).obj</ObjectFileName>
       <AdditionalIncludeDirectories>./include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>BUILDING_LIBICONV;BUILDING_LIBCHARSET;NOMINMAX;NTDDI_VERSION=0x06000000;_WIN32_WINNT=0x0600;WINVER=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;BUILDING_LIBICONV;BUILDING_LIBCHARSET;NOMINMAX;NTDDI_VERSION=0x06000000;_WIN32_WINNT=0x0600;WINVER=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

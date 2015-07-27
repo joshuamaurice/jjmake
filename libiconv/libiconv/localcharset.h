@@ -20,10 +20,18 @@
 #ifndef _LOCALCHARSET_H
 #define _LOCALCHARSET_H
 
-#if @HAVE_VISIBILITY@ && BUILDING_LIBCHARSET
-#define LIBCHARSET_DLL_EXPORTED __attribute__((__visibility__("default")))
+//#if @HAVE_VISIBILITY@ && BUILDING_LIBCHARSET
+//#define LIBCHARSET_DLL_EXPORTED __attribute__((__visibility__("default")))
+//#else
+//#define LIBCHARSET_DLL_EXPORTED
+//#endif
+
+#ifdef BUILDING_LIBCHARSET
+    #define LIBCHARSET_DLL_EXPORTED __declspec(dllexport)
+#elif USING_STATIC_LIBICONV
+    #define LIBCHARSET_DLL_EXPORTED
 #else
-#define LIBCHARSET_DLL_EXPORTED
+    #define LIBCHARSET_DLL_EXPORTED __declspec(dllimport)
 #endif
 
 
