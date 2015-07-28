@@ -12,6 +12,7 @@
 #include <cstddef>
 
 #ifdef _WIN32
+    #define USING_STATIC_LIBICONV 1
     #include "libiconv/include/iconv.h"
 #else
     #include <iconv.h>
