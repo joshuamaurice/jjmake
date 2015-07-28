@@ -1,18 +1,31 @@
-The code in ./libiconv/ is licensed under LGPL. 
+The files in ./libiconv/ are licensed under LGPL. 
 For further information, see the files: 
     ./libiconv/COPYING
     ./libiconv/COPYING.LIB
     ./libiconv/DESIGN
     ./libiconv/NEWS
-    
+
 The following file is copy of Unicode, Inc.: 
     junicode/GraphemeBreakProperty.txt 
 See the description in the top of that file for additional information. 
-
-The rest of the code is licensed under the 3-clause BSD license. 
+    
+The remaining files are released under the 3-clause BSD license. 
 For further information, see the (duplicate) license files: 
     ./build/BSD-3CLAUSE-LICENSE.TXT
     ./jbase/BSD-3CLAUSE-LICENSE.TXT
     ./jjmake/BSD-3CLAUSE-LICENSE.TXT
     ./josutils/BSD-3CLAUSE-LICENSE.TXT
     ./junicode/BSD-3CLAUSE-LICENSE.TXT
+
+...
+
+Compliance note regarding LGPL: 
+
+Quick definition: The combined work is the jjmake executable and all of the
+files in this git repository. 
+
+This release remains in compliance with the requirements of the LGPL without 
+releasing all of the code under the LGPL license as follows. The non-LGPL 
+portion of the combined work statically links against the LGPL portion of the
+combined work, and a method is provided for modifying the LGPL portion of the 
+combined work and for rebuilding the whole combined work with these changes. 
