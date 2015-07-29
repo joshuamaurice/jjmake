@@ -34,6 +34,7 @@ public:
                 executionMode(ExecuteGoals), 
                 dependencyMode(AllDependencies), 
                 alwaysMake(false), 
+                allGoals(false), 
                 keepGoing(false), 
                 numThreads(1) 
                 {}
@@ -41,6 +42,7 @@ public:
         DependencyMode dependencyMode; 
         std::vector<std::string> goals; 
         bool alwaysMake; 
+        bool allGoals; 
         bool keepGoing; 
         int numThreads; 
         std::string rootEvalText; 
@@ -95,13 +97,9 @@ private:
 
     //data members
 
-    Mutex stdOutErrMutex; 
+    Arguments arguments; 
 
-    ExecutionMode executionMode; 
-    DependencyMode dependencyMode; 
-    std::vector<std::string> specifiedGoals; 
-    int numThreads; 
-    std::string rootEvalText; 
+    Mutex stdOutErrMutex; 
 
     ThreadPool threadPool; 
     UniquePtr<ParserContext*> rootParserContext; 
@@ -109,7 +107,6 @@ private:
     std::map<std::string, jjm::Node*> nodes; //ownership
     std::map<std::string, std::vector<jjm::Node*> > inputPathMap; 
     std::map<std::string, jjm::Node*> outputPathMap; 
-    bool keepGoing; 
     bool failFlag; 
 };
 

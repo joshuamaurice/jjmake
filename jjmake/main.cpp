@@ -121,7 +121,25 @@ namespace
         BufferedOutputStream & s = jout(); 
         s << "-A\n";
         s << "--always-make\n";
-        s << "        All targets are treated as out-of-date.\n"; 
+        s << "        All goals are treated as out-of-date.\n"; 
+        s << "\n";
+        s << "--all-dependencies\n";
+        s << "--all-dependents";
+        s << "        Tells jjmake to also build all of the dependencies / dependents of\n";
+        s << "        specified goals. Also tells jjmake to build all goals in\n";
+        s << "        dependency / dependent order.\n";
+        s << "        The default is --all-dependencies.\n"; 
+        s << "\n"; 
+        s << "--no-dependencies"; 
+        s << "        Tells jjmake to build the goals in any order. Also tells jjmake\n"; 
+        s << "        to not build goals unless they are explicitly specified on the\n"; 
+        s << "        command line.\n"; 
+        s << "\n";
+        s << "--all-goals"; 
+        s << "        Tell make to build all goals. This option is useful with -P.\n"; 
+        s << "        This option is disabled by default.\n"; 
+        s << "        When combined with --no-dependencies, jjmake will build all goals\n"; 
+        s << "        in a random order; you probably do not want this except with -P.\n"; 
         s << "\n";
         s << "-D<var>=<val>\n";
         s << "-D <var>=<val>\n";
@@ -141,15 +159,15 @@ namespace
         s << "-I<file>\n";
         s << "-I <file>\n";
         s << "--include=<file>\n";
-        s << "        Include the given file in the root context.\n"; 
+        s << "        Causes the specified file to be included in the root context.\n"; 
         s << "-K\n";
         s << "--keep-going\n";
-        s << "        Continue as much after an error during\n";
-        s << "        a target execution.\n";
+        s << "        Continue as much as possible after a goal execution failure.\n";
+        s << "        The default is to stop as soon as possible after a goal execution fails.\n";
         s << "\n";
         s << "-P\n";
         s << "--just-print\n";
-        s << "        Instead of executing goals, print what goals\n";
+        s << "        Instead of executing goals, print the names of goals when they\n";
         s << "        would be executed.\n";
         s << "\n";
         s << "-T<N>\n";
@@ -183,6 +201,18 @@ int jjm::jjmakemain(vector<string> const& args)
         bool hasInclude = false; 
         for (std::vector<string>::const_iterator arg = args.begin(); arg != args.end(); ++arg)
         {
+            if (*arg == "--all-dependencies")
+            {   jjarguments.dependencyMode = JjmakeContext::AllDependencies; 
+                continue; 
+            }
+            if (*arg == "--all-dependents")
+            {   jjarguments.dependencyMode = JjmakeContext::AllDependents; 
+                continue; 
+            }
+            if (*arg == "--all-goals")
+            {   jjarguments.allGoals = true; 
+                continue; 
+            }
             if (*arg == "-A" || *arg == "--always-make")
             {   jjarguments.alwaysMake = true;
                 continue; 
@@ -245,6 +275,10 @@ int jjm::jjmakemain(vector<string> const& args)
             }
             if (*arg == "-K" || *arg == "--keep-going")
             {   jjarguments.keepGoing = true; 
+                continue; 
+            }
+            if (*arg == "--no-dependencies")
+            {   jjarguments.dependencyMode = JjmakeContext::NoDependencies; 
                 continue; 
             }
             if (*arg == "-P" || *arg == "--just-print")

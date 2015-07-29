@@ -46,7 +46,7 @@ private:
     std::set<Node*> dependencies; 
     std::set<Node*> dependents; 
     ssize_t numOutstandingPrereqs; 
-    bool active; 
+    bool activated; 
     Mutex mutex; 
 };
 

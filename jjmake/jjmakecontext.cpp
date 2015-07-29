@@ -11,19 +11,15 @@
 
 using namespace std;
 
-jjm::JjmakeContext::JjmakeContext(Arguments const& args)
+jjm::JjmakeContext::JjmakeContext(Arguments const& arguments_)
     : 
-    executionMode(args.executionMode), 
-    dependencyMode(args.dependencyMode), 
-    specifiedGoals(args.goals),
-    numThreads(args.numThreads),
-    rootEvalText(args.rootEvalText),
-    threadPool(args.numThreads),
-    keepGoing(args.keepGoing), 
+    arguments(arguments_), 
+    threadPool(arguments_.numThreads),
     failFlag(false)
+
 {
     rootParserContext.reset(ParserContext::newRoot(this)); 
-    if (numThreads < 1)
+    if (arguments.numThreads < 1)
         JFATAL(0, 0); 
 }
 
@@ -72,7 +68,7 @@ void jjm::JjmakeContext::execute()
     setNumOutstandingPrereqs();
     
     phase2(); 
-    if (failFlag && keepGoing)
+    if (failFlag && arguments.keepGoing)
         throw std::runtime_error("Execution failed. See previous error messages."); 
 }
 
@@ -82,7 +78,7 @@ void jjm::JjmakeContext::phase1()
     UniquePtr<InitialParseNode*> initialNode(new InitialParseNode); 
     initialNode->jjmakeContext = this;
     initialNode->parserContext = this->rootParserContext.get();
-    initialNode->rootEvalText = rootEvalText; 
+    initialNode->rootEvalText = arguments.rootEvalText; 
     threadPool.addTask(initialNode.release()); 
     threadPool.waitUntilIdle(); 
 }
@@ -185,15 +181,15 @@ void jjm::JjmakeContext::createImplicitDependencies()
 
 void jjm::JjmakeContext::setNumOutstandingPrereqs()
 {
-    if (dependencyMode == AllDependencies)
+    if (arguments.dependencyMode == AllDependencies)
     {   for (map<string, Node*>::iterator node = nodes.begin(); node != nodes.end(); ++node)
-        {   if (node->second->active)
+        {   if (node->second->activated)
                 node->second->numOutstandingPrereqs = node->second->dependencies.size(); 
         }
     }
-    if (dependencyMode == AllDependents)
+    if (arguments.dependencyMode == AllDependents)
     {   for (map<string, Node*>::iterator node = nodes.begin(); node != nodes.end(); ++node)
-        {   if (node->second->active)
+        {   if (node->second->activated)
                 node->second->numOutstandingPrereqs = node->second->dependents.size(); 
         }
     }
@@ -201,11 +197,20 @@ void jjm::JjmakeContext::setNumOutstandingPrereqs()
 
 void jjm::JjmakeContext::activateSpecifiedGoals()
 {
-    for (vector<string>::const_iterator g = specifiedGoals.begin(); g != specifiedGoals.end(); ++g)
+    if (arguments.allGoals)
+    {   for (map<string, Node*>::iterator node = nodes.begin(); node != nodes.end(); ++node)
+            node->second->activated = true; 
+        return; 
+    }
+
+    for (vector<string>::const_iterator 
+                g = arguments.goals.begin(); 
+                g != arguments.goals.end(); 
+                ++g)
     {
         map<string, Node*>::const_iterator node = nodes.find(*g); 
         if (node != nodes.end())
-        {   node->second->active = true; 
+        {   node->second->activated = true; 
             continue; 
         }
 
@@ -214,7 +219,7 @@ void jjm::JjmakeContext::activateSpecifiedGoals()
         if ( ! p1.isEmpty())
         {   node = nodes.find(p1.getStringRep());
             if (node != nodes.end())
-            {   node->second->active = true; 
+            {   node->second->activated = true; 
                 continue; 
             }
         }
@@ -222,7 +227,7 @@ void jjm::JjmakeContext::activateSpecifiedGoals()
         if ( ! p1.isEmpty())
         {   map<string, Node*>::iterator n = outputPathMap.find(p1.getStringRep());
             if (n != outputPathMap.end())
-            {   node->second->active = true;
+            {   node->second->activated = true;
                 continue; 
             }
         }
@@ -233,32 +238,33 @@ void jjm::JjmakeContext::activateSpecifiedGoals()
 
 void jjm::JjmakeContext::enableDependenciesDependents()
 {
-    if (dependencyMode == NoDependencies)
+    if (arguments.dependencyMode == NoDependencies)
         return; 
+
     vector<Node*> pending; 
     for (map<string, Node*>::iterator node = nodes.begin(); node != nodes.end(); ++node)
-    {   if (node->second->active)
+    {   if (node->second->activated)
             pending.push_back(node->second);
     }
-    if (dependencyMode == AllDependencies)
+    if (arguments.dependencyMode == AllDependencies)
     {   for ( ; pending.size(); )
         {   Node * node = pending.back();
             pending.pop_back();
             for (set<Node*>::iterator d = node->dependencies.begin(); d != node->dependencies.end(); ++d)
-            {   if ( ! (**d).active)
-                {   (**d).active = true;
+            {   if ( ! (**d).activated)
+                {   (**d).activated = true;
                     pending.push_back(*d); 
                 }
             }
         }
     }
-    if (dependencyMode == AllDependents)
+    if (arguments.dependencyMode == AllDependents)
     {   for ( ; pending.size(); )
         {   Node * node = pending.back();
             pending.pop_back();
             for (set<Node*>::iterator d = node->dependents.begin(); d != node->dependents.end(); ++d)
-            {   if ( ! (**d).active)
-                {   (**d).active = true;
+            {   if ( ! (**d).activated)
+                {   (**d).activated = true;
                     pending.push_back(*d); 
                 }
             }
@@ -275,26 +281,27 @@ public:
     virtual void run()
     {
         try
-        {   if (context->failFlag && ! context->keepGoing)
+        {   if (context->failFlag && ! context->arguments.keepGoing)
                 return; 
 
-            if (context->executionMode == JjmakeContext::ExecuteGoals)
+            if (context->arguments.executionMode == JjmakeContext::ExecuteGoals)
             {   context->toStdOut("[jjmake] Executing goal: " + node->goalName + "\n"); 
                 node->execute(); 
-            }else if (context->executionMode == JjmakeContext::PrintGoals)
+            }else if (context->arguments.executionMode == JjmakeContext::PrintGoals)
             {   context->toStdOut("[jjmake] Goal: " + node->goalName + "\n"); 
             }else
-                JFATAL(context->executionMode, 0); 
+                JFATAL(context->arguments.executionMode, 0); 
 
             set<Node*> * downstream = 0;
-            if (context->dependencyMode == JjmakeContext::AllDependencies)
+            if (context->arguments.dependencyMode == JjmakeContext::AllDependencies)
                 downstream = & node->dependents;
-            if (context->dependencyMode == JjmakeContext::AllDependents)
+            if (context->arguments.dependencyMode == JjmakeContext::AllDependents)
                 downstream = & node->dependencies;
             if (downstream)
             {   for (set<Node*>::iterator d = downstream->begin(); d != downstream->end(); ++d)
-                {   if ( ! (**d).active)
+                {   if ( ! (**d).activated)
                         continue; 
+                    bool d_is_active = false; 
                     ssize_t numOutstandingPrereqsOfD; 
                     {
                         Lock lock((**d).mutex); 
@@ -327,9 +334,13 @@ public:
 
 void jjm::JjmakeContext::phase2()
 {
+    //We collect the list of toExecute before creating and adding tasks to 
+    //the threadpool to avoid a data race. 
+    //The first loop accesses "numOutstandingPrereqs", which can be modified
+    //when a task in the threadpool completes. 
     vector<Node*> toExecute; 
     for (map<string, Node*>::iterator node = nodes.begin(); node != nodes.end(); ++node)
-    {   if (node->second->active && node->second->numOutstandingPrereqs == 0)
+    {   if (node->second->activated && node->second->numOutstandingPrereqs == 0)
             toExecute.push_back(node->second); 
     }
     for (vector<Node*>::iterator node = toExecute.begin(); node != toExecute.end(); ++node)
@@ -344,7 +355,7 @@ void jjm::JjmakeContext::phase2()
 void jjm::JjmakeContext::setFailFlag()
 {
     failFlag = true; 
-    if ( ! keepGoing)
+    if ( ! arguments.keepGoing)
         threadPool.setStopFlag(); 
 }
 

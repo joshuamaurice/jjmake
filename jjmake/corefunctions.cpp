@@ -29,26 +29,11 @@ using namespace std;
 
 namespace
 {
-    string arrayValueToSingleString(vector<string> const& v)
-    {
-        string result; 
-        bool needSpace = false; 
-        for (size_t i = 0; i < v.size(); ++i)
-        {   if (v[i].size() > 0)
-            {   if (needSpace)
-                    result += ' ';
-                result += v[i]; 
-                needSpace = true; 
-            }
-        }
-        return result; 
-    }
-
     class AddFunction : public jjm::ParserContext::NativeFunction
     {
     public:
         AddFunction() {}
-        virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
+        virtual vector<Utf8String> eval(ParserContext * c, vector<Utf8String> const& arguments) 
         {
             if (arguments.size() <= 1)
                 throw std::runtime_error("Function '" + arguments[0] + "' takes 1 or more additional arguments."); 
@@ -60,7 +45,7 @@ namespace
                 result += x; 
             }
 
-            vector<string> result2;
+            vector<Utf8String> result2;
             result2.push_back(toDecStr(result));
             return result2; 
         }
@@ -70,12 +55,12 @@ namespace
     {
     public:
         EqualsFunction() {}
-        virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
+        virtual vector<Utf8String> eval(ParserContext * c, vector<Utf8String> const& arguments) 
         {
             if (arguments.size() != 3)
                 throw std::runtime_error("Function '" + arguments[0] + "' takes exactly 2 additional arguments."); 
             bool b = arguments[1] == arguments[2];
-            vector<string> result;
+            vector<Utf8String> result;
             if (b)
                 result.push_back("t");
             return result; 
@@ -86,12 +71,12 @@ namespace
     {
     public:
         NotEqualsFunction() {}
-        virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
+        virtual vector<Utf8String> eval(ParserContext * c, vector<Utf8String> const& arguments) 
         {
             if (arguments.size() != 3)
                 throw std::runtime_error("Function '" + arguments[0] + "' takes exactly 2 additional arguments."); 
             bool b = arguments[1] != arguments[2];
-            vector<string> result;
+            vector<Utf8String> result;
             if (b)
                 result.push_back("t");
             return result; 
@@ -102,21 +87,21 @@ namespace
     {
     public:
         GetFunction() {}
-        virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
+        virtual vector<Utf8String> eval(ParserContext * c, vector<Utf8String> const& arguments) 
         {
             if (arguments.size() != 2)
                 throw std::runtime_error("Function '" + arguments[0] + "' takes exactly 1 additional argument."); 
-            string const& name = arguments[1]; 
+            Utf8String const& name = arguments[1]; 
             if (name.size() == 0)
                 throw std::runtime_error("Function '" + arguments[0] + "' does not accept an empty variable name."); 
 
             jjm::ParserContext::Value const* v = c->getValue(name); 
 
-            vector<string> result; 
+            vector<Utf8String> result; 
             if (v && v->value.size() > 0)
                 result.push_back(v->value[0]); 
             else
-                result.push_back(string()); 
+                result.push_back(Utf8String()); 
             return result; 
         }
     };
@@ -125,17 +110,17 @@ namespace
     {
     public:
         GetAtFunction() {}
-        virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
+        virtual vector<Utf8String> eval(ParserContext * c, vector<Utf8String> const& arguments) 
         {
             if (arguments.size() != 2)
                 throw std::runtime_error("Function '" + arguments[0] + "' takes exactly 1 additional argument."); 
-            string const& name = arguments[1]; 
+            Utf8String const& name = arguments[1]; 
             if (name.size() == 0)
                 throw std::runtime_error("Function '" + arguments[0] + "' does not accept an empty variable name."); 
 
             jjm::ParserContext::Value const* v = c->getValue(name); 
 
-            vector<string> result; 
+            vector<Utf8String> result; 
             if (v)
                 result = v->value; 
             return result; 
@@ -146,21 +131,31 @@ namespace
     {
     public:
         GetStarFunction() {}
-        virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
+        virtual vector<Utf8String> eval(ParserContext * c, vector<Utf8String> const& arguments) 
         {
             if (arguments.size() != 2)
                 throw std::runtime_error("Function '" + arguments[0] + "' takes exactly 1 additional argument."); 
-            string const& name = arguments[1]; 
+            Utf8String const& name = arguments[1]; 
             if (name.size() == 0)
                 throw std::runtime_error("Function '" + arguments[0] + "' does not accept an empty variable name."); 
 
             jjm::ParserContext::Value const* v = c->getValue(name); 
 
-            vector<string> result; 
-            if (v)
-                result.push_back(arrayValueToSingleString(v->value)); 
-            else
-                result.push_back(string()); 
+            vector<Utf8String> result; 
+            result.push_back(Utf8String()); 
+            if (v == 0)
+                return result; 
+
+            Utf8String & str = result.back(); 
+            bool needSpace = false; 
+            for (size_t i = 0; i < v->value.size(); ++i)
+            {   if (v->value[i].size() > 0)
+                {   if (needSpace)
+                        str += ' ';
+                    str += v->value[i]; 
+                    needSpace = true; 
+                }
+            }
             return result; 
         }
     };
@@ -169,22 +164,22 @@ namespace
     {
     public:
         IfFunction() { alwaysEvalArguments = false; }
-        virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
+        virtual vector<Utf8String> eval(ParserContext * c, vector<Utf8String> const& arguments) 
         {
             if (arguments.size() != 3 && arguments.size() != 4)
                 throw std::runtime_error("Function '" + arguments[0] + "' takes exactly 2 or 3 additional arguments."); 
-            string const& cond = arguments[1]; 
-            string const& trueBody = arguments[2]; 
-            string const& falseBody = arguments.size() == 4 ? arguments[3] : string(); 
+            Utf8String const& cond = arguments[1]; 
+            Utf8String const& trueBody = arguments[2]; 
+            Utf8String const& falseBody = arguments.size() == 4 ? arguments[3] : Utf8String(); 
 
-            vector<string> result; 
+            vector<Utf8String> result; 
             if (cond.size() > 0)
                 result.push_back(trueBody);
             else
                 result.push_back(falseBody);
             return result; 
         }
-        bool evalNextArgument(ParserContext * , vector<string> const& argumentsThusFar)
+        bool evalNextArgument(ParserContext * , vector<Utf8String> const& argumentsThusFar)
         {
             switch (argumentsThusFar.size())
             {
@@ -200,53 +195,53 @@ namespace
     {
     public:
         IncludeFunction() {}
-        virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
+        virtual vector<Utf8String> eval(ParserContext * c, vector<Utf8String> const& arguments) 
         {
             if (arguments.size() != 2)
                 throw std::runtime_error("Function '" + arguments[0] + "' takes exactly 1 additional argument.");
             
-            string prevDotPwd;
+            Utf8String prevDotPwd;
             jjm::ParserContext::Value const* prevDotPwdClass = c->getValue(".PWD");
             if (prevDotPwdClass && prevDotPwdClass->value.size())
                 prevDotPwd = prevDotPwdClass->value[0]; 
 
-            string prevFile;
+            Utf8String prevFile;
             jjm::ParserContext::Value const* prevFileClass = c->getValue(".FILE");
             if (prevFileClass && prevFileClass->value.size())
                 prevFile = prevFileClass->value[0]; 
 
-            string prevLine;
+            Utf8String prevLine;
             jjm::ParserContext::Value const* prevLineClass = c->getValue(".LINE");
             if (prevLineClass && prevLineClass->value.size())
                 prevLine = prevLineClass->value[0]; 
 
-            string prevCol;
+            Utf8String prevCol;
             jjm::ParserContext::Value const* prevColClass = c->getValue(".COL");
             if (prevColClass && prevColClass->value.size())
                 prevCol = prevColClass->value[0]; 
 
             Path const path = Path::join(Path(prevDotPwd), Path(arguments[1]).getAbsolutePath()); 
 
-            //TODO need to use current locale for POSIX multi-byte string
+            //TODO need to use current locale for POSIX multi-byte Utf8String
             FileHandleOwner file;
             try
             {   file.reset(FileOpener().readOnly().openExistingOnly().open(path));
             }catch (std::exception & e)
-            {   string message;
-                message += string() + "Function 'include' unable to open file \"" + path.getStringRep() + "\". Cause:\n"; 
+            {   Utf8String message;
+                message += Utf8String() + "Function 'include' unable to open file \"" + path.getStringRep() + "\". Cause:\n"; 
                 message += e.what(); 
                 throw std::runtime_error(message); 
             }
             FileStream inputStream(file.release()); 
             BufferedInputStream in( & inputStream); 
 
-            string contents; 
+            Utf8String contents; 
             for (;;)
             {   size_t oldSize = contents.size();
                 size_t fetchSize = 16 * 1024; 
                 contents.resize(oldSize + fetchSize); 
 
-                //Assumes std::string uses contiguous storage. 
+                //Assumes Utf8String uses contiguous storage. 
                 //Not gauranteed by C++03. It is guaranteed by C++11. 
                 //True of all commercial implementations. 
                 in.read(&contents[0] + oldSize, fetchSize); 
@@ -263,11 +258,11 @@ namespace
                 if (in.isEof())
                     break;
 #ifdef _WIN32
-                throw std::runtime_error(string() 
+                throw std::runtime_error(Utf8String() 
                         + "Function 'include': Failure when reading from file \"" + path.getStringRep() + "\". "
                         + "GetLastError() " + toDecStr(lastError) + "."); 
 #else
-                throw std::runtime_error(string() 
+                throw std::runtime_error(Utf8String() 
                         + "Function 'include': Failure when reading from file \"" + path.getStringRep() + "\". "
                         + "errno " + toDecStr(lastErrno) + "."); 
 #endif
@@ -285,7 +280,7 @@ namespace
             c->setValue(".LINE", prevLine); 
             c->setValue(".COL", prevCol); 
 
-            vector<string> result; 
+            vector<Utf8String> result; 
             return result; 
         }
     };
@@ -294,9 +289,9 @@ namespace
     {
     public:
         PrintFunction() {}
-        virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
+        virtual vector<Utf8String> eval(ParserContext * c, vector<Utf8String> const& arguments) 
         {
-            string out;
+            Utf8String out;
             for (size_t i = 1; i < arguments.size(); ++i)
             {   out += arguments[i];
                 if (i + 1 < arguments.size())
@@ -305,7 +300,7 @@ namespace
             out += '\n';
             c->toStdOut(out); 
 
-            vector<string> result; 
+            vector<Utf8String> result; 
             return result; 
         }
     };
@@ -314,12 +309,12 @@ namespace
     {
     public:
         SetFunction() {}
-        virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
+        virtual vector<Utf8String> eval(ParserContext * c, vector<Utf8String> const& arguments) 
         {
             if (arguments.size() != 3)
                 throw std::runtime_error("Function '" + arguments[0] + "' takes exactly 2 additional arguments."); 
-            string const& name = arguments[1]; 
-            string const& valueString = arguments[2]; 
+            Utf8String const& name = arguments[1]; 
+            Utf8String const& valueString = arguments[2]; 
 
             if (name.size() == 0)
                 throw std::runtime_error("Function '" + arguments[0] + "' does not accept an empty variable name."); 
@@ -328,7 +323,7 @@ namespace
 
             c->setValue(name, valueString); 
 
-            vector<string> result; 
+            vector<Utf8String> result; 
             return result; 
         }
     };
@@ -337,18 +332,18 @@ namespace
     {
     public:
         SetaFunction() {}
-        virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
+        virtual vector<Utf8String> eval(ParserContext * c, vector<Utf8String> const& arguments) 
         {
             if (arguments.size() <= 1)
                 throw std::runtime_error("Function '" + arguments[0] + "' takes 1 or more additional arguments."); 
-            string const& name = arguments[1]; 
-            vector<string> valueVec(arguments.begin() + 2, arguments.end()); 
+            Utf8String const& name = arguments[1]; 
+            vector<Utf8String> valueVec(arguments.begin() + 2, arguments.end()); 
             if (name.size() == 0)
                 throw std::runtime_error("Function '" + arguments[0] + "' does not accept an empty variable name."); 
 
             c->setValue(name, valueVec); 
 
-            vector<string> result; 
+            vector<Utf8String> result; 
             return result; 
         }
     };
@@ -398,7 +393,7 @@ namespace
     {
     public: 
         TouchNodeFunction() {}
-        virtual vector<string> eval(ParserContext * c, vector<std::string> const& arguments) 
+        virtual vector<Utf8String> eval(ParserContext * c, vector<Utf8String> const& arguments) 
         {
             if (arguments.size() < 2)
                 throw std::runtime_error("Function '" + arguments[0] + "' takes 1 or more additional argument."); 
@@ -421,7 +416,7 @@ namespace
             UniquePtr<TouchNode*> node(new TouchNode(outputPaths[0], inputPaths, outputPaths)); 
             c->newNode(node.release()); 
 
-            return vector<string>(); 
+            return vector<Utf8String>(); 
         }
     };
 
@@ -429,7 +424,7 @@ namespace
 
 void jjm::ParserContext::registerBuiltInFunctions()
 {
-    map<string, NativeFunction*> & r = getNativeFunctionRegistry();
+    map<Utf8String, NativeFunction*> & r = getNativeFunctionRegistry();
     r["add"]     = new AddFunction; 
     r["eq"]      = new EqualsFunction; 
     r["equ"]     = new EqualsFunction; 
