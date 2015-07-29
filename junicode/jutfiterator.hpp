@@ -757,6 +757,7 @@ BasicCpToUtfBidiIterator<CpIter, utfKind> &
         buf[i] = x.seq[i]; 
     buflen = x.len; 
     bufpos = x.len - 1; 
+    return *this; 
 }
 
 template <typename CpIter, UtfKind utfKind>

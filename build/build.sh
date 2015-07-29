@@ -53,7 +53,7 @@ compile_c()
   opts=()
   if test $# -ne 0 ; then opts=("$@") ; fi
   obj="$objdir/`basename "$c" .c`$obj_ext"
-  cmd=("$c_compiler" "${c_compiler_opts[@]}" "-I${PWD}" "$c" -o "$obj" "${opts[@]}")
+  cmd=("$c_compiler" "${c_compiler_opts[@]}" "$c" -o "$obj" "${opts[@]}")
 
   rm -f "$obj"
   echo 'XXXX'
@@ -74,7 +74,7 @@ compile_cpp()
   opts=()
   if test $# -ne 0 ; then opts=("$@") ; fi
   obj="$objdir/`basename "$cpp" .cpp`$obj_ext"
-  cmd=("$cpp_compiler" "${cpp_compiler_opts[@]}" "-I${PWD}" "$cpp" -o "$obj" "${opts[@]}" )
+  cmd=("$cpp_compiler" "${cpp_compiler_opts[@]}" "$cpp" -o "$obj" "${opts[@]}" )
 
   rm -f "$obj"
   echo 'XXXX'
@@ -135,13 +135,39 @@ link_exe()
   return $x
 }
 
+compile_cs()
+{
+  objdir="$1"
+  shift
+  
+  cs=()
+  opts=()
+  for x in "$@" ; do
+    if echo "$x" | grep -E '^-'   > /dev/null ; then opts=("${opts[@]}" "$x") ; continue ; fi
+    if echo "$x" | grep -E '\.c$' > /dev/null ; then cs=(  "${cs[@]}"   "$x") ; continue ; fi
+  done
+  
+  for c in "${cs[@]}" ; do
+    compile_c "$objdir" "$c" "${opts[@]}"
+    x=$?
+    if test $x -ne 0 ; then return 1 ; fi
+  done
+}
+
 compile_cpps()
 {
   objdir="$1"
   shift
-  cpps=("$@")
+  
+  cpps=()
+  opts=()
+  for x in "$@" ; do
+    if echo "$x" | grep -E '^-'     > /dev/null ; then opts=("${opts[@]}" "$x") ; continue ; fi
+    if echo "$x" | grep -E '\.cpp$' > /dev/null ; then cpps=("${cpps[@]}" "$x") ; continue ; fi
+  done
+  
   for cpp in "${cpps[@]}" ; do
-    compile_cpp "$objdir" "$cpp"
+    compile_cpp "$objdir" "$cpp" "${opts[@]}"
     x=$?
     if test $x -ne 0 ; then return 1 ; fi
   done
@@ -151,13 +177,13 @@ compile_cpps()
 ##
 
 #jbase
-compile_cpps "tmp/$platform/jbase" jbase/*.cpp
+compile_cpps "tmp/$platform/jbase" jbase/*.cpp "-I${PWD}" 
 x=$?; if test $x -ne 0; then exit 1; fi
 link_staticlib "tmp/$platform/jbase/jbase$staticlib_ext" "tmp/$platform/jbase/"*$obj_ext
 x=$?; if test $x -ne 0; then exit 1; fi
 
 #junicode: create junicode/generate-gciter-data-cfile.exe
-compile_cpp "tmp/$platform/junicode" junicode/generate-gciter-data-cfile.cpp
+compile_cpp "tmp/$platform/junicode" junicode/generate-gciter-data-cfile.cpp "-I${PWD}" 
 x=$?; if test $x -ne 0; then exit 1; fi
 link_exe "tmp/$platform/junicode/generate-gciter-data-cfile.exe" "tmp/$platform/junicode/generate-gciter-data-cfile$obj_ext"
 x=$?; if test $x -ne 0; then exit 1; fi
@@ -185,7 +211,7 @@ for cpp in "${cpps[@]}" ; do
   if echo "$cpp" | grep 'generate-gciter-data-cfile.cpp' > /dev/null ; then continue ; fi
   cpps2=("${cpps2[@]}" "$cpp")
 done
-compile_cpps "tmp/$platform/junicode" "${cpps2[@]}"
+compile_cpps "tmp/$platform/junicode" "${cpps2[@]}" "-I${PWD}" 
 x=$?; if test $x -ne 0; then exit 1; fi
 
 #junicode: link the obj files
@@ -199,21 +225,45 @@ link_staticlib "tmp/$platform/junicode/junicode$staticlib_ext" "${objs2[@]}"
 x=$?; if test $x -ne 0; then exit 1; fi
 
 #josutils
-compile_cpps "tmp/$platform/josutils" josutils/*.cpp
+compile_cpps "tmp/$platform/josutils" josutils/*.cpp "-I${PWD}" 
 x=$?; if test $x -ne 0; then exit 1; fi
 link_staticlib "tmp/$platform/josutils/josutils$staticlib_ext" "tmp/$platform/josutils/"*$obj_ext
 x=$?; if test $x -ne 0; then exit 1; fi
 
+#iconv
+if test "$platform" = "mingw-w64" ; then
+  compile_cs  "tmp/$platform/libiconv"  libiconv/libiconv/*.c  \
+        "-I${PWD}/libiconv/include/" \
+        -DBUILDING_LIBICONV -DBUILDING_LIBCHARSET
+  x=$?; if test $x -ne 0; then exit 1; fi
+  link_staticlib "tmp/$platform/libiconv/libiconv$staticlib_ext" "tmp/$platform/libiconv/"*$obj_ext
+  x=$?; if test $x -ne 0; then exit 1; fi
+fi
+
+#
+linkagainst_iconv_opts=(-liconv)
+if test "$platform" = "mingw-w64" ; then 
+  linkagainst_iconv_opts=("-Ltmp/$platform/libiconv/" "${linkagainst_iconv_opts[@]}")
+fi
+
 #jjmake
-compile_cpps "tmp/$platform/jjmake/" jjmake/*.cpp
+compile_cpps "tmp/$platform/jjmake/" jjmake/*.cpp "-I${PWD}" 
 x=$?; if test $x -ne 0; then exit 1; fi
-link_exe "bin/$platform/jjmake/jjmake" "tmp/$platform/jjmake/"*$obj_ext "tmp/$platform/jbase/jbase$staticlib_ext" "tmp/$platform/josutils/josutils$staticlib_ext" "tmp/$platform/junicode/junicode$staticlib_ext" -liconv
+link_exe  "bin/$platform/jjmake/jjmake"  "tmp/$platform/jjmake/"*$obj_ext  \
+    "tmp/$platform/jbase/jbase$staticlib_ext" \
+    "tmp/$platform/josutils/josutils$staticlib_ext" \
+    "tmp/$platform/junicode/junicode$staticlib_ext" \
+    "${linkagainst_iconv_opts[@]}"
 x=$?; if test $x -ne 0; then exit 1; fi
 
 #tests
-compile_cpps "tmp/$platform/tests/" tests/*.cpp
+compile_cpps "tmp/$platform/tests/" tests/*.cpp "-I${PWD}" 
 x=$?; if test $x -ne 0; then exit 1; fi
-link_exe "bin/$platform/tests/tests" "tmp/$platform/tests/"*$obj_ext "tmp/$platform/jbase/jbase$staticlib_ext" "tmp/$platform/josutils/josutils$staticlib_ext" "tmp/$platform/junicode/junicode$staticlib_ext" -liconv
+link_exe  "bin/$platform/tests/tests"  "tmp/$platform/tests/"*$obj_ext  \
+    "tmp/$platform/jbase/jbase$staticlib_ext" \
+    "tmp/$platform/josutils/josutils$staticlib_ext" \
+    "tmp/$platform/junicode/junicode$staticlib_ext" \
+    "${linkagainst_iconv_opts[@]}"
 x=$?; if test $x -ne 0; then exit 1; fi
 
 #

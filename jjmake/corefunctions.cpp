@@ -252,8 +252,9 @@ namespace
                 in.read(&contents[0] + oldSize, fetchSize); 
 #ifdef _WIN32
                 DWORD const lastError = GetLastError(); 
-#endif
+#else
                 int const lastErrno = errno; 
+#endif
 
                 ssize_t gcount = in.gcount(); 
                 contents.resize(oldSize + gcount); 

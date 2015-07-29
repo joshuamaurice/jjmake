@@ -146,9 +146,7 @@ ssize_t StandardInputStream::read(void * const argumentBuffer, size_t const argu
                     numCharsToRead = (DWORD) argumentBufferBytes;
                 else
                     numCharsToRead = std::numeric_limits<DWORD>::max(); 
-
-                numCharsToRead ; 
-
+                
                 size_t const bufsize = numCharsToRead; 
                 UniqueArray<wchar_t*> buf(new wchar_t[bufsize]); 
 
