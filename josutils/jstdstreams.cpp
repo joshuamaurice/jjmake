@@ -5,6 +5,7 @@
 
 #include "jstdstreams.hpp"
 
+#include "jenv.hpp"
 #include "junicode/jiconv.hpp"
 #include "junicode/jutfstring.hpp"
 #include "jbase/jfatal.hpp"
@@ -173,19 +174,15 @@ ssize_t StandardInputStream::read(void * const argumentBuffer, size_t const argu
         }
 #endif
         //otherwise, read it in the encoding of the specified encoding
-        bool eof = false; 
-        if (converter.outputSize == 0 && converter.inputSize < converter.inputCapacity)
-        {   ssize_t x = handle.read(converter.input.get() + converter.inputSize, converter.inputCapacity - converter.inputSize); 
-            if (x == -1)
-            {   eof = true; 
-                x = 0; 
-            }
-            converter.inputSize += x; 
-        }
-        converter.convert(); 
-        if (eof && converter.outputSize == 0 && converter.inputSize == 0)
+        ssize_t const toRead = converter.inputCapacity - converter.inputSize; 
+        ssize_t const bytesRead = handle.read(converter.input.get() + converter.inputSize, toRead); 
+        if (bytesRead >= 0)
+            converter.inputSize += bytesRead; 
+        if (bytesRead == -1 && converter.inputSize == 0 && converter.outputSize == 0)
             return -1; 
-        if (eof && converter.outputSize == 0 && converter.inputSize != 0)
+        if (converter.outputSize == 0)
+            converter.convert(); 
+        if (bytesRead == -1 && converter.inputSize != 0 && converter.outputSize == 0)
         {   throw std::runtime_error("Incomplete partial encoding sequence found just before end-of-input."); 
             return -2;
         }
@@ -309,26 +306,26 @@ ssize_t  StandardOutputStream::write(void const * const argumentBuffer, std::siz
         char const * argumentBufferEnd = reinterpret_cast<char const*>(argumentBuffer) + argumentBufferBytes; 
         for (;;)
         {
-            if (argumentBufferCurrent == argumentBufferEnd)
-                return argumentBufferBytes; 
-
             //copy some number of bytes to converter input
-            {
-                ssize_t toCopy = std::min<ssize_t>(argumentBufferEnd - argumentBufferCurrent, converter.inputCapacity - converter.inputSize); 
-                std::memcpy(
-                        converter.input.get() + converter.inputSize, 
-                        argumentBufferCurrent, 
-                        toCopy
-                        ); 
-                argumentBufferCurrent += toCopy; 
-                converter.inputSize += toCopy; 
-            }
+            ssize_t const toCopy = std::min<ssize_t>(
+                    argumentBufferEnd - argumentBufferCurrent, 
+                    converter.inputCapacity - converter.inputSize); 
+            std::memcpy(
+                    converter.input.get() + converter.inputSize, 
+                    argumentBufferCurrent, 
+                    toCopy
+                    ); 
+            argumentBufferCurrent += toCopy; 
+            converter.inputSize += toCopy; 
 
             //convert
             converter.convert(); 
 
             //copy all of the output to the handle
             handle.writeComplete(converter.output.get(), converter.outputSize); 
+
+            if (argumentBufferCurrent == argumentBufferEnd)
+                return argumentBufferBytes; 
         }
         JFATAL(0, 0); 
     }catch (std::exception & e)
@@ -339,56 +336,6 @@ ssize_t  StandardOutputStream::write(void const * const argumentBuffer, std::siz
     }
 }
 
-#ifdef _WIN32
-    string jjm::getWindowsOemEncodingName()
-    {
-        //setlocale returns the Windows-ANSI codepage encoding, not the 
-        //Windows-OEM encoding, which is what we want for command line 
-        //applications. 
-        SetLastError(0);
-        size_t const oemCodePageBufferSize = 6; 
-        wchar_t oemCodePageBuffer[oemCodePageBufferSize + 1]; 
-        int const getLocaleInfoExResult = 
-                GetLocaleInfoEx(
-                        LOCALE_NAME_USER_DEFAULT, 
-                        LOCALE_IDEFAULTCODEPAGE, 
-                        oemCodePageBuffer, 
-                        oemCodePageBufferSize
-                        );
-        if (getLocaleInfoExResult == 0)
-        {   DWORD const lastError = GetLastError(); 
-            string message;
-            message += "GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_IDEFAULTCODEPAGE, ...) failed. Cause:\n"; 
-            message += "GetLastError() " + toDecStr(lastError) + "."; 
-            throw std::runtime_error(message);
-        }
-        oemCodePageBuffer[getLocaleInfoExResult] = 0; 
-
-        string encoding = "CP" + makeU8StrFromCpRange(makeCpRangeFromUtf16(
-                make_pair(oemCodePageBuffer + 0, oemCodePageBuffer + getLocaleInfoExResult))); 
-        return encoding; 
-    }
-#else
-    string jjm::getEncodingNameFrom_setlocale_LC_ALL_emptyString()
-    {
-        char const * localeName1 = setlocale(LC_ALL, ""); 
-        if (localeName1 == 0)
-        {   string message;
-            message += "jjm's StandardOutputStream::StandardOutputStream() failed. Cause:\n";
-            message += "setlocale(LC_ALL, \"\") returned NULL."; 
-            throw std::runtime_error(message); 
-        }
-        string encoding = localeName1; 
-        if (encoding.find('.') == string::npos)
-        {   string message;
-            message += "jjm's StandardOutputStream::StandardOutputStream() failed. Cause:\n";
-            message += string() + "The return value of setlocale(LC_ALL, \"\") -> \"" + localeName1 + "\" does not end in an encoding."; 
-            throw std::runtime_error(message); 
-        }
-        encoding.erase(0, encoding.find('.') + 1); 
-        return encoding; 
-    }
-#endif
 
 void jjm::setJinEncoding (std::string const& encoding)
 {

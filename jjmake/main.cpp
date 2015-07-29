@@ -11,6 +11,7 @@
 #include "jbase/jnulltermiter.hpp"
 #include "junicode/jiconv.hpp"
 #include "junicode/jutfstring.hpp"
+#include "josutils/jenv.hpp"
 #include "josutils/jstdstreams.hpp"
 #include <iostream>
 #include <stdlib.h>
@@ -58,6 +59,18 @@ namespace
         writeStringLiteral(x, ".\n");
     }
     bool installFatalHandler = (jjmGetFatalHandler() = & fatalHandler, false); 
+
+    template <size_t N>
+    bool startsWith(string const& str, char const (&prefix)[N])
+    {
+        if (str.size() < N - 1)
+            return false; 
+        for (size_t i = 0; i < N - 1; ++i)
+        {   if (str[i] != prefix[i])
+                return false;
+        }
+        return true; 
+    }
 }
 
 
@@ -66,16 +79,19 @@ namespace jjm { int jjmakemain(vector<string> const& args); }
     int wmain(int argc, wchar_t **argv)
     {
         try
-        {
+        {   
             vector<string> args;
             try
             {   for (int x = 1; x < argc; ++x)
-                {   auto utf16range = makeNullTermRange(argv[x]);
-                    Utf8String u8str = makeU8StrFromCpRange(makeCpRangeFromUtf16(utf16range)); 
-                    if (u8str.size())
-                        args.push_back(u8str);  
-                    else
-                        args.push_back(std::string());  
+                {   Utf8String u8str = makeU8StrFromCpRange(makeCpRangeFromUtf16(makeNullTermRange(argv[x]))); 
+                    if (startsWith(u8str, "--console-encoding="))
+                    {   string encoding = u8str.substr(strlen("--console-encoding=")); 
+                        jjm::setJinEncoding(encoding);
+                        jjm::setJoutEncoding(encoding);
+                        jjm::setJoutEncoding(encoding); 
+                        continue; 
+                    }
+                    args.push_back(u8str);  
                 }
             } catch (std::exception & e)
             {   string message; 
@@ -101,38 +117,28 @@ namespace jjm { int jjmakemain(vector<string> const& args); }
     {
         try
         {
-            string encoding = jjm::getEncodingNameFrom_setlocale_LC_ALL_emptyString(); 
-
-            IconvConverter converter;
-            converter.init("UTF-8", encoding); 
+            string argumentEncoding = jjm::getEncodingNameFrom_setlocale_LC_ALL_emptyString(); 
 
             vector<Utf8String> utf8args;
             for (int x = 1; x < argc; ++x)
             {
-                converter.resetState(); 
-
-                Utf8String utf8arg; 
-
-                char * inputBegin = argv[x]; 
-                char * inputEnd = inputBegin; 
-                for ( ; *inputEnd; ++inputEnd)
-                    ;
-                for ( ; inputBegin != inputEnd; )
-                {
-                    ssize_t toCopy = std::min<ssize_t>(converter.inputCapacity - converter.inputSize, inputEnd - inputBegin); 
-                    memcpy(converter.input.get() + converter.inputSize, inputBegin, toCopy); 
-                    inputBegin += toCopy; 
-                    converter.inputSize += toCopy; 
-
-                    converter.convert(); 
-
-                    utf8arg.append(converter.output.get(), converter.output.get() + converter.outputSize); 
-                }
-                if (converter.inputSize != 0)
+                string utf8arg;
+                try
+                {   utf8arg = jjm::iconvConvert("UTF-8", argumentEncoding, argv[x]); 
+                } catch (std::exception & e)
                 {   string message; 
-                    message += "Failed to convert an argument of main() from the encoding of the user's locale to UTF-8. Cause:\n";
-                    message += "The argument ended in an incomplete encoding sequence.";
+                    message += "Failed to transcode an argument of main() to UTF-8. Cause:\n"; 
+                    message += e.what();
                     throw std::runtime_error(message); 
+                }
+                if (startsWith(utf8arg, "--console-encoding="))
+                {   string encoding = utf8arg.substr(strlen("--console-encoding=")); 
+                    jjm::setJinEncoding(encoding);
+                    jjm::setJoutEncoding(encoding);
+                    jjm::setJoutEncoding(encoding); 
+                    argumentEncoding = encoding; 
+                    jjm::setEncodingOfEnvVars(encoding); 
+                    continue; 
                 }
                 utf8args.push_back(utf8arg); 
             }
@@ -153,18 +159,6 @@ namespace jjm { int jjmakemain(vector<string> const& args); }
 
 namespace
 {
-    template <size_t N>
-    bool startsWith(string const& str, char const (&prefix)[N])
-    {
-        if (str.size() < N - 1)
-            return false; 
-        for (size_t i = 0; i < N - 1; ++i)
-        {   if (str[i] != prefix[i])
-                return false;
-        }
-        return true; 
-    }
-
     inline string escapeSingleQuote(string const& x)
     {
         string r;
@@ -183,37 +177,77 @@ namespace
     void printHelpMessage()
     {
         BufferedOutputStream & s = jout(); 
-        s << "-A\n";
         s << "--always-make\n";
         s << "        All goals are treated as out-of-date.\n"; 
         s << "\n";
         s << "--all-dependencies\n";
-        s << "--all-dependents";
+        s << "--all-dependents\n";
         s << "        Tells jjmake to also build all of the dependencies / dependents of\n";
         s << "        specified goals. Also tells jjmake to build all goals in\n";
         s << "        dependency / dependent order.\n";
         s << "        The default is --all-dependencies.\n"; 
         s << "\n"; 
-        s << "--no-dependencies"; 
+        s << "--no-dependencies\n"; 
         s << "        Tells jjmake to build the goals in any order. Also tells jjmake\n"; 
         s << "        to not build goals unless they are explicitly specified on the\n"; 
         s << "        command line.\n"; 
         s << "\n";
-        s << "--all-goals"; 
+        s << "--all-goals\n"; 
         s << "        Tell make to build all goals. This option is useful with -P.\n"; 
         s << "        This option is disabled by default.\n"; 
         s << "        When combined with --no-dependencies, jjmake will build all goals\n"; 
         s << "        in a random order; you probably do not want this except with -P.\n"; 
+        s << "\n";
+
+        s << "--console-encoding=<encoding>\n";
+        s << "        Specifies the encoding of stdin, stdout, and stderr.\n";
+#if defined(_WIN32)
+        s << "\n"; 
+        s << "        Native Windows Application rules:\n";
+        s << "\n"; 
+        s << "        If any of the standard handles (stdin, stdout, stderr) are directly\n";
+        s << "        connected to a Windows terminal, then it will directly read / write\n";
+        s << "        in UTF-16 via Windows-specific APIs.\n";
+        s << "\n"; 
+        s << "        Note: When a standard handle is redirected to/from a file or piped\n";
+        s << "        to/from another program, this program will use the encoding\n";
+        s << "        specified by --console-encoding.\n"; 
+        s << "\n"; 
+        s << "        Note: This program will use the encoding specified by\n";
+        s << "        --console-encoding when directly read from / writing to a cygwin\n";
+        s << "        terminal (because the cygwin terminals do not implement the\n";
+        s << "        Windows-specific functions to count as a Windows-terminal).\n";
+        s << "\n"; 
+        s << "        Arguments of main() are accessed in UTF-16 via Windows-specific\n";
+        s << "        APIs. It is the responsibility of the caller process to correctly\n";
+        s << "        transcode when working with the Windows CreateProcess API.\n";
+        s << "\n"; 
+        s << "        Environmental variables are accessed in UTF-16 via Windows-specific\n";
+        s << "        APIs. It is the responsibility of the caller process to correctly\n";
+        s << "        transcode when working with the Windows CreateProcess API.\n";
+        s << "\n"; 
+        s << "        File paths are accessed in UTF-16 via Windows-specific APIs.\n";
+#else
+        s << "        Also specifies the encoding of all subsequent arguments of main().\n";
+        s << "        Also specifies the encoding of environmental variables.\n";
+        s << "        Also specifies the encoding of file paths.\n";
+#endif
+        s << "\n"; 
+        s << "        Remember: The jjmake 'include' function always assumes UTF-8 file\n";
+        s << "        contents.\n"; 
+
         s << "\n";
         s << "-D<var>=<val>\n";
         s << "-D <var>=<val>\n";
         s << "        Create a variable with the given name and\n"; 
         s << "        value in the root context.\n"; 
         s << "\n";
+        s << "<goal>\n";
         s << "-G<goal>\n";
         s << "-G <goal>\n";
         s << "--goal=<goal>\n";
-        s << "        Tell make to execute that goal.\n"; 
+        s << "        Tell make to execute the goal.\n"; 
+        s << "        this option is additive.\n"; 
         s << "\n";
         s << "-h\n";
         s << "-help\n";
@@ -237,14 +271,7 @@ namespace
         s << "-T<N>\n";
         s << "-T <N>\n";
         s << "--threads=<N>\n";
-        s << "        Specify the number of goals to run\n";
-        s << "        concurrently.\n";
-        s << "\n";
-        s << "--std-encodings=<encoding>\n";
-        s << "--stdin-encoding=<encoding>\n";
-        s << "--stdout-encoding=<encoding>\n";
-        s << "--stderr-encoding=<encoding>\n";
-        s << "        Specify the encoding of the input, output, and/or error.\n";
+        s << "        Specify the number of goals to run concurrently.\n";
         s << "\n";
         s << "-v\n"; 
         s << "-V\n"; 
@@ -275,7 +302,7 @@ int jjm::jjmakemain(vector<string> const& args)
         {   jjarguments.allGoals = true; 
             continue; 
         }
-        if (*arg == "-A" || *arg == "--always-make")
+        if (*arg == "--always-make")
         {   jjarguments.alwaysMake = true;
             continue; 
         }
@@ -308,7 +335,7 @@ int jjm::jjmakemain(vector<string> const& args)
             continue; 
         }
         if (startsWith(*arg, "--goal="))
-        {   string x = arg->substr(string("--goal=").size()); 
+        {   string x = arg->substr(strlen("--goal=")); 
             jjarguments.goals.push_back(x); 
             continue; 
         }
@@ -330,7 +357,7 @@ int jjm::jjmakemain(vector<string> const& args)
             continue; 
         }
         if (startsWith(*arg, "--include="))
-        {   string x = arg->substr(string("--include=").size()); 
+        {   string x = arg->substr(strlen("--include=")); 
             hasInclude = true; 
             jjarguments.rootEvalText += "(include '" + escapeSingleQuote(x) + "')\n"; 
             continue; 
@@ -345,28 +372,6 @@ int jjm::jjmakemain(vector<string> const& args)
         }
         if (*arg == "-P" || *arg == "--just-print")
         {   jjarguments.executionMode = JjmakeContext::PrintGoals; 
-            continue; 
-        }
-        if (startsWith(*arg, "--std-encodings="))
-        {   string encoding = arg->substr(string("--std-encodings=").size()); 
-            jjm::setJinEncoding(encoding); 
-            jjm::setJoutEncoding(encoding); 
-            jjm::setJerrEncoding(encoding); 
-            continue; 
-        }
-        if (startsWith(*arg, "--stdin-encoding="))
-        {   string encoding = arg->substr(string("--stdin-encoding=").size()); 
-            jjm::setJinEncoding(encoding); 
-            continue; 
-        }
-        if (startsWith(*arg, "--stdout-encoding="))
-        {   string encoding = arg->substr(string("--stdout-encoding=").size()); 
-            jjm::setJoutEncoding(encoding); 
-            continue; 
-        }
-        if (startsWith(*arg, "--stderr-encoding="))
-        {   string encoding = arg->substr(string("--stderr-encoding=").size()); 
-            jjm::setJerrEncoding(encoding); 
             continue; 
         }
         if (startsWith(*arg, "-T"))
@@ -387,7 +392,7 @@ int jjm::jjmakemain(vector<string> const& args)
             continue;
         }
         if (startsWith(*arg, "--threads="))
-        {   string x = arg->substr(string("--threads=").size()); 
+        {   string x = arg->substr(strlen("--threads=")); 
             int y = 0; 
             if (false == decStrToInteger(y, x))
                 throw std::runtime_error("Not a valid number in --threads=<N> command line option \"" + *arg + "\"."); 
@@ -402,11 +407,14 @@ int jjm::jjmakemain(vector<string> const& args)
             //TODO print version information
             JFATAL(0, 0); 
         }
-        if (startsWith(*arg, "-"))
-            throw std::runtime_error("Unrecognized command line option \"" + *arg + "\"."); 
-
-        //goal
-        jjarguments.goals.push_back(*arg); 
+        if ( ! startsWith(*arg, "-"))
+        {   jjarguments.goals.push_back(*arg); 
+            continue;
+        }
+        string message;
+        message += "Unrecognized command line option \"" + *arg + "\". ";
+        message += "For usage information, >>--help<<."; 
+        throw std::runtime_error(message); 
     }
 
     if (hasInclude == false)

@@ -21,6 +21,7 @@
 namespace jjm
 {
 
+
 //TODO see if I can make a better interface. 
 class IconvConverter
 {
@@ -59,6 +60,15 @@ private:
 
     iconv_t converter; 
 };
+
+
+//Utility function, it uses IconvConverter
+std::string iconvConvert(
+        std::string const& toEncoding, 
+        std::string const& fromEncoding, 
+        std::string const& text
+        ); 
+
 
 }//namespace jjm
 

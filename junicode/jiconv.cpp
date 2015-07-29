@@ -5,9 +5,11 @@
 
 #include "jiconv.hpp"
 
+#include "jbase/jstdint.hpp"
 #include "jbase/jinttostring.hpp"
 #include "jbase/jfatal.hpp"
 
+#include <stdexcept>
 #include <errno.h>
 #include <string.h>
 
@@ -92,7 +94,7 @@ void jjm::IconvConverter::convert()
 #endif
     int const lastErrno = errno; 
 
-    memmove(input.get() + (inbuf - input.get()), input.get(), inbuf - input.get()); 
+    memmove(input.get(), inbuf, inputSizeLeft); 
     inputSize = inputSizeLeft; 
 
     outputSize = outputCapacity - outputSizeLeft; 
@@ -153,6 +155,43 @@ void jjm::IconvConverter::resetState()
 #else
         message += "errno " + toDecStr(lastErrno) + "."; 
 #endif
+        throw std::runtime_error(message); 
+    }
+}
+
+
+string jjm::iconvConvert(
+        std::string const& toEncoding, 
+        std::string const& fromEncoding, 
+        std::string const& text
+        )
+{
+    try
+    {
+        string result; 
+        IconvConverter converter;
+        converter.init(toEncoding, fromEncoding); 
+        if (text.size() == 0)
+            return result; 
+        char const * textbegin = &text[0]; 
+        char const * const textend = &text[0] + text.size(); 
+        for (;;)
+        {   if (textbegin == textend)
+            {   if (converter.inputSize == 0)
+                    return result; 
+                throw std::runtime_error("The input text ended with an incomplete encoding sequence.");
+            }
+            ssize_t toCopy = std::min<ssize_t>(textend - textbegin, converter.inputCapacity - converter.inputSize); 
+            memcpy(converter.input.get() + converter.inputSize, textbegin, toCopy); 
+            textbegin += toCopy; 
+            converter.inputSize += toCopy; 
+            converter.convert(); 
+            result.append(converter.output.get(), converter.output.get() + converter.outputSize); 
+        }
+    } catch (std::exception & e)
+    {   string message; 
+        message += "jjm::iconvConvert() failed. Cause:\n"; 
+        message += e.what(); 
         throw std::runtime_error(message); 
     }
 }

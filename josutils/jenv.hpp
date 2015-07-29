@@ -13,56 +13,70 @@
 
 namespace jjm
 {
-    /* 
-    getEnvMapUtf8() and getEnvMapLocalized()
-
-    These functions are thin wrappers on top of 
-        extern char ** ::_environ   on win32, and
-        extern char ** ::environ   on POSIX. 
-
-    getEnvMapUtf8() facilitates the common convention(?) of interpreting the 
-    names and values of env vars according to the current locale as specified 
-    in LC_ALL and friends, as if obtained by setlocale(LC_ALL, ""). 
-
-    getEnvMapLocal() does not interpret the name nor value. The values are
-    forwarded as-is with no modification. This function is provided only for
-    POSIX systems. Because the Window implementation uses the UTF16 _environ 
-    variable, you should always use getEnvMapUtf8() on windows.
-
-    Concurrent access to env vars is not protected on windows, and doing so
-    will lead to crashes. 
-    */
-    std::map<Utf8String, Utf8String> getEnvMapUtf8(); 
-#ifndef _WIN32
-    std::map<std::string, std::string> getEnvMapLocal(); 
-#endif
-
-
     /*
-    getEnvVarUtf8() and getEnvVarLocal()
+    Environmental variables API. 
 
-    These functions get the value of a single variable. In terms of encodings,
-    they obey the same rules as getEnvMapUtf8() and getEnvMapLocal(). 
+    ...
+
+    On Windows, these functions access the environment via: 
+        ::_wgetenv()
+        extern char ** ::_environ
+
+    Environmental variables on Windows are always stored in UTF-16, and so 
+    there is no localization nor encoding problems. 
+
+    This API has a hook (via a constructor of a namespace scope function) to 
+    invoke getenv("foo") and _wgetenv(L"foo") at the start of the process to 
+    ensure that the _environ and _wenviron are initialized (as per the 
+    Microsoft documentation). 
+
+    ...
+
+    On POSIX, these functions access the environment via: 
+        ::getenv()
+        extern char ** ::environ
+
+    On POSIX, the convention is that the environmental variables are encoded
+    according to the encoding of setlocale(LC_ALL, ""). This API has a hook
+    (via a constructor of a namespace scope function) to obtain the encoding
+    of setlocale(LC_ALL, "") by calling setlocale(LC_ALL, ""). This encoding 
+    is internally stored, and it is used to convert the environmental variables
+    to UTF-8 as needed. 
+
+    This encoding can later be changed with jjm::setEncodingOfEnvVars(). Note
+    that no synchronization protects the internal encoding stored by this API. 
+    
+    ...
+
+    Due to the lack of synchronization and possible threading concerns, good
+    practice is to change environmental variables only at the start of the 
+    process inside main(), or when creating a new process via the exec() API 
+    and CreateProcessW() API. 
     */
+
+    std::map<Utf8String, Utf8String> getEnvMapUtf8(); 
     Utf8String getEnvVarUtf8(Utf8String const& name); 
 #ifndef _WIN32
+    void setEncodingOfEnvVars(std::string const& encoding); //used for getEnvMapUtf8 and getEnvVarUtf8
+    std::map<std::string, std::string> getEnvMapLocal(); 
     std::string getEnvVarLocal(std::string const& name); 
 #endif
 
-    /*
-    On Windows, initially only one of ::environ and ::_wenviron are created. 
-    The other is created on the first call to a function like 
-    getenv() / _wgetenv(). 
-    
-    Code in the lib associated with this header will invoke 
-    getenv("FOO") and _wgetenv(L"FOO") in a namespace-scope initializor to 
-    ensure that both are created and available to avoid potential threading
-    data races. For further reading, research the static initialization 
-    order fiasco. 
 
-    In particular, creating multiple threads before main() and accessing the 
-    environment is likely to cause a crash. 
+
+
+    /* Get the encoding of the result of setlocale(LC_ALL, ""). 
+    On Windows, this returns the encoding of the current Windows-ANSI code page,
+    not the encoding of the current Windows-OEM code page. 
     */
+    std::string getEncodingNameFrom_setlocale_LC_ALL_emptyString(); 
+
+#ifdef _WIN32
+    /* Get the encoding of the Windows-OEM code page in a format that iconv will
+    hopefully understand. */
+    std::string getWindowsOemEncodingName(); 
+#endif
+
 }
 
 #endif

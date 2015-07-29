@@ -11,3 +11,16 @@
 #include "jstdint.hpp"
 #include "jtemplatemetaprogrammingutils.hpp"
 #include "juniqueptr.hpp"
+
+//Just do a sanity check. The rest of the program assumes that we're compiling 
+//for Windows, or for POSIX. 
+#if defined(_WIN32)
+#elif defined(__unix__) || defined(__unix)
+    #include <unistd.h>
+    #if defined(_POSIX_VERSION)
+    #else
+        #error
+    #endif
+#else
+    #error
+#endif

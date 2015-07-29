@@ -35,12 +35,6 @@ namespace Internal
 //** Public APIs
 
 
-#ifdef _WIN32
-    std::string getWindowsOemEncodingName();
-#else
-    std::string getEncodingNameFrom_setlocale_LC_ALL_emptyString(); 
-#endif
-
 /*
 These are meant as replacements to std::in, std::out, std::err
 to work with Unicode and localization. 
@@ -49,19 +43,33 @@ The APIs are in terms of UTF-8 strings. jin returns UTF-8 strings. jout, jerr,
 and jlog take input UTF-8 strings. These objects do The Right Thing regarding
 encodings for dealing with the outside world. 
 
-Doing The Right Thing for input and output generally involves using the result
-of setlocale(LC_ALL, "") to determine the proper encoding for the outside 
-world, then using iconv / WideCharToMultiByte() and MultiByteToWideChar() to
-convert UTF-8 to and from the encoding of the outside world. 
+..
 
-As a special rule, if the program detects that that stdout or stderr are 
-connected to a Windows console, then it writes UTF-16 directly with 
-WriteConsoleW(). Note: If the program is executed from the console and stdout 
-is redirected to a file, this rule does not apply, and the contents of the file
-will be in an encoding that matches the result of setlocale(LC_ALL, ""). 
+Doing The Right Thing on POSIX: 
+
+It follows the convention of assuming the encoding obtained from 
+setlocale(LC_ALL, "") is the encoding of the outside world. It uses iconv to 
+convert to/from UTF-8 and this encoding of the outside world. 
 
 Note: This implementation will invoke setlocale(LC_ALL, "") before main() 
 starts. 
+
+..
+
+Doing The Right Thing on Windows: 
+
+If the std handle is connected to a terminal, then it uses ReadConsoleW /
+WriteConsoleW to read and write in UTF-16. If the file is redirected to a file
+or piped to another program, then this rule does not apply. 
+
+Otherwise, we match the convention used on Windows console programs which is 
+to use the current Windows-OEM encoding, a thing which is distinct from the 
+current Windows-ANSI encoding. setlocale(LC_ALL, "") will return the current 
+Windows-ANSI encoding, which is not what we want. Instead, we obtain the 
+current Windows-OEM encoding by calling: 
+    GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_IDEFAULTCODEPAGE, ...);
+
+..
 
 TODO details buffering and automatic flushing
 */

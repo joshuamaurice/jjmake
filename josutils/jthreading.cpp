@@ -198,6 +198,8 @@ void jjm::ThreadPool::waitUntilIdle()
     for (;;)
     {   if (numRunningTasks == 0 && pendingTasks.size() == 0)
             return; 
+        if (numRunningTasks == 0 && stopflag)
+            return; 
         wait(g, idleCondition); 
     }
 }

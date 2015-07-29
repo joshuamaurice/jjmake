@@ -36,7 +36,7 @@ public:
                 alwaysMake(false), 
                 allGoals(false), 
                 keepGoing(false), 
-                numThreads(1) 
+                numThreads(1)
                 {}
         ExecutionMode executionMode; 
         DependencyMode dependencyMode; 
