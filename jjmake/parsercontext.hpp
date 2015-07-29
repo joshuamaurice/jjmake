@@ -6,6 +6,8 @@
 #ifndef JJMAKE_PARSERCONTEXT_HPP_HEADER_GUARD
 #define JJMAKE_PARSERCONTEXT_HPP_HEADER_GUARD
 
+#include "junicode/jutfstring.hpp"
+
 #include <map>
 #include <string>
 #include <utility>
@@ -75,8 +77,10 @@ public:
     //Does not take ownership
     static void registerNativeFunction(std::string const& name, NativeFunction* nativeFunction); 
 
-    //takes ownership always
+    //always takes ownership 
     void newNode(jjm::Node * node); 
+
+    void toStdOut(Utf8String const& str); 
 
 private:
     ParserContext(ParserContext const& ); //not defined, not copyable

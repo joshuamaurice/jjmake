@@ -9,6 +9,7 @@
 #include "node.hpp"
 #include "jbase/juniqueptr.hpp"
 #include "josutils/jthreading.hpp"
+#include "josutils/jstdstreams.hpp"
 
 #include <map>
 #include <string>
@@ -56,7 +57,21 @@ public:
     //is safe to call newNode() concurrently on the same JjmakeContext object
     void newNode(jjm::Node* node); 
 
-
+    //meant for public use by everyone
+    void toStdOut(Utf8String const& str)
+    {
+        Lock lock(stdOutErrMutex); 
+        if ( ! (jout() << str << flush))
+            throw std::runtime_error("Writing to stdout failed."); 
+    }
+    
+    //meant for public use by everyone
+    void toStdErr(Utf8String const& str)
+    {
+        Lock lock(stdOutErrMutex); 
+        if ( ! (jerr() << str << flush))
+            throw std::runtime_error("Writing to stderr failed."); 
+    }
 private:
     JjmakeContext(JjmakeContext const& ); //not defined, not copyable
     JjmakeContext& operator= (JjmakeContext const& ); //not defined, not copyable
@@ -79,6 +94,8 @@ private:
     void setFailFlag(); 
 
     //data members
+
+    Mutex stdOutErrMutex; 
 
     ExecutionMode executionMode; 
     DependencyMode dependencyMode; 

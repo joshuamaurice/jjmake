@@ -15,7 +15,7 @@
 #include "josutils/jopen.hpp"
 #include "josutils/jpath.hpp"
 #include "josutils/jstat.hpp"
-#include "josutils/jstdinouterr.hpp"
+#include "josutils/jstdstreams.hpp"
 #include <errno.h>
 #include <fstream>
 #include <vector>
@@ -302,10 +302,7 @@ namespace
                     out += ' ';
             }
             out += '\n';
-
-            jout() << out << flush; 
-            if ( ! jout())
-                throw std::runtime_error("Writing to stdout failed."); 
+            c->toStdOut(out); 
 
             vector<string> result; 
             return result; 

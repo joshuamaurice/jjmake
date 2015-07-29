@@ -35,6 +35,7 @@ elif test "$1" = "mingw-w64" ; then
   cpp_compiler_opts=(-Wall -c -g -std=gnu++0x -pthread -O0 -DNOMINMAX -DNTDDI_VERSION=0x06000000 -D_WIN32_WINNT=0x0600 -DWINVER=0x0600 -D_UNICODE -DUNICODE)
   
   staticlib_linker=x86_64-w64-mingw32-gcc-ar
+  staticlib_linker_opts=()
   
   exe_linker=x86_64-w64-mingw32-g++
   exe_linker_opts=(-static -municode -Wall -g -std=gnu++0x -pthread -O0)
@@ -97,7 +98,7 @@ link_staticlib()
     echo Bad obj "$obj"
     return 1
   done
-  cmd=("$staticlib_linker" "${staticlib_linker[@]}" crs "$lib" "${objs[@]}")
+  cmd=("$staticlib_linker" "${staticlib_linker_opts[@]}" crs "$lib" "${objs[@]}")
 
   rm -f "$lib"
   echo 'XXXX'

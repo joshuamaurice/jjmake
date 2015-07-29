@@ -87,7 +87,7 @@ public:
     */
     enum WindowsArgumentQuotingConvention { msvc_c_main_convention };
     ProcessBuilder&  argumentQuoting(WindowsArgumentQuotingConvention argumentQuoting_)  { m_argumentQuoting = argumentQuoting_; return *this; }
-    WindowsArgumentQuotingConvention  getArgumentQuoting() const  { m_argumentQuoting; }
+    WindowsArgumentQuotingConvention  getArgumentQuoting() const  { return m_argumentQuoting; }
 #endif
 
     /* Caller owns returned object and must delete it. 

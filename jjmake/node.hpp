@@ -6,6 +6,7 @@
 #ifndef JJMAKE_NODE_HPP_HEADER_GUARD
 #define JJMAKE_NODE_HPP_HEADER_GUARD
 
+#include "josutils/jthreading.hpp"
 #include "jbase/jstdint.hpp"
 #include "josutils/jpath.hpp"
 #include <string>
@@ -46,6 +47,7 @@ private:
     std::set<Node*> dependents; 
     ssize_t numOutstandingPrereqs; 
     bool active; 
+    Mutex mutex; 
 };
 
 } //namespace jjm

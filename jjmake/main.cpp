@@ -10,10 +10,11 @@
 #include "jbase/juniqueptr.hpp"
 #include "jbase/jnulltermiter.hpp"
 #include "junicode/jutfstring.hpp"
-#include "josutils/jstdinouterr.hpp"
+#include "josutils/jstdstreams.hpp"
 #include <iostream>
 #include <stdlib.h>
 #include <string>
+#include <string.h>
 #include <typeinfo>
 #include <vector>
 
@@ -28,14 +29,32 @@ using namespace std;
 
 namespace 
 {
+    template <size_t N>
+    void writeStringLiteral(FileHandle h, char const (&str)[N]) { h.writeComplete2(str, N-1); }
     void fatalHandler(char const * const filename, int linenum, int info_n, char const * info_cstr)
     {
-        string message; 
-        message += string() + "JFATAL(), file \"" + filename + "\", line " + toDecStr(linenum) + ", info [" + toDecStr(info_n) + "]"; 
+        FileHandle x = FileHandle::getstderr();
+        writeStringLiteral(x, "JFATAL(), file \""); 
+        x.writeComplete2(filename, strlen(filename)); 
+        writeStringLiteral(x, "\", line "); 
+
+        string linenumString = toDecStr(linenum); //TODO change to version that does not allocate memory
+        x.writeComplete2(linenumString.data(), linenumString.size()); 
+
+        writeStringLiteral(x, ", info [");
+
+        string info_n_string = toDecStr(info_n); //TODO change to version that does not allocate memory
+        x.writeComplete2(info_n_string.data(), info_n_string.size()); 
+
+        writeStringLiteral(x, "]");
+
         if (info_cstr)
-            message += string() + ", \"" + info_cstr + "\"";
-        message += ".\n"; 
-        cerr << message << flush; 
+        {   writeStringLiteral(x, ", \"");
+            x.writeComplete2(info_cstr, strlen(info_cstr));
+            writeStringLiteral(x, "\"");
+        }
+
+        writeStringLiteral(x, ".\n");
     }
     bool installFatalHandler = (jjmGetFatalHandler() = & fatalHandler, false); 
 }
@@ -99,53 +118,60 @@ namespace
 
     void printHelpMessage()
     {
-        jout() << "-A\n";
-        jout() << "--always-make\n";
-        jout() << "        All targets are treated as out-of-date.\n"; 
-        jout() << "\n";
-        jout() << "-D<var>=<val>\n";
-        jout() << "-D <var>=<val>\n";
-        jout() << "        Create a variable with the given name and\n"; 
-        jout() << "        value in the root context.\n"; 
-        jout() << "\n";
-        jout() << "-G<goal>\n";
-        jout() << "-G <goal>\n";
-        jout() << "--goal=<goal>\n";
-        jout() << "        Tell make to execute that goal.\n"; 
-        jout() << "\n";
-        jout() << "-h\n";
-        jout() << "-help\n";
-        jout() << "--help\n";
-        jout() << "        Display this help message.\n"; 
-        jout() << "\n";
-        jout() << "-I<file>\n";
-        jout() << "-I <file>\n";
-        jout() << "--include=<file>\n";
-        jout() << "        Include the given file in the root context.\n"; 
-        jout() << "-K\n";
-        jout() << "--keep-going\n";
-        jout() << "        Continue as much after an error during\n";
-        jout() << "        a target execution.\n";
-        jout() << "\n";
-        jout() << "-P\n";
-        jout() << "--just-print\n";
-        jout() << "        Instead of executing goals, print what goals\n";
-        jout() << "        would be executed.\n";
-        jout() << "\n";
-        jout() << "-T<N>\n";
-        jout() << "-T <N>\n";
-        jout() << "--threads=<N>\n";
-        jout() << "        Specify the number of goals to run\n";
-        jout() << "        concurrently.\n";
-        jout() << "\n";
-        jout() << "-v\n"; 
-        jout() << "-V\n"; 
-        jout() << "-version\n"; 
-        jout() << "-Version\n"; 
-        jout() << "--version\n"; 
-        jout() << "--Version\n"; 
-        jout() << "        Display version information.\n"; 
-        jout() << flush; 
+        BufferedOutputStream & s = jout(); 
+        s << "-A\n";
+        s << "--always-make\n";
+        s << "        All targets are treated as out-of-date.\n"; 
+        s << "\n";
+        s << "-D<var>=<val>\n";
+        s << "-D <var>=<val>\n";
+        s << "        Create a variable with the given name and\n"; 
+        s << "        value in the root context.\n"; 
+        s << "\n";
+        s << "-G<goal>\n";
+        s << "-G <goal>\n";
+        s << "--goal=<goal>\n";
+        s << "        Tell make to execute that goal.\n"; 
+        s << "\n";
+        s << "-h\n";
+        s << "-help\n";
+        s << "--help\n";
+        s << "        Display this help message.\n"; 
+        s << "\n";
+        s << "-I<file>\n";
+        s << "-I <file>\n";
+        s << "--include=<file>\n";
+        s << "        Include the given file in the root context.\n"; 
+        s << "-K\n";
+        s << "--keep-going\n";
+        s << "        Continue as much after an error during\n";
+        s << "        a target execution.\n";
+        s << "\n";
+        s << "-P\n";
+        s << "--just-print\n";
+        s << "        Instead of executing goals, print what goals\n";
+        s << "        would be executed.\n";
+        s << "\n";
+        s << "-T<N>\n";
+        s << "-T <N>\n";
+        s << "--threads=<N>\n";
+        s << "        Specify the number of goals to run\n";
+        s << "        concurrently.\n";
+        s << "\n";
+        s << "--std-encodings=<encoding>\n";
+        s << "--stdin-encoding=<encoding>\n";
+        s << "--stdout-encoding=<encoding>\n";
+        s << "--stderr-encoding=<encoding>\n";
+        s << "        Specify the encoding of the input, output, and/or error.\n";
+        s << "\n";
+        s << "-v\n"; 
+        s << "-V\n"; 
+        s << "-version\n"; 
+        s << "-Version\n"; 
+        s << "--version\n"; 
+        s << "--Version\n"; 
+        s << "        Display version information.\n"; 
+        s << flush; 
     }
 }
 
@@ -223,6 +249,13 @@ int jjm::jjmakemain(vector<string> const& args)
             }
             if (*arg == "-P" || *arg == "--just-print")
             {   jjarguments.executionMode = JjmakeContext::PrintGoals; 
+                continue; 
+            }
+            if (startsWith(*arg, "--std-encodings="))
+            {   string encoding = arg->substr(string("--std-encodings=").size()); 
+                jjm::setJinEncoding(encoding); 
+                jjm::setJoutEncoding(encoding); 
+                jjm::setJerrEncoding(encoding); 
                 continue; 
             }
             if (startsWith(*arg, "--stdin-encoding="))

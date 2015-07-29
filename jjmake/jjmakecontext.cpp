@@ -6,7 +6,7 @@
 #include "jjmakecontext.hpp"
 
 #include "parsercontext.hpp"
-#include "josutils/jstdinouterr.hpp"
+#include "josutils/jstdstreams.hpp"
 #include "josutils/jpath.hpp"
 
 using namespace std;
@@ -55,7 +55,7 @@ public:
             message += ": ";
             message += e.what(); 
             message += "\n"; 
-            jerr() << message << flush; 
+            jjmakeContext->toStdErr(message); 
         }
     }
 };
@@ -279,10 +279,10 @@ public:
                 return; 
 
             if (context->executionMode == JjmakeContext::ExecuteGoals)
-            {   jout() << "[jjmake] Executing goal: " << node->goalName << endl; 
+            {   context->toStdOut("[jjmake] Executing goal: " + node->goalName + "\n"); 
                 node->execute(); 
             }else if (context->executionMode == JjmakeContext::PrintGoals)
-            {   jout() << "[jjmake] Goal: " << node->goalName << endl; 
+            {   context->toStdOut("[jjmake] Goal: " + node->goalName + "\n"); 
             }else
                 JFATAL(context->executionMode, 0); 
 
@@ -295,10 +295,14 @@ public:
             {   for (set<Node*>::iterator d = downstream->begin(); d != downstream->end(); ++d)
                 {   if ( ! (**d).active)
                         continue; 
-                    --(**d).numOutstandingPrereqs;
-                    if ((**d).numOutstandingPrereqs < 0)
+                    ssize_t numOutstandingPrereqsOfD; 
+                    {
+                        Lock lock((**d).mutex); 
+                        numOutstandingPrereqsOfD  = --(**d).numOutstandingPrereqs;
+                    }
+                    if (numOutstandingPrereqsOfD < 0)
                         JFATAL(0, 0);
-                    if ((**d).numOutstandingPrereqs == 0)
+                    if (numOutstandingPrereqsOfD == 0)
                     {   UniquePtr<ExecuteGoalRunnable*> newRunnable(new ExecuteGoalRunnable);
                         newRunnable.get()->context = context;
                         newRunnable.get()->node = *d;
@@ -316,20 +320,23 @@ public:
             message += ": ";
             message += e.what(); 
             message += "\n"; 
-            jerr() << message << flush; 
+            context->toStdErr(message); 
         }
     }
 };
 
 void jjm::JjmakeContext::phase2()
 {
+    vector<Node*> toExecute; 
     for (map<string, Node*>::iterator node = nodes.begin(); node != nodes.end(); ++node)
     {   if (node->second->active && node->second->numOutstandingPrereqs == 0)
-        {   UniquePtr<ExecuteGoalRunnable*> newRunnable(new ExecuteGoalRunnable);
-            newRunnable.get()->context = this;
-            newRunnable.get()->node = node->second;
-            threadPool.addTask(newRunnable.release()); 
-        }
+            toExecute.push_back(node->second); 
+    }
+    for (vector<Node*>::iterator node = toExecute.begin(); node != toExecute.end(); ++node)
+    {   UniquePtr<ExecuteGoalRunnable*> newRunnable(new ExecuteGoalRunnable);
+        newRunnable.get()->context = this;
+        newRunnable.get()->node = *node;
+        threadPool.addTask(newRunnable.release()); 
     }
     threadPool.waitUntilIdle(); 
 }

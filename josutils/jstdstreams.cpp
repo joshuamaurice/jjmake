@@ -3,7 +3,7 @@
 //      (See accompanying file LICENSE.TXT or copy at
 //  http://www.w3.org/Consortium/Legal/2008/03-bsd-license.html)
 
-#include "jstdinouterr.hpp"
+#include "jstdstreams.hpp"
 #include "junicode/jiconv.hpp"
 #include "junicode/jutfstring.hpp"
 #include "jbase/jfatal.hpp"
@@ -175,7 +175,6 @@ ssize_t StandardInputStream::read(void * const argumentBuffer, size_t const argu
 #endif
         //otherwise, read it in the encoding of the specified encoding
         bool eof = false; 
-        ssize_t result = 0; 
         if (converter.outputSize == 0 && converter.inputSize < converter.inputCapacity)
         {   ssize_t x = handle.read(converter.input.get() + converter.inputSize, converter.inputCapacity - converter.inputSize); 
             if (x == -1)

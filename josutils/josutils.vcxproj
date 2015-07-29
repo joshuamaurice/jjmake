@@ -28,7 +28,7 @@
     <ClCompile Include="jpipe.cpp" />
     <ClCompile Include="jprocess.cpp" />
     <ClCompile Include="jstat.cpp" />
-    <ClCompile Include="jstdinouterr.cpp" />
+    <ClCompile Include="jstdstreams.cpp" />
     <ClCompile Include="jthreading.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -41,7 +41,7 @@
     <ClInclude Include="jpipe.hpp" />
     <ClInclude Include="jprocess.hpp" />
     <ClInclude Include="jstat.hpp" />
-    <ClInclude Include="jstdinouterr.hpp" />
+    <ClInclude Include="jstdstreams.hpp" />
     <ClInclude Include="jthreading.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

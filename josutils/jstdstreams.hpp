@@ -3,8 +3,8 @@
 //      (See accompanying file LICENSE.TXT or copy at
 //  http://www.w3.org/Consortium/Legal/2008/03-bsd-license.html)
 
-#ifndef JOSUTILS_JSTDINOUTERR_HPP_HEADER_GUARD
-#define JOSUTILS_JSTDINOUTERR_HPP_HEADER_GUARD
+#ifndef JOSUTILS_JSTDSTREAMS_HPP_HEADER_GUARD
+#define JOSUTILS_JSTDSTREAMS_HPP_HEADER_GUARD
 
 #include "jfilehandle.hpp"
 #include "jbase/jstdint.hpp"

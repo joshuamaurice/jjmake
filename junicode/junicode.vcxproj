@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="generate-gciter-data-cfile.cpp" />
+    <ClCompile Include="..\tmp\msvc-x64-Debug\junicode-gciter-data\gciter-data-cfile.c" />
     <ClCompile Include="jiconv.cpp" />
     <ClCompile Include="junicode.cpp" />
     <ClCompile Include="jwinlocale.cpp" />

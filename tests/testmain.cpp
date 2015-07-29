@@ -9,7 +9,7 @@
 #include "jbase/jinttostring.hpp"
 #include "jbase/jstreams.hpp"
 #include "josutils/jthreading.hpp"
-#include "josutils/jstdinouterr.hpp"
+#include "josutils/jstdstreams.hpp"
 #include <algorithm>
 #include <errno.h>
 #include <iostream>

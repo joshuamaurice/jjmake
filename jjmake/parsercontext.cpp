@@ -890,3 +890,8 @@ void jjm::ParserContext::setValue(string const& name, vector<string> const& valu
         value.definitionFile = line->value[0];
     value.value = valueVec; 
 }
+
+void jjm::ParserContext::toStdOut(Utf8String const& str)
+{
+    jjmakeContext->toStdOut(str); 
+}
