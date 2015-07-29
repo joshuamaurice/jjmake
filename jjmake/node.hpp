@@ -24,13 +24,20 @@ class Node
 public:
     virtual ~Node() {}
 
-    //will be invoked by JjmakeContext
+    //The logic of determining up-to-date should be delayed until this function 
+    //is called. 
+    //If the node is already up to date, then this function should merely exit
+    //successfully. 
     virtual void execute() = 0; 
 
 protected: 
+
+    //Paths given to this constructor should be absolute 
+    //and include the drive prefix for windows paths. 
+    //Otherwise implicit dependency detection will fail
     Node(   std::string const& goalName_, 
             std::vector<jjm::Path> const& inputPaths_, 
-            std::vector<jjm::Path> const& outputPaths_
+            std::vector<jjm::Path> const& outputPaths_ 
             ); 
 
 private:
@@ -40,14 +47,21 @@ private:
 private:
     friend class jjm::JjmakeContext; 
     friend class jjm::ParserContext; 
+
+    //the following fields should remain fixed once phase2 goal execution has begun: 
     std::string goalName; 
-    std::vector<jjm::Path> inputPaths; //guaranteed to be in realpath format
-    std::vector<jjm::Path> outputPaths; //guaranteed to be in realpath format
+    std::vector<jjm::Path> inputPaths; 
+    std::vector<jjm::Path> outputPaths; 
     std::set<Node*> dependencies; 
     std::set<Node*> dependents; 
-    ssize_t numOutstandingPrereqs; 
     bool activated; 
+
     Mutex mutex; 
+
+    //The following fields may be modified during phase2 goal execution. 
+    //Once phase2 goal execution has begun, access to this field should be
+    //protected by this->mutex. 
+    ssize_t numOutstandingPrereqs; 
 };
 
 } //namespace jjm

@@ -301,7 +301,6 @@ public:
             {   for (set<Node*>::iterator d = downstream->begin(); d != downstream->end(); ++d)
                 {   if ( ! (**d).activated)
                         continue; 
-                    bool d_is_active = false; 
                     ssize_t numOutstandingPrereqsOfD; 
                     {
                         Lock lock((**d).mutex); 

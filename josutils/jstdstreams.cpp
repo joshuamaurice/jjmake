@@ -4,6 +4,7 @@
 //  http://www.w3.org/Consortium/Legal/2008/03-bsd-license.html)
 
 #include "jstdstreams.hpp"
+
 #include "junicode/jiconv.hpp"
 #include "junicode/jutfstring.hpp"
 #include "jbase/jfatal.hpp"
@@ -338,10 +339,8 @@ ssize_t  StandardOutputStream::write(void const * const argumentBuffer, std::siz
     }
 }
 
-namespace
-{
 #ifdef _WIN32
-    string getWindowsOemEncodingName()
+    string jjm::getWindowsOemEncodingName()
     {
         //setlocale returns the Windows-ANSI codepage encoding, not the 
         //Windows-OEM encoding, which is what we want for command line 
@@ -370,7 +369,7 @@ namespace
         return encoding; 
     }
 #else
-    string getEncodingNameFrom_setlocale_LC_ALL_emptyString()
+    string jjm::getEncodingNameFrom_setlocale_LC_ALL_emptyString()
     {
         char const * localeName1 = setlocale(LC_ALL, ""); 
         if (localeName1 == 0)
@@ -390,7 +389,6 @@ namespace
         return encoding; 
     }
 #endif
-}
 
 void jjm::setJinEncoding (std::string const& encoding)
 {

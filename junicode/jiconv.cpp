@@ -97,13 +97,17 @@ void jjm::IconvConverter::convert()
 
     outputSize = outputCapacity - outputSizeLeft; 
 
-    if (iconvReturn >= 0)
+    if (iconvReturn != (size_t)-1)
         return; 
     if (lastErrno == EILSEQ)
     {   string message; 
-        message += "jjm::IconvConverter::IconvConverter() failed. Cause:\n";
+        message += "jjm::IconvConverter::convert() failed. Cause:\n";
         message += "iconv(...) failed. Cause:\n";
-        message += "errno EILSEQ, the input contains a sequence which is invalid in the specified input encoding."; 
+        message += "errno EILSEQ, the input contains a sequence of bytes which are invalid in the input encoding, "; 
+
+        //Perhaps contrary to documentation, this is how my version of iconv seems to behave. 
+        message += "or a valid character in the input cannot be mapped to a valid character in the output encoding."; 
+
         throw std::runtime_error(message); 
     }
     if (lastErrno == EINVAL)
@@ -123,4 +127,32 @@ void jjm::IconvConverter::convert()
     message += "errno " + toDecStr(lastErrno) + "."; 
 #endif
     throw std::runtime_error(message); 
+}
+
+void jjm::IconvConverter::resetState()
+{
+    inputSize = 0;
+    outputSize = 0; 
+
+#ifdef _WIN32
+    SetLastError(0);
+#endif
+    errno = 0; 
+    size_t const x = iconv(converter, 0, 0, 0, 0);
+#ifdef _WIN32
+    DWORD const lastError = GetLastError(); 
+#endif
+    int const lastErrno = errno; 
+
+    if (x == (size_t)-1)
+    {   string message; 
+        message += "jjm::IconvConverter::resetState() failed. Cause:\n";
+        message += "iconv(iconv_handle, 0, 0, 0, 0) failed. Cause:\n";
+#ifdef _WIN32
+        message += "GetLastError() " + toDecStr(lastError) + ". errno " + toDecStr(lastErrno) + "."; 
+#else
+        message += "errno " + toDecStr(lastErrno) + "."; 
+#endif
+        throw std::runtime_error(message); 
+    }
 }

@@ -9,6 +9,7 @@
 #include "jbase/jnulltermiter.hpp"
 #include "jbase/juniqueptr.hpp"
 #include "jbase/jnulltermiter.hpp"
+#include "junicode/jiconv.hpp"
 #include "junicode/jutfstring.hpp"
 #include "josutils/jstdstreams.hpp"
 #include <iostream>
@@ -64,25 +65,88 @@ namespace jjm { int jjmakemain(vector<string> const& args); }
 #ifdef _WIN32
     int wmain(int argc, wchar_t **argv)
     {
-        vector<string> args;
-        for (int x = 1; x < argc; ++x)
-        {   auto utf16range = makeNullTermRange(argv[x]);
-            Utf8String u8str = makeU8StrFromCpRange(makeCpRangeFromUtf16(utf16range)); 
-            if (u8str.size())
-                args.push_back(u8str);  
-            else
-                args.push_back(std::string());  
+        try
+        {
+            vector<string> args;
+            try
+            {   for (int x = 1; x < argc; ++x)
+                {   auto utf16range = makeNullTermRange(argv[x]);
+                    Utf8String u8str = makeU8StrFromCpRange(makeCpRangeFromUtf16(utf16range)); 
+                    if (u8str.size())
+                        args.push_back(u8str);  
+                    else
+                        args.push_back(std::string());  
+                }
+            } catch (std::exception & e)
+            {   string message; 
+                message += "Failed to convert an argument of main() from UTF-16 to UTF-8. Cause:\n";
+                message += e.what(); 
+                throw std::runtime_error(message);
+            }
+            return jjm::jjmakemain(args);
         }
-        return jjm::jjmakemain(args);
+        catch (std::exception & e)
+        {   string message; 
+            message += typeid(e).name() ;
+            message += ": ";
+            message += e.what(); 
+            message += "\n"; 
+            jerr() << message << flush; 
+        }
+        return 1;
+
     }
 #else
     int main(int argc, char** argv)
     {
-        //TODO use setlocale(LC_ALL, ""); and iconv
-        vector<string> args;
-        for (int x = 1; x < argc; ++x)
-            args.push_back(string(argv[x])); 
-        return jjm::jjmakemain(args);
+        try
+        {
+            string encoding = jjm::getEncodingNameFrom_setlocale_LC_ALL_emptyString(); 
+
+            IconvConverter converter;
+            converter.init("UTF-8", encoding); 
+
+            vector<Utf8String> utf8args;
+            for (int x = 1; x < argc; ++x)
+            {
+                converter.resetState(); 
+
+                Utf8String utf8arg; 
+
+                char * inputBegin = argv[x]; 
+                char * inputEnd = inputBegin; 
+                for ( ; *inputEnd; ++inputEnd)
+                    ;
+                for ( ; inputBegin != inputEnd; )
+                {
+                    ssize_t toCopy = std::min<ssize_t>(converter.inputCapacity - converter.inputSize, inputEnd - inputBegin); 
+                    memcpy(converter.input.get() + converter.inputSize, inputBegin, toCopy); 
+                    inputBegin += toCopy; 
+                    converter.inputSize += toCopy; 
+
+                    converter.convert(); 
+
+                    utf8arg.append(converter.output.get(), converter.output.get() + converter.outputSize); 
+                }
+                if (converter.inputSize != 0)
+                {   string message; 
+                    message += "Failed to convert an argument of main() from the encoding of the user's locale to UTF-8. Cause:\n";
+                    message += "The argument ended in an incomplete encoding sequence.";
+                    throw std::runtime_error(message); 
+                }
+                utf8args.push_back(utf8arg); 
+            }
+            return jjm::jjmakemain(utf8args);
+        }
+        catch (std::exception & e)
+        {   string message; 
+            message += typeid(e).name() ;
+            message += ": ";
+            message += e.what(); 
+            message += "\n"; 
+            jerr() << message << flush; 
+        }
+        return 1;
     }
 #endif
 
@@ -195,171 +259,160 @@ namespace
 
 int jjm::jjmakemain(vector<string> const& args)
 {
-    try 
+    JjmakeContext::Arguments jjarguments; 
+    bool hasInclude = false; 
+    for (std::vector<string>::const_iterator arg = args.begin(); arg != args.end(); ++arg)
     {
-        JjmakeContext::Arguments jjarguments; 
-        bool hasInclude = false; 
-        for (std::vector<string>::const_iterator arg = args.begin(); arg != args.end(); ++arg)
-        {
-            if (*arg == "--all-dependencies")
-            {   jjarguments.dependencyMode = JjmakeContext::AllDependencies; 
-                continue; 
-            }
-            if (*arg == "--all-dependents")
-            {   jjarguments.dependencyMode = JjmakeContext::AllDependents; 
-                continue; 
-            }
-            if (*arg == "--all-goals")
-            {   jjarguments.allGoals = true; 
-                continue; 
-            }
-            if (*arg == "-A" || *arg == "--always-make")
-            {   jjarguments.alwaysMake = true;
-                continue; 
-            }
-            if (startsWith(*arg, "-D"))
-            {   string x; 
-                if (arg->size() == 2)
-                {   ++arg; 
-                    if (arg == args.end())
-                        throw std::runtime_error("Command line option \"-D\" without definition."); 
-                    x = *arg;
-                }else
-                    x = arg->substr(2, string::npos); 
-                if (x.find('=') == string::npos)
-                    throw std::runtime_error("Missing '=' in -D command line option \"" + *arg + "\"."); 
-                string name = x.substr(0, x.find('=')); 
-                string val =  x.substr(x.find('=') + 1, string::npos); 
-                jjarguments.rootEvalText += "(set '" + escapeSingleQuote(name) + "' '" + escapeSingleQuote(val) + "')\n"; 
-                continue; 
-            }
-            if (startsWith(*arg, "-G"))
-            {   string x; 
-                if (arg->size() == 2)
-                {   ++arg; 
-                    if (arg == args.end())
-                        throw std::runtime_error("Command line option \"-G\" without following goal."); 
-                    x = *arg;
-                }else
-                    x = arg->substr(2, string::npos); 
-                jjarguments.goals.push_back(x); 
-                continue; 
-            }
-            if (startsWith(*arg, "--goal="))
-            {   string x = arg->substr(string("--goal=").size()); 
-                jjarguments.goals.push_back(x); 
-                continue; 
-            }
-            if (   *arg == "-h" || *arg == "-help" || *arg == "--help")
-            {   printHelpMessage(); 
-                return 0; 
-            }
-            if (startsWith(*arg, "-I"))
-            {   string x; 
-                if (arg->size() == 2)
-                {   ++arg; 
-                    if (arg == args.end())
-                        throw std::runtime_error("Command line option \"-I\" without following path."); 
-                    x = *arg;
-                }else
-                    x = arg->substr(2, string::npos); 
-                hasInclude = true; 
-                jjarguments.rootEvalText += "(include '" + escapeSingleQuote(x) + "')\n"; 
-                continue; 
-            }
-            if (startsWith(*arg, "--include="))
-            {   string x = arg->substr(string("--include=").size()); 
-                hasInclude = true; 
-                jjarguments.rootEvalText += "(include '" + escapeSingleQuote(x) + "')\n"; 
-                continue; 
-            }
-            if (*arg == "-K" || *arg == "--keep-going")
-            {   jjarguments.keepGoing = true; 
-                continue; 
-            }
-            if (*arg == "--no-dependencies")
-            {   jjarguments.dependencyMode = JjmakeContext::NoDependencies; 
-                continue; 
-            }
-            if (*arg == "-P" || *arg == "--just-print")
-            {   jjarguments.executionMode = JjmakeContext::PrintGoals; 
-                continue; 
-            }
-            if (startsWith(*arg, "--std-encodings="))
-            {   string encoding = arg->substr(string("--std-encodings=").size()); 
-                jjm::setJinEncoding(encoding); 
-                jjm::setJoutEncoding(encoding); 
-                jjm::setJerrEncoding(encoding); 
-                continue; 
-            }
-            if (startsWith(*arg, "--stdin-encoding="))
-            {   string encoding = arg->substr(string("--stdin-encoding=").size()); 
-                jjm::setJinEncoding(encoding); 
-                continue; 
-            }
-            if (startsWith(*arg, "--stdout-encoding="))
-            {   string encoding = arg->substr(string("--stdout-encoding=").size()); 
-                jjm::setJoutEncoding(encoding); 
-                continue; 
-            }
-            if (startsWith(*arg, "--stderr-encoding="))
-            {   string encoding = arg->substr(string("--stderr-encoding=").size()); 
-                jjm::setJerrEncoding(encoding); 
-                continue; 
-            }
-            if (startsWith(*arg, "-T"))
-            {   string x; 
-                if (arg->size() == 2)
-                {   ++arg; 
-                    if (arg == args.end())
-                        throw std::runtime_error("Command line option \"-T\" without following number."); 
-                    x = *arg;
-                }else
-                    x = arg->substr(2, string::npos); 
-                int y = 0; 
-                if (false == decStrToInteger(y, x))
-                    throw std::runtime_error("Not a valid number in -T command line option \"" + *arg + "\"."); 
-                if (y < 1)
-                    throw std::runtime_error("Invalid number in -T command line option \"" + *arg + "\"."); 
-                jjarguments.numThreads = y; 
-                continue;
-            }
-            if (startsWith(*arg, "--threads="))
-            {   string x = arg->substr(string("--threads=").size()); 
-                int y = 0; 
-                if (false == decStrToInteger(y, x))
-                    throw std::runtime_error("Not a valid number in --threads=<N> command line option \"" + *arg + "\"."); 
-                if (y < 1)
-                    throw std::runtime_error("Invalid number in --threads=<N> command line option \"" + *arg + "\"."); 
-                jjarguments.numThreads = y; 
-                continue;
-            }
-            if (   *arg == "-v" || *arg == "-version" || *arg == "--version"
-                || *arg == "-V" || *arg == "-Version" || *arg == "--Version")
-            {
-                //TODO print version information
-                JFATAL(0, 0); 
-            }
-            if (startsWith(*arg, "-"))
-                throw std::runtime_error("Unrecognized command line option \"" + *arg + "\"."); 
-
-            //goal
-            jjarguments.goals.push_back(*arg); 
+        if (*arg == "--all-dependencies")
+        {   jjarguments.dependencyMode = JjmakeContext::AllDependencies; 
+            continue; 
         }
+        if (*arg == "--all-dependents")
+        {   jjarguments.dependencyMode = JjmakeContext::AllDependents; 
+            continue; 
+        }
+        if (*arg == "--all-goals")
+        {   jjarguments.allGoals = true; 
+            continue; 
+        }
+        if (*arg == "-A" || *arg == "--always-make")
+        {   jjarguments.alwaysMake = true;
+            continue; 
+        }
+        if (startsWith(*arg, "-D"))
+        {   string x; 
+            if (arg->size() == 2)
+            {   ++arg; 
+                if (arg == args.end())
+                    throw std::runtime_error("Command line option \"-D\" without definition."); 
+                x = *arg;
+            }else
+                x = arg->substr(2, string::npos); 
+            if (x.find('=') == string::npos)
+                throw std::runtime_error("Missing '=' in -D command line option \"" + *arg + "\"."); 
+            string name = x.substr(0, x.find('=')); 
+            string val =  x.substr(x.find('=') + 1, string::npos); 
+            jjarguments.rootEvalText += "(set '" + escapeSingleQuote(name) + "' '" + escapeSingleQuote(val) + "')\n"; 
+            continue; 
+        }
+        if (startsWith(*arg, "-G"))
+        {   string x; 
+            if (arg->size() == 2)
+            {   ++arg; 
+                if (arg == args.end())
+                    throw std::runtime_error("Command line option \"-G\" without following goal."); 
+                x = *arg;
+            }else
+                x = arg->substr(2, string::npos); 
+            jjarguments.goals.push_back(x); 
+            continue; 
+        }
+        if (startsWith(*arg, "--goal="))
+        {   string x = arg->substr(string("--goal=").size()); 
+            jjarguments.goals.push_back(x); 
+            continue; 
+        }
+        if (   *arg == "-h" || *arg == "-help" || *arg == "--help")
+        {   printHelpMessage(); 
+            return 0; 
+        }
+        if (startsWith(*arg, "-I"))
+        {   string x; 
+            if (arg->size() == 2)
+            {   ++arg; 
+                if (arg == args.end())
+                    throw std::runtime_error("Command line option \"-I\" without following path."); 
+                x = *arg;
+            }else
+                x = arg->substr(2, string::npos); 
+            hasInclude = true; 
+            jjarguments.rootEvalText += "(include '" + escapeSingleQuote(x) + "')\n"; 
+            continue; 
+        }
+        if (startsWith(*arg, "--include="))
+        {   string x = arg->substr(string("--include=").size()); 
+            hasInclude = true; 
+            jjarguments.rootEvalText += "(include '" + escapeSingleQuote(x) + "')\n"; 
+            continue; 
+        }
+        if (*arg == "-K" || *arg == "--keep-going")
+        {   jjarguments.keepGoing = true; 
+            continue; 
+        }
+        if (*arg == "--no-dependencies")
+        {   jjarguments.dependencyMode = JjmakeContext::NoDependencies; 
+            continue; 
+        }
+        if (*arg == "-P" || *arg == "--just-print")
+        {   jjarguments.executionMode = JjmakeContext::PrintGoals; 
+            continue; 
+        }
+        if (startsWith(*arg, "--std-encodings="))
+        {   string encoding = arg->substr(string("--std-encodings=").size()); 
+            jjm::setJinEncoding(encoding); 
+            jjm::setJoutEncoding(encoding); 
+            jjm::setJerrEncoding(encoding); 
+            continue; 
+        }
+        if (startsWith(*arg, "--stdin-encoding="))
+        {   string encoding = arg->substr(string("--stdin-encoding=").size()); 
+            jjm::setJinEncoding(encoding); 
+            continue; 
+        }
+        if (startsWith(*arg, "--stdout-encoding="))
+        {   string encoding = arg->substr(string("--stdout-encoding=").size()); 
+            jjm::setJoutEncoding(encoding); 
+            continue; 
+        }
+        if (startsWith(*arg, "--stderr-encoding="))
+        {   string encoding = arg->substr(string("--stderr-encoding=").size()); 
+            jjm::setJerrEncoding(encoding); 
+            continue; 
+        }
+        if (startsWith(*arg, "-T"))
+        {   string x; 
+            if (arg->size() == 2)
+            {   ++arg; 
+                if (arg == args.end())
+                    throw std::runtime_error("Command line option \"-T\" without following number."); 
+                x = *arg;
+            }else
+                x = arg->substr(2, string::npos); 
+            int y = 0; 
+            if (false == decStrToInteger(y, x))
+                throw std::runtime_error("Not a valid number in -T command line option \"" + *arg + "\"."); 
+            if (y < 1)
+                throw std::runtime_error("Invalid number in -T command line option \"" + *arg + "\"."); 
+            jjarguments.numThreads = y; 
+            continue;
+        }
+        if (startsWith(*arg, "--threads="))
+        {   string x = arg->substr(string("--threads=").size()); 
+            int y = 0; 
+            if (false == decStrToInteger(y, x))
+                throw std::runtime_error("Not a valid number in --threads=<N> command line option \"" + *arg + "\"."); 
+            if (y < 1)
+                throw std::runtime_error("Invalid number in --threads=<N> command line option \"" + *arg + "\"."); 
+            jjarguments.numThreads = y; 
+            continue;
+        }
+        if (   *arg == "-v" || *arg == "-version" || *arg == "--version"
+            || *arg == "-V" || *arg == "-Version" || *arg == "--Version")
+        {
+            //TODO print version information
+            JFATAL(0, 0); 
+        }
+        if (startsWith(*arg, "-"))
+            throw std::runtime_error("Unrecognized command line option \"" + *arg + "\"."); 
 
-        if (hasInclude == false)
-            jjarguments.rootEvalText += "(include jjmake.txt)\n"; 
+        //goal
+        jjarguments.goals.push_back(*arg); 
+    }
 
-        JjmakeContext context(jjarguments); 
-        context.execute(); 
-    }
-    catch (std::exception & e)
-    {   string message; 
-        message += typeid(e).name() ;
-        message += ": ";
-        message += e.what(); 
-        message += "\n"; 
-        jerr() << message << flush; 
-    }
-    return 1;
+    if (hasInclude == false)
+        jjarguments.rootEvalText += "(include jjmake.txt)\n"; 
+
+    JjmakeContext context(jjarguments); 
+    context.execute(); 
+    return 0; 
 }

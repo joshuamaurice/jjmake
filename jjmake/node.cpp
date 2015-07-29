@@ -21,8 +21,8 @@ jjm::Node::Node(
     goalName(goalName_),
     inputPaths(inputPaths_), 
     outputPaths(outputPaths_), 
-    numOutstandingPrereqs(0),
-    activated(false)
+    activated(false), 
+    numOutstandingPrereqs(0)
 {
     for (size_t i = 0; i < inputPaths.size(); ++i)
     {   if ( ! inputPaths[i].isAbsolute())

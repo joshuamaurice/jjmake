@@ -3,13 +3,14 @@
 //      (See accompanying file LICENSE.TXT or copy at
 //  http://www.w3.org/Consortium/Legal/2008/03-bsd-license.html)
 
-#include "junicode/jutfstring.hpp"
 #include "josutils/jpath.hpp"
 #include "josutils/jprocess.hpp"
-#include "jbase/jinttostring.hpp"
-#include "jbase/jstreams.hpp"
 #include "josutils/jthreading.hpp"
 #include "josutils/jstdstreams.hpp"
+#include "junicode/jutfstring.hpp"
+#include "junicode/jiconv.hpp"
+#include "jbase/jinttostring.hpp"
+#include "jbase/jstreams.hpp"
 #include <algorithm>
 #include <errno.h>
 #include <iostream>

@@ -35,6 +35,12 @@ namespace Internal
 //** Public APIs
 
 
+#ifdef _WIN32
+    std::string getWindowsOemEncodingName();
+#else
+    std::string getEncodingNameFrom_setlocale_LC_ALL_emptyString(); 
+#endif
+
 /*
 These are meant as replacements to std::in, std::out, std::err
 to work with Unicode and localization. 

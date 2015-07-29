@@ -34,6 +34,14 @@ public:
 
     //will overwrite any existing contents of this->output
     void convert(); 
+    
+    /* This function is meant to reset the state of the converter for any 
+    stateful encoding. The user should always call this function after 
+    finishing processing one stream of data and before starting another stream
+    of data. 
+    This function will overwrite any existing contents of this->input and 
+    this->output. */
+    void resetState(); 
 
     //can't use std::vector because of potential alignment issues
 
