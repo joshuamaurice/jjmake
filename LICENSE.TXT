@@ -10,12 +10,8 @@ The following file is copy of Unicode, Inc.:
 See the description in the top of that file for additional information. 
     
 The remaining files are released under the 3-clause BSD license. 
-For further information, see the (duplicate) license files: 
-    ./build/BSD-3CLAUSE-LICENSE.TXT
-    ./jbase/BSD-3CLAUSE-LICENSE.TXT
-    ./jjmake/BSD-3CLAUSE-LICENSE.TXT
-    ./josutils/BSD-3CLAUSE-LICENSE.TXT
-    ./junicode/BSD-3CLAUSE-LICENSE.TXT
+For further information, see the file: 
+    ./BSD-3CLAUSE-LICENSE.TXT
 
 ...
 
