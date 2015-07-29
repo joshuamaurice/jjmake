@@ -281,8 +281,11 @@ vector<string> jjm::ParserContext::Evaluator::eval(string const& text)
         message += "Evaluation failure at ";
         if (file.size() > 0)
             message += "file \"" + file + "\", "; 
-        message += "line " + toDecStr(source.line()) + ", column " + toDecStr(source.col()) + ". ";
-        message += "Cause:\n";
+        message += "line ";
+        message += toDecStr(source.line());
+        message += ", column ";
+        message += toDecStr(source.col());
+        message += " (approx). Cause:\n";
         message += e.what(); 
         throw std::runtime_error(message); 
     }
@@ -768,9 +771,11 @@ void jjm::ParserContext::Evaluator::throwExceptionMissingExpected(string const& 
 
     if (file.size())
         message += "file \"" + file + "\", ";
-    message += "line " + toDecStr(frames.back().frameStartLineNum) + ", ";
-    message += "column " + toDecStr(frames.back().frameStartColNum) + ".";
-
+    message += "line ";
+    message += toDecStr(frames.back().frameStartLineNum);
+    message += ", column ";
+    message += toDecStr(frames.back().frameStartColNum);
+    message += " (approx)."; 
     throw std::runtime_error(message); 
 }
 

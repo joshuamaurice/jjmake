@@ -3,12 +3,15 @@
 !/*/
 !/.gitignore
 
+# a specific file
+/libiconv/libiconv/libiconv.aps
+
 # files in any dir
 /**/*.opensdf
 /**/*.sdf
 /**/*.vcxproj.user
 /**/*.v12.suo
 
-# and always ignore stuff in bin and tmp
-/bin/**
-/tmp/**
+# always ignore stuff in bin and tmp
+/bin/
+/tmp/
