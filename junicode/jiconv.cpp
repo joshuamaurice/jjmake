@@ -23,7 +23,11 @@ jjm::IconvConverter::IconvConverter() : converter((iconv_t)-1) {}
 void jjm::IconvConverter::init(std::string const& toEncoding, std::string const& fromEncoding)
 {
     if (converter != (iconv_t)-1)
-        JFATAL(0, 0);
+    {   errno = 0;
+        if (0 != iconv_close(converter))
+            JFATAL(0, 0); 
+    }
+    converter = (iconv_t)-1; 
 
     size_t const magicNumber = 4 * 1024; 
 
@@ -67,7 +71,6 @@ jjm::IconvConverter::~IconvConverter()
     }
 }
 
-//will overwrite any existing contents of this->output
 void jjm::IconvConverter::convert()
 {
 #ifdef _WIN32

@@ -28,6 +28,8 @@ public:
     IconvConverter();
     ~IconvConverter();
 
+    //safe to call init() several times. 
+    //Calling init() nukes any contents of input and output. 
     void init(std::string const& toEncoding, std::string const& fromEncoding);
 
     //will overwrite any existing contents of this->output

@@ -225,6 +225,21 @@ int jjm::jjmakemain(vector<string> const& args)
             {   jjarguments.executionMode = JjmakeContext::PrintGoals; 
                 continue; 
             }
+            if (startsWith(*arg, "--stdin-encoding="))
+            {   string encoding = arg->substr(string("--stdin-encoding=").size()); 
+                jjm::setJinEncoding(encoding); 
+                continue; 
+            }
+            if (startsWith(*arg, "--stdout-encoding="))
+            {   string encoding = arg->substr(string("--stdout-encoding=").size()); 
+                jjm::setJoutEncoding(encoding); 
+                continue; 
+            }
+            if (startsWith(*arg, "--stderr-encoding="))
+            {   string encoding = arg->substr(string("--stderr-encoding=").size()); 
+                jjm::setJerrEncoding(encoding); 
+                continue; 
+            }
             if (startsWith(*arg, "-T"))
             {   string x; 
                 if (arg->size() == 2)

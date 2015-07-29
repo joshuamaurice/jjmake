@@ -9,6 +9,7 @@
 #include "jfilehandle.hpp"
 #include "jbase/jstreams.hpp"
 #include "jbase/jstdint.hpp"
+#include "jbase/jinttostring.hpp"
 
 #include <errno.h>
 
@@ -26,9 +27,13 @@ public:
     explicit FileStream(FileHandle handle_); 
     ~FileStream(); 
 
-    void handle(FileHandle handle_); //calls FileHandle::close on the previous handle (if any)
+    //calls FileHandle::close on the previous handle (if any) and takes ownership
+    void handle(FileHandle handle_); 
+
     FileHandle handle() const; 
-    FileHandle release(); //release ownership over the internal FileHandle
+
+    //release ownership over the internal FileHandle
+    FileHandle release(); 
 
     virtual void close(); //same as FileHandle::close
     virtual std::int64_t seek(std::int64_t off, int whence); //same as FileHandle::seek2
@@ -36,16 +41,14 @@ public:
     virtual ssize_t write(void const* buf, std::size_t bytes); //same as FileHandle::write2
     virtual int flush() { return 0; }
 
-    //This class saves the last error value of GetLastError() / errno 
-    //to ease use of BufferedInputStream and BufferedOutputStream. 
-    std::int32_t getLastError() const { return mLastError; }
+    Utf8String getLastErrorDescription() const; 
 
 private:
     FileStream(FileStream const& ); //not defined, not copyable
     FileStream& operator= (FileStream const& ); //not defined, not copyable
 
     FileHandle mhandle; 
-    std::int32_t mLastError; 
+    Utf8String lastErrorDescription; 
 };
 
 
@@ -54,14 +57,15 @@ private:
 //**** **** **** ****
 //** Private Implementation
 
-FileStream::FileStream() : mhandle(), mLastError(0) {}
+FileStream::FileStream() : mhandle() {}
 
-FileStream::FileStream(FileHandle handle_) : mhandle(handle_), mLastError(0) {}
+FileStream::FileStream(FileHandle handle_) : mhandle(handle_) {}
 
 FileStream::~FileStream() { mhandle.close(); } 
 
 void FileStream::handle(FileHandle handle_) 
 {
+    lastErrorDescription.clear(); 
     this->close(); 
     mhandle = handle_; 
 }
@@ -69,7 +73,8 @@ void FileStream::handle(FileHandle handle_)
 FileHandle FileStream::handle() const { return mhandle; }
 
 FileHandle FileStream::release() 
-{ 
+{
+    lastErrorDescription.clear(); 
     FileHandle x = mhandle; 
     mhandle = FileHandle(); 
     return x; 
@@ -84,55 +89,59 @@ void FileStream::close()
 #endif
     mhandle.close(); 
 #ifdef _WIN32
-    mLastError = GetLastError();
+    int lastError = GetLastError();
 #else
-    mLastError = errno;
+    int lastErrno = errno;
+#endif
+    lastErrorDescription.clear(); 
+    lastErrorDescription += "FileStream::close() failed. Cause:\n";
+    lastErrorDescription += "FileHandle::close() failed. Cause:\n";
+#ifdef _WIN32
+    lastErrorDescription += "GetLastError() " + toDecStr(lastError) + "."; 
+#else
+    lastErrorDescription += "errno " + toDecStr(lastErrno) + "."; 
 #endif
 }
 
 std::int64_t FileStream::seek(std::int64_t off, int whence) 
 { 
-#ifdef _WIN32
-    SetLastError(0);
-#else
-    errno = 0;
-#endif
-    return mhandle.seek(off, whence); 
-#ifdef _WIN32
-    mLastError = GetLastError();
-#else
-    mLastError = errno;
-#endif
+    try
+    {   return mhandle.seek(off, whence); 
+    } catch (std::exception & e)
+    {   lastErrorDescription.clear(); 
+        lastErrorDescription += "FileStream::seek() failed. Cause:\n";
+        lastErrorDescription += e.what(); 
+        return -1; 
+    }
 } 
 
 ssize_t FileStream::read(void * buf, std::size_t bytes) 
-{ 
-#ifdef _WIN32
-    SetLastError(0);
-#else
-    errno = 0;
-#endif
-    return mhandle.read(buf, bytes); 
-#ifdef _WIN32
-    mLastError = GetLastError();
-#else
-    mLastError = errno;
-#endif
+{
+    try
+    {   return mhandle.read(buf, bytes); 
+    } catch (std::exception & e)
+    {   lastErrorDescription.clear(); 
+        lastErrorDescription += "FileStream::read() failed. Cause:\n";
+        lastErrorDescription += e.what(); 
+        return -2; 
+    }
 }
 
 ssize_t FileStream::write(void const* buf, std::size_t bytes) 
 { 
-#ifdef _WIN32
-    SetLastError(0);
-#else
-    errno = 0;
-#endif
-    return mhandle.write(buf, bytes); 
-#ifdef _WIN32
-    mLastError = GetLastError();
-#else
-    mLastError = errno;
-#endif
+    try
+    {   return mhandle.write(buf, bytes); 
+    } catch (std::exception & e)
+    {   lastErrorDescription.clear(); 
+        lastErrorDescription += "FileStream::write() failed. Cause:\n";
+        lastErrorDescription += e.what(); 
+        return -1; 
+    }
+}
+
+Utf8String FileStream::getLastErrorDescription() const
+{
+    return lastErrorDescription; 
 }
 
 }//namespace jjm

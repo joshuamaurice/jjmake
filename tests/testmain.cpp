@@ -28,8 +28,6 @@ void jjmPathTests();
 #endif
 
 
-
-
 #ifdef _WIN32
 int wmain()
 #else
@@ -38,17 +36,6 @@ int main()
 {
     try
     {
-        std::cout << setlocale(LC_ALL, "") << endl; 
-
-        U8String str;
-        str += 'c'; 
-        appendCp(str, 0x00E7); 
-        str += 'c'; 
-
-        jout() << str << endl;
-
-        //IconvConverter converter("CP437", "UTF-8"); 
-
         junicodeTests(); 
         jjmPathTests(); 
 

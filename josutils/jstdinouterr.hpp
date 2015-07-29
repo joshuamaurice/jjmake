@@ -68,6 +68,20 @@ namespace { bool jjmForceInitJout = (jout(), false); }
 namespace { bool jjmForceInitJerr = (jerr(), false); }
 namespace { bool jjmForceInitJlog = (jlog(), false); }
 
+/* setJinEncoding(), setJoutEncoding(), setJerrEncoding() 
+
+These functions are no-ops if it is detected that the relevant std handle 
+(stdin, stdout, stderr) is directedly connected to a Windows console. In that 
+case, WriteConsoleW is always used. 
+
+Note that no synchronization is done. It is not safe to call these functions
+when jin(), jout(), jerr(), jlog() might be in use by another thread. It is 
+suggested that these should be called only by main before any threads are 
+created. */
+void setJinEncoding (std::string const& encoding);
+void setJoutEncoding(std::string const& encoding); 
+void setJerrEncoding(std::string const& encoding); //also sets the encoding of jlog
+
 
 inline BufferedOutputStream &  operator<< (BufferedOutputStream & out, Utf8String const& str) { return out.write(str.data(), str.size());  }
 inline BufferedOutputStream &  operator<< (BufferedOutputStream & out, Utf16String const& str) { return out << makeU8Str(str);  }
@@ -100,6 +114,19 @@ inline BufferedOutputStream &  flush(BufferedOutputStream & out)
 {
     out.flush(); 
     return out; 
+}
+
+inline BufferedInputStream &  getline(BufferedInputStream & in, Utf8String & str)
+{
+    for (;;)
+    {   char c[1]; 
+        in.read(c, 1);
+        if (!in)
+            return in; 
+        if (*c == '\n')
+            return in; 
+        str.push_back(*c); 
+    }
 }
 
 

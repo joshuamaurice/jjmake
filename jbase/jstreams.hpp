@@ -7,6 +7,7 @@
 #define JBASE_JSTREAMS_HPP_HEADER_GUARD
 
 #include "jstdint.hpp"
+#include "junicode/jutfstring.hpp"
 #include <stddef.h>
 #include <stdio.h> //for SEEK_CUR, etc.,
 #include <string.h>
@@ -432,6 +433,9 @@ public:
     Implementations may not support this operation. Those implementations 
     should simply return -1. */
     virtual std::int64_t seek(std::int64_t off, int whence) = 0; 
+
+
+    virtual jjm::Utf8String getLastErrorDescription() const = 0; 
 
 
 protected:
