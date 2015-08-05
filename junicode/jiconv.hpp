@@ -7,6 +7,8 @@
 #define JUNICODE_JICONV_HPP_HEADER_GUARD
 
 #include "jbase/juniqueptr.hpp"
+#include "jbase/jstdint.hpp"
+#include "jbase/jstreams.hpp"
 
 #include <string>
 #include <cstddef>
@@ -21,53 +23,94 @@
 namespace jjm
 {
 
-
-//TODO see if I can make a better interface. 
-class IconvConverter
-{
-public:
-    IconvConverter();
-    ~IconvConverter();
-
-    //safe to call init() several times. 
-    //Calling init() nukes any contents of input and output. 
-    void init(std::string const& toEncoding, std::string const& fromEncoding);
-
-    //will overwrite any existing contents of this->output
-    void convert(); 
-    
-    /* This function is meant to reset the state of the converter for any 
-    stateful encoding. The user should always call this function after 
-    finishing processing one stream of data and before starting another stream
-    of data. 
-    This function will overwrite any existing contents of this->input and 
-    this->output. */
-    void resetState(); 
-
-    //can't use std::vector because of potential alignment issues
-
-    UniqueArray<char*> input;
-    size_t inputSize; 
-    size_t inputCapacity; 
-
-    UniqueArray<char*> output;
-    size_t outputSize; 
-    size_t outputCapacity; 
-
-private:
-    IconvConverter(IconvConverter const& ); //not defined, not copyable
-    IconvConverter& operator= (IconvConverter const& ); //not defined, not copyable
-
-    iconv_t converter; 
-};
+//DeallocateIconv is private detail:
+class DeallocateIconv { public: void operator() (iconv_t converter) const; };
 
 
-//Utility function, it uses IconvConverter
-std::string iconvConvert(
+//Uses iconv
+std::string convertEncoding(
         std::string const& toEncoding, 
         std::string const& fromEncoding, 
         std::string const& text
         ); 
+
+
+//Uses iconv
+class EncodingConverterInputStream : public jjm::InputStream
+{
+public:
+    EncodingConverterInputStream(); 
+
+    //does not take ownership of the stream
+    EncodingConverterInputStream(jjm::InputStream * st, std::string const& encoding, std::string const& underlyingStreamEncoding); 
+
+    //does not take ownership of the stream
+    void reset(jjm::InputStream * st, std::string const& encoding, std::string const& underlyingStreamEncoding); 
+    jjm::InputStream * getStream() const { return stream; }
+
+    virtual ~EncodingConverterInputStream(); 
+    virtual void close(); 
+    virtual std::int64_t seek(std::int64_t off, int whence); 
+    virtual ssize_t read(void * buf, std::size_t bytes); 
+    virtual jjm::Utf8String getLastErrorDescription() const; 
+
+private:
+    jjm::Utf8String lastErrorDescription; 
+
+    jjm::InputStream * stream; 
+
+    jjm::UniquePtr<iconv_t, DeallocateIconv> converter; 
+
+    jjm::UniqueArray<char*> input; 
+    std::size_t inputSize; 
+    std::size_t inputCapacity; 
+    
+    bool foundEof; 
+    bool needsFlush; 
+
+    jjm::UniqueArray<char*> output; 
+    std::size_t outputSize; 
+    std::size_t outputCapacity; 
+};
+
+
+//Uses iconv
+class EncodingConverterOutputStream : public jjm::OutputStream
+{
+public:
+    EncodingConverterOutputStream(); 
+
+    //does not take ownership of the stream
+    EncodingConverterOutputStream(jjm::OutputStream * st, std::string const& toEncoding, std::string const& fromEncoding); 
+
+    //does not take ownership of the stream
+    void reset(jjm::OutputStream * st, std::string const& encoding, std::string const& underlyingStreamEncoding); 
+    jjm::OutputStream * getStream() const { return stream; }
+
+    virtual ~EncodingConverterOutputStream(); 
+    virtual void close(); 
+    virtual std::int64_t seek(std::int64_t off, int whence); 
+    virtual ssize_t write(void const* buf, std::size_t bytes);  
+    virtual int flush(); 
+    virtual jjm::Utf8String getLastErrorDescription() const; 
+
+private:
+    jjm::Utf8String lastErrorDescription; 
+
+    jjm::OutputStream * stream; 
+
+    jjm::UniquePtr<iconv_t, DeallocateIconv> converter; 
+
+    jjm::UniqueArray<char*> input; 
+    std::size_t inputSize; 
+    std::size_t inputCapacity; 
+
+    bool foundEof; 
+
+    jjm::UniqueArray<char*> output; 
+    std::size_t outputSize; 
+    std::size_t outputCapacity; 
+};
 
 
 }//namespace jjm

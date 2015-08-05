@@ -6,6 +6,7 @@
 #include "jstdstreams.hpp"
 
 #include "jenv.hpp"
+#include "jfilestreams.hpp"
 #include "junicode/jiconv.hpp"
 #include "junicode/jutfstring.hpp"
 #include "jbase/jfatal.hpp"
@@ -59,22 +60,14 @@ namespace
         message += "GetFileType(<handle>) returned an unexpected value " + toDecStr(handleType) + "."; 
         throw std::runtime_error(message); 
     }
-}
-#endif
 
-namespace
-{
-    class StandardInputStream : public jjm::InputStream
+    class Win32ConsoleUtf16InputStream : public jjm::InputStream
     {
     public:
-
         //does not take ownership of filehandle
-        StandardInputStream(FileHandle handle); 
+        Win32ConsoleUtf16InputStream(FileHandle handle); 
 
-        ~StandardInputStream() {}
-
-        //function is no-op if it detects that this is directly connected to a win32 terminal
-        void resetEncoding(string const& encoding); 
+        ~Win32ConsoleUtf16InputStream() {}
 
         virtual void close() {} //no-op
         virtual std::int64_t seek(std::int64_t off, int whence) { return -1; } //cannot seek on stdin
@@ -83,137 +76,19 @@ namespace
         virtual Utf8String getLastErrorDescription() const { return lastErrorDescription; }
 
     private:
-        StandardInputStream(StandardInputStream const& ); //not defined, not copyable
-        StandardInputStream& operator= (StandardInputStream const& ); //not defined, not copyable
-
-        FileHandle handle; 
         Utf8String lastErrorDescription; 
-
-        jjm::IconvConverter converter; 
-
-    #ifdef _WIN32
-        bool isConsole; 
+        FileHandle handle; 
         vector<char> remaining; 
-    #endif
     };
-}
 
-StandardInputStream::StandardInputStream(FileHandle handle_)
-    : handle(handle_)
-#ifdef _WIN32
-    , isConsole(false) 
-#endif
-{
-    try
-    {
-#ifdef _WIN32
-        isConsole = isConnectedToWin32Console(handle); 
-#endif
-    }
-    catch (std::exception & e)
-    {   string message; 
-        message += "StandardInputStream::StandardInputStream() failed. Cause:\n"; 
-        message += e.what(); 
-        throw std::runtime_error(message); 
-    }
-}
-
-void StandardInputStream::resetEncoding(string const& encoding)
-{
-#ifdef _WIN32
-    if (isConsole)
-        return; 
-#endif
-    try
-    {   converter.init("UTF-8", encoding); 
-    }catch (std::exception & e)
-    {   string message;
-        message += "jjm's StandardInputStream::resetEncoding(\"" + encoding + "\") failed. Cause:\n";
-        message += e.what(); 
-        throw std::runtime_error(message); 
-    }
-}
-
-ssize_t StandardInputStream::read(void * const argumentBuffer, size_t const argumentBufferBytes)
-{
-    try
-    {   
-#ifdef _WIN32
-        //if it's a console, read UTF-16 using the console-specific function ReadConsoleW
-        if (isConsole)
-        {   
-            if (remaining.size() == 0)
-            {   DWORD numCharsToRead = 0;
-                if (argumentBufferBytes < std::numeric_limits<DWORD>::max())
-                    numCharsToRead = (DWORD) argumentBufferBytes;
-                else
-                    numCharsToRead = std::numeric_limits<DWORD>::max(); 
-                
-                size_t const bufsize = numCharsToRead; 
-                UniqueArray<wchar_t*> buf(new wchar_t[bufsize]); 
-
-                DWORD numCharsRead = 0; 
-
-                SetLastError(0); 
-                if (0 == ReadConsoleW(handle.native(), buf.get(), numCharsToRead, & numCharsRead, 0))
-                {   DWORD const lastError = GetLastError(); 
-                    throw std::runtime_error(string() + "ReadConsoleW() failed. Cause:\n" + "GetLastError() " + toDecStr(lastError) + "."); 
-                }
-
-                auto x = makeUtf8RangeFromCpRange(makeCpRangeFromUtf16(make_pair(buf.get(), buf.get() + numCharsRead))); 
-                remaining.insert(remaining.end(), x.first, x.second); 
-            }
-            if (remaining.size() > 0)
-            {   ssize_t toCopy = std::min<ssize_t>(remaining.size(), argumentBufferBytes); 
-                memcpy(argumentBuffer, &remaining[0], toCopy); 
-                memmove(&remaining[0], &remaining[0] + toCopy, remaining.size() - toCopy); 
-                remaining.resize(remaining.size() - toCopy); 
-                return toCopy; 
-            }
-            return 0; 
-        }
-#endif
-        //otherwise, read it in the encoding of the specified encoding
-        ssize_t const toRead = converter.inputCapacity - converter.inputSize; 
-        ssize_t const bytesRead = handle.read(converter.input.get() + converter.inputSize, toRead); 
-        if (bytesRead >= 0)
-            converter.inputSize += bytesRead; 
-        if (bytesRead == -1 && converter.inputSize == 0 && converter.outputSize == 0)
-            return -1; 
-        if (converter.outputSize == 0)
-            converter.convert(); 
-        if (bytesRead == -1 && converter.inputSize != 0 && converter.outputSize == 0)
-        {   throw std::runtime_error("Incomplete partial encoding sequence found just before end-of-input."); 
-            return -2;
-        }
-
-        ssize_t toCopy = std::min<ssize_t>(argumentBufferBytes, converter.outputSize); 
-        memcpy(argumentBuffer, converter.output.get(), toCopy); 
-        memmove(converter.output.get(), converter.output.get() + toCopy, converter.outputSize - toCopy); 
-        converter.outputSize -= toCopy; 
-        return toCopy; 
-    }catch (std::exception & e)
-    {   lastErrorDescription.clear();
-        lastErrorDescription += "StandardInputStream::read failed. Cause:\n";
-        lastErrorDescription += e.what(); 
-        return -2; 
-    }
-}
-
-
-namespace
-{
-    class StandardOutputStream : public jjm::OutputStream
+    class Win32ConsoleUtf16OutputStream : public jjm::OutputStream
     {
     public:
 
         //does not take ownership of filehandle
-        StandardOutputStream(FileHandle handle); 
+        Win32ConsoleUtf16OutputStream(FileHandle handle); 
 
-        ~StandardOutputStream() {}
-
-        //function is no-op if it detects that this is directly connected to a win32 terminal
-        void resetEncoding(string const& encoding); 
+        ~Win32ConsoleUtf16OutputStream() {}
 
         virtual void close() {} //no-op
         virtual std::int64_t seek(std::int64_t off, int whence) { return -1; } //cannot seek on stdout nor stderr
@@ -223,49 +98,69 @@ namespace
         virtual Utf8String getLastErrorDescription() const { return lastErrorDescription; }
 
     private:
-        StandardOutputStream(StandardOutputStream const& ); //not defined, not copyable
-        StandardOutputStream& operator= (StandardOutputStream const& ); //not defined, not copyable
-
         FileHandle handle; 
         Utf8String lastErrorDescription; 
-
-        jjm::IconvConverter converter; 
-
-    #ifdef _WIN32
-        bool isConsole; 
-    #endif
     };
 }
 
-StandardOutputStream::StandardOutputStream(FileHandle handle_)
+Win32ConsoleUtf16InputStream::Win32ConsoleUtf16InputStream(FileHandle handle_)
     : handle(handle_)
-#ifdef _WIN32
-    , isConsole(false)
-#endif
 {
-#ifdef _WIN32
-    isConsole = ::isConnectedToWin32Console(handle); 
-#endif
 }
 
-void StandardOutputStream::resetEncoding(string const& encoding)
+ssize_t Win32ConsoleUtf16InputStream::read(void * const argumentBuffer, size_t const argumentBufferBytes)
 {
     try
-    {   converter.init(encoding, "UTF-8"); 
+    {   
+        if (remaining.size() == 0)
+        {   DWORD numCharsToRead = 0;
+            if (argumentBufferBytes < std::numeric_limits<DWORD>::max())
+                numCharsToRead = (DWORD) argumentBufferBytes;
+            else
+                numCharsToRead = std::numeric_limits<DWORD>::max(); 
+                
+            size_t const bufsize = numCharsToRead; 
+            UniqueArray<wchar_t*> buf(new wchar_t[bufsize]); 
+
+            DWORD numCharsRead = 0; 
+
+            SetLastError(0); 
+            if (0 == ReadConsoleW(handle.native(), buf.get(), numCharsToRead, & numCharsRead, 0))
+            {   DWORD const lastError = GetLastError(); 
+                throw std::runtime_error(string() + "ReadConsoleW() failed. Cause:\n" + "GetLastError() " + toDecStr(lastError) + "."); 
+            }
+
+            auto x = makeUtf8RangeFromCpRange(makeCpRangeFromUtf16(make_pair(buf.get(), buf.get() + numCharsRead))); 
+            remaining.insert(remaining.end(), x.first, x.second); 
+        }
+
+        if (remaining.size() > 0)
+        {   ssize_t toCopy = std::min<ssize_t>(remaining.size(), argumentBufferBytes); 
+            memcpy(argumentBuffer, &remaining[0], toCopy); 
+            memmove(&remaining[0], &remaining[0] + toCopy, remaining.size() - toCopy); 
+            remaining.resize(remaining.size() - toCopy); 
+            return toCopy; 
+        }
+
+        return 0; 
+
     }catch (std::exception & e)
-    {   string message;
-        message += "jjm's StandardOutputStream::StandardOutputStream(\"" + encoding + "\") failed. Cause:\n";
-        message += e.what(); 
-        throw std::runtime_error(message); 
+    {   lastErrorDescription.clear();
+        lastErrorDescription += "StandardInputStream::read failed. Cause:\n";
+        lastErrorDescription += e.what(); 
+        return -2; 
     }
 }
 
-ssize_t  StandardOutputStream::write(void const * const argumentBuffer, std::size_t const argumentBufferBytes)
+Win32ConsoleUtf16OutputStream::Win32ConsoleUtf16OutputStream(FileHandle handle_)
+    : handle(handle_)
 {
-#ifdef _WIN32
-    //if it's a console, write UTF-16 using the console-specific function WriteConsoleW
-    if (isConsole)
-    {  
+}
+
+ssize_t  Win32ConsoleUtf16OutputStream::write(void const * const argumentBuffer, std::size_t const argumentBufferBytes)
+{
+    try
+    {
         pair<char const*, char const*> u8range;
         u8range.first  = static_cast<char const*>(argumentBuffer);
         u8range.second = static_cast<char const*>(argumentBuffer) + argumentBufferBytes;
@@ -295,39 +190,9 @@ ssize_t  StandardOutputStream::write(void const * const argumentBuffer, std::siz
             }
             begin += numWritten; 
         }
+
         return argumentBufferBytes; 
-    }
-#endif
 
-    try
-    {
-        //otherwise, write it in the encoding of the specified locale
-        char const * argumentBufferCurrent = reinterpret_cast<char const*>(argumentBuffer); 
-        char const * argumentBufferEnd = reinterpret_cast<char const*>(argumentBuffer) + argumentBufferBytes; 
-        for (;;)
-        {
-            //copy some number of bytes to converter input
-            ssize_t const toCopy = std::min<ssize_t>(
-                    argumentBufferEnd - argumentBufferCurrent, 
-                    converter.inputCapacity - converter.inputSize); 
-            std::memcpy(
-                    converter.input.get() + converter.inputSize, 
-                    argumentBufferCurrent, 
-                    toCopy
-                    ); 
-            argumentBufferCurrent += toCopy; 
-            converter.inputSize += toCopy; 
-
-            //convert
-            converter.convert(); 
-
-            //copy all of the output to the handle
-            handle.writeComplete(converter.output.get(), converter.outputSize); 
-
-            if (argumentBufferCurrent == argumentBufferEnd)
-                return argumentBufferBytes; 
-        }
-        JFATAL(0, 0); 
     }catch (std::exception & e)
     {   lastErrorDescription.clear();
         lastErrorDescription += "StandardOutputStream::write failed. Cause:\n";
@@ -335,38 +200,62 @@ ssize_t  StandardOutputStream::write(void const * const argumentBuffer, std::siz
         return -1; 
     }
 }
+#endif
+
+
 
 
 void jjm::setJinEncoding (std::string const& encoding)
 {
-    dynamic_cast<StandardInputStream*>(jin().inputStream())->resetEncoding(encoding); 
+    EncodingConverterInputStream * x = 
+            dynamic_cast<EncodingConverterInputStream *>(jin().inputStream());
+    if (x)
+        x->reset(x->getStream(), "UTF-8", encoding); 
 }
 
 void jjm::setJoutEncoding(std::string const& encoding)
 {
-    dynamic_cast<StandardOutputStream*>(jout().outputStream())->resetEncoding(encoding); 
+    EncodingConverterOutputStream * x = 
+            dynamic_cast<EncodingConverterOutputStream *>(jout().outputStream());
+    if (x)
+        x->reset(x->getStream(), "UTF-8", encoding); 
 }
 
 void jjm::setJerrEncoding(std::string const& encoding)
 {
-    dynamic_cast<StandardOutputStream*>(jerr().outputStream())->resetEncoding(encoding); 
-    dynamic_cast<StandardOutputStream*>(jlog().outputStream())->resetEncoding(encoding); 
+    EncodingConverterOutputStream * x = 
+            dynamic_cast<EncodingConverterOutputStream *>(jerr().outputStream());
+    if (x)
+        x->reset(x->getStream(), "UTF-8", encoding); 
+    x = 
+            dynamic_cast<EncodingConverterOutputStream *>(jlog().outputStream());
+    if (x)
+        x->reset(x->getStream(), "UTF-8", encoding); 
 }
 
 
 
 
-jjm::BufferedInputStream  *  jjm::Internal::createJin()
+jjm::BufferedInputStream *  jjm::Internal::createJin()
 {
     try
     {   
+#ifdef _WIN32
+        if (isConnectedToWin32Console(FileHandle::getstdin()))
+        {   Win32ConsoleUtf16InputStream * x = new Win32ConsoleUtf16InputStream(FileHandle::getstdin()); 
+            BufferedInputStream * y = new BufferedInputStream(x); 
+            return y; 
+        }
+#endif
+
 #ifdef _WIN32
         string encoding = getWindowsOemEncodingName(); 
 #else
         string encoding = getEncodingNameFrom_setlocale_LC_ALL_emptyString(); 
 #endif
-        StandardInputStream * x = new StandardInputStream(FileHandle::getstdin()); 
-        x->resetEncoding(encoding); 
+        InputStream * x = 0;
+        x = new jjm::FileStream(FileHandle::getstdin()); 
+        x = new jjm::EncodingConverterInputStream(x, "UTF-8", encoding); 
         BufferedInputStream * y = new BufferedInputStream(x); 
         return y; 
     }
@@ -384,12 +273,21 @@ jjm::BufferedOutputStream *  jjm::Internal::createJout()
     try
     {   
 #ifdef _WIN32
+        if (isConnectedToWin32Console(FileHandle::getstdout()))
+        {   Win32ConsoleUtf16OutputStream * x = new Win32ConsoleUtf16OutputStream(FileHandle::getstdout()); 
+            BufferedOutputStream * y = new BufferedOutputStream(x); 
+            return y; 
+        }
+#endif
+
+#ifdef _WIN32
         string encoding = getWindowsOemEncodingName(); 
 #else
         string encoding = getEncodingNameFrom_setlocale_LC_ALL_emptyString(); 
 #endif
-        StandardOutputStream * x = new StandardOutputStream(FileHandle::getstdout()); 
-        x->resetEncoding(encoding); 
+        OutputStream * x = 0;
+        x = new jjm::FileStream(FileHandle::getstdout()); 
+        x = new jjm::EncodingConverterOutputStream(x, "UTF-8", encoding); 
         BufferedOutputStream * y = new BufferedOutputStream(x); 
         return y; 
     }
@@ -405,14 +303,23 @@ jjm::BufferedOutputStream *  jjm::Internal::createJout()
 jjm::BufferedOutputStream *  jjm::Internal::createJerr()
 {
     try
-    {   
+    {  
+#ifdef _WIN32
+        if (isConnectedToWin32Console(FileHandle::getstderr()))
+        {   Win32ConsoleUtf16OutputStream * x = new Win32ConsoleUtf16OutputStream(FileHandle::getstderr()); 
+            BufferedOutputStream * y = new BufferedOutputStream(x); 
+            return y; 
+        }
+#endif
+
 #ifdef _WIN32
         string encoding = getWindowsOemEncodingName(); 
 #else
         string encoding = getEncodingNameFrom_setlocale_LC_ALL_emptyString(); 
 #endif
-        StandardOutputStream * x = new StandardOutputStream(FileHandle::getstderr()); 
-        x->resetEncoding(encoding); 
+        OutputStream * x = 0;
+        x = new jjm::FileStream(FileHandle::getstderr()); 
+        x = new jjm::EncodingConverterOutputStream(x, "UTF-8", encoding); 
         BufferedOutputStream * y = new BufferedOutputStream(x); 
         return y; 
     }
@@ -430,12 +337,21 @@ jjm::BufferedOutputStream *  jjm::Internal::createJlog()
     try
     {   
 #ifdef _WIN32
+        if (isConnectedToWin32Console(FileHandle::getstderr()))
+        {   Win32ConsoleUtf16OutputStream * x = new Win32ConsoleUtf16OutputStream(FileHandle::getstderr()); 
+            BufferedOutputStream * y = new BufferedOutputStream(x); 
+            return y; 
+        }
+#endif
+
+#ifdef _WIN32
         string encoding = getWindowsOemEncodingName(); 
 #else
         string encoding = getEncodingNameFrom_setlocale_LC_ALL_emptyString(); 
 #endif
-        StandardOutputStream * x = new StandardOutputStream(FileHandle::getstderr()); 
-        x->resetEncoding(encoding); 
+        OutputStream * x = 0;
+        x = new jjm::FileStream(FileHandle::getstderr()); 
+        x = new jjm::EncodingConverterOutputStream(x, "UTF-8", encoding); 
         BufferedOutputStream * y = new BufferedOutputStream(x); 
         return y; 
     }

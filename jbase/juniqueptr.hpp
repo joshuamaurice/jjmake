@@ -61,7 +61,7 @@ class UniquePtr
 {
 private:
     typedef void (*unspecified_bool_type)();
-    static void unspecified_bool_true() {}
+    static void unspecified_bool_true() {} //TODO apparently visual studios sucks, and can convert pointer-to-member-function to pointer-to-void, figure out some other way to do this
 public:
     explicit UniquePtr(T x = T()) : p(x) {}
     ~UniquePtr() { deleter_t()(p); }
@@ -115,6 +115,34 @@ private:
     UniquePtr(UniquePtr const& ); //not defined, not copyable
     UniquePtr operator= (UniquePtr const& ); //not defined, not copyable
     T* p;
+};
+
+
+template <typename deleter_t>
+class UniquePtr<void*, deleter_t>
+{
+private:
+    typedef void (*unspecified_bool_type)();
+    static void unspecified_bool_true() {} 
+public:
+    explicit UniquePtr(void* x = 0) : p(x) {}
+    ~UniquePtr() { deleter_t()(p); }
+    void* release() { void* x = p; p = 0; return x; }
+    void reset(void* x = 0) { deleter_t()(p); p = x; }
+    void swap(UniquePtr& x) { using std::swap; swap(p, x.p); }
+    void* get() const { return p; }
+    operator unspecified_bool_type () const { return p ? unspecified_bool_true : 0; }
+    bool operator! () const { return ! static_cast<bool>(*this); }
+    friend bool operator == (UniquePtr const& a, UniquePtr const& b) { return a.p == b.p; }
+    friend bool operator != (UniquePtr const& a, UniquePtr const& b) { return !(a==b); }
+    friend bool operator <  (UniquePtr const& a, UniquePtr const& b) { return std::less<void*>()(a.get(), b.get()); }
+    friend bool operator <= (UniquePtr const& a, UniquePtr const& b) { return a<b || a==b; }
+    friend bool operator >  (UniquePtr const& a, UniquePtr const& b) { return b<a; }
+    friend bool operator >= (UniquePtr const& a, UniquePtr const& b) { return b<a || a==b; }
+private:
+    UniquePtr(UniquePtr const& ); //not defined, not copyable
+    UniquePtr operator= (UniquePtr const& ); //not defined, not copyable
+    void* p;
 };
 
 

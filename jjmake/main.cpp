@@ -124,7 +124,7 @@ namespace jjm { int jjmakemain(vector<string> const& args); }
             {
                 string utf8arg;
                 try
-                {   utf8arg = jjm::iconvConvert("UTF-8", argumentEncoding, argv[x]); 
+                {   utf8arg = jjm::convertEncoding("UTF-8", argumentEncoding, argv[x]); 
                 } catch (std::exception & e)
                 {   string message; 
                     message += "Failed to transcode an argument of main() to UTF-8. Cause:\n"; 

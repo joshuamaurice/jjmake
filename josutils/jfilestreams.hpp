@@ -57,22 +57,22 @@ private:
 //**** **** **** ****
 //** Private Implementation
 
-FileStream::FileStream() : mhandle() {}
+inline FileStream::FileStream() : mhandle() {}
 
-FileStream::FileStream(FileHandle handle_) : mhandle(handle_) {}
+inline FileStream::FileStream(FileHandle handle_) : mhandle(handle_) {}
 
-FileStream::~FileStream() { mhandle.close(); } 
+inline FileStream::~FileStream() { mhandle.close(); } 
 
-void FileStream::handle(FileHandle handle_) 
+inline void FileStream::handle(FileHandle handle_) 
 {
     lastErrorDescription.clear(); 
     this->close(); 
     mhandle = handle_; 
 }
 
-FileHandle FileStream::handle() const { return mhandle; }
+inline FileHandle FileStream::handle() const { return mhandle; }
 
-FileHandle FileStream::release() 
+inline FileHandle FileStream::release() 
 {
     lastErrorDescription.clear(); 
     FileHandle x = mhandle; 
@@ -80,7 +80,7 @@ FileHandle FileStream::release()
     return x; 
 }
 
-void FileStream::close() 
+inline void FileStream::close() 
 { 
 #ifdef _WIN32
     SetLastError(0);
@@ -103,7 +103,7 @@ void FileStream::close()
 #endif
 }
 
-std::int64_t FileStream::seek(std::int64_t off, int whence) 
+inline std::int64_t FileStream::seek(std::int64_t off, int whence) 
 { 
     try
     {   return mhandle.seek(off, whence); 
@@ -115,7 +115,7 @@ std::int64_t FileStream::seek(std::int64_t off, int whence)
     }
 } 
 
-ssize_t FileStream::read(void * buf, std::size_t bytes) 
+inline ssize_t FileStream::read(void * buf, std::size_t bytes) 
 {
     try
     {   return mhandle.read(buf, bytes); 
@@ -127,7 +127,7 @@ ssize_t FileStream::read(void * buf, std::size_t bytes)
     }
 }
 
-ssize_t FileStream::write(void const* buf, std::size_t bytes) 
+inline ssize_t FileStream::write(void const* buf, std::size_t bytes) 
 { 
     try
     {   return mhandle.write(buf, bytes); 
@@ -139,7 +139,7 @@ ssize_t FileStream::write(void const* buf, std::size_t bytes)
     }
 }
 
-Utf8String FileStream::getLastErrorDescription() const
+inline Utf8String FileStream::getLastErrorDescription() const
 {
     return lastErrorDescription; 
 }

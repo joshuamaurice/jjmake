@@ -476,7 +476,7 @@ public:
     If an implementation cannot read the requested number of bytes because of
     EOF, and if there are no more bytes left to be read, then it returns -1. 
 
-    On other errors, return -2. 
+    On other errors, return -2. Should not throw exceptions on errors. 
     
     Subclasses should be written so that:
         1- the call fails and extracts zero bytes from the underlying source, or 
@@ -521,7 +521,7 @@ public:
     
     On success, returns number of bytes successfully written. 
     
-    On errors, returns -1. 
+    On errors, returns -1. Should not throw exceptions on errors. 
     
     Subclasses should be written so that:
         1- the call fails and writes zero bytes to the underlying target, or 
@@ -532,13 +532,15 @@ public:
     virtual ssize_t write(void const* buf, std::size_t bytes) = 0;  
 
     
-    /* Ensure that the data is moved to its final destination. Subclasses 
-    should be implemented to avoid the use of additional userspace buffering, 
-    but an explicit flush is still a useful API to have. 
+    /* Ensure that the data is moved to its final destination. 
+
+    Subclasses should be implemented to work in bulk and should be optimized
+    for bulk operations at the cost of byte-by-byte processing. 
     
     Returns 0 on success. 
     
-    Return -1 on errors. */
+    Return -1 on errors. Should not throw exceptions on errors. 
+    */
     virtual int flush() = 0; 
 
 

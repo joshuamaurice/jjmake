@@ -88,7 +88,7 @@ using namespace std;
                 JFATAL(0, y1);
             Utf8String transcodedValue;
             try
-            {   transcodedValue = jjm::iconvConvert("UTF-8", encoding, string(y2 + 1)); 
+            {   transcodedValue = jjm::convertEncoding("UTF-8", encoding, string(y2 + 1)); 
             } catch (std::exception & e)
             {   string message;
                 message += "jjm::getEnvMapUtf8() failed. Cause:\n";
@@ -123,7 +123,7 @@ using namespace std;
         char * v = getenv(name.c_str()); 
         if (v != 0)
         {   try
-            {   result = jjm::iconvConvert("UTF-8", encoding, string(v)); 
+            {   result = jjm::convertEncoding("UTF-8", encoding, string(v)); 
             } catch (std::exception & e)
             {   string message;
                 message += "jjm::getEnvVarUtf8(\"" + name + "\") failed. Cause:\n";
